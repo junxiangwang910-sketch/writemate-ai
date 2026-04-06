@@ -1,0 +1,54 @@
+{
+  "users": [
+    {
+      "id": "ec383aa9-15fa-4fe2-8982-19089dfac9c8",
+      "name": "Amy",
+      "email": "amy@example.com",
+      "plan": "pro",
+      "createdAt": "2026-04-06T12:16:56.210Z"
+    },
+    {
+      "id": "b67894f1-0b6b-451f-a410-da6caea59ac3",
+      "name": "Guest",
+      "email": "",
+      "plan": "free",
+      "createdAt": "2026-04-06T12:16:59.788Z"
+    }
+  ],
+  "drafts": {},
+  "submissions": [
+    {
+      "id": "1362aa4e-47e2-4e3e-a7d1-ffe7cbdf7dc6",
+      "userId": "ec383aa9-15fa-4fe2-8982-19089dfac9c8",
+      "timestamp": "4/6/2026, 8:17:14 PM",
+      "plan": "pro",
+      "name": "Amy",
+      "task": "task2",
+      "taskLabel": "Task 2",
+      "prompt": "Some people think that children should begin formal education at a very early age. Others believe they should start school later. Discuss both views and give your own opinion.",
+      "essay": "It is often argued that children should attend school as early as possible, while others believe a later start is more beneficial. In my opinion, although early education can help children adapt to group learning, beginning school slightly later is better for emotional development. On the one hand, starting school early allows children to build basic literacy and social skills sooner. On the other hand, not all children are mentally prepared for formal education at a young age. In conclusion, both views have merit, but I believe children should start formal education a little later.",
+      "overall": 6,
+      "taskResponse": 6,
+      "coherence": 6,
+      "lexical": 5.5,
+      "grammar": 6,
+      "taskResponseFeedback": "The task is addressed reasonably well, but ideas can be developed more directly.",
+      "coherenceFeedback": "Paragraphing is clear and transitions are generally natural.",
+      "lexicalFeedback": "Vocabulary is adequate to strong, though more paraphrasing would help.",
+      "grammarFeedback": "Sentence variety is present, but complex sentence accuracy can still improve.",
+      "strengths": [
+        "The essay reaches about 95 words and broadly meets the expected length.",
+        "1 paragraphs were detected, giving the response a workable structure.",
+        "About 5 clear linking devices support cohesion."
+      ],
+      "improvements": [
+        "Prompt keyword coverage is about 81%, so the response could address the task more directly.",
+        "Some long sentences should be split for better accuracy.",
+        "Examples and support could be more specific."
+      ],
+      "rewriteSuggestion": "Split an overly long sentence into two parts and replace abstract wording with more concrete support.",
+      "coachSummary": "This Task 2 response already shows a foundation around band 6.0. The next step is to sharpen task response, specificity, and accuracy in complex sentences."
+    }
+  ],
+  "simulatedUsers": 129
+}

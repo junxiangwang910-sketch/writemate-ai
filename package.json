@@ -1,0 +1,9 @@
+{
+  "name": "writemate-ai-mvp",
+  "version": "1.0.0",
+  "private": true,
+  "description": "IELTS Writing correction MVP with backend and OpenAI integration",
+  "scripts": {
+    "start": "node server.js"
+  }
+}

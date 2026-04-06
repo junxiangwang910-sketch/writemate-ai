@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WriteMate AI | IELTS Writing SaaS MVP</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Noto+Sans+SC:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="page-shell">
+    <header class="topbar">
+      <div class="brand">
+        <div class="brand-mark">W</div>
+        <div>
+          <p class="brand-name">WriteMate AI</p>
+          <p class="brand-tag" data-i18n="brandTag">雅思写作智能批改 SaaS</p>
+        </div>
+      </div>
+      <nav class="nav-links">
+        <button class="nav-link" type="button" data-scroll-target="#workspace" data-i18n="navWorkspace">工作台</button>
+        <button class="nav-link" type="button" data-scroll-target="#pricing" data-i18n="navPricing">套餐</button>
+        <button class="nav-link" type="button" data-scroll-target="#admin" data-i18n="navAdmin">运营视图</button>
+        <button class="nav-link" type="button" data-scroll-target="#faq" data-i18n="navFaq">FAQ</button>
+      </nav>
+      <div class="topbar-actions">
+        <button class="ghost-button" id="langToggle" type="button">EN</button>
+        <div class="account-chip" id="accountChip">
+          <span class="account-name" id="accountName" data-i18n="guestName">游客模式</span>
+          <span class="account-plan" id="accountPlan">Free</span>
+        </div>
+        <button class="primary-button small" id="authButton" type="button" data-i18n="loginButton">登录 / 注册</button>
+      </div>
+    </header>
+
+    <main>
+      <section class="hero">
+        <div class="hero-copy">
+          <p class="eyebrow" data-i18n="eyebrow">Built for monetizable IELTS writing products</p>
+          <h1 data-i18n="heroTitle">从批改网页，升级成可以卖的雅思写作服务</h1>
+          <p class="hero-text" data-i18n="heroText">
+            不只展示批改结果，还包含用户身份、套餐选择、历史记录、使用次数和运营数据。你现在拿到的是一个更接近 SaaS MVP 的产品原型。
+          </p>
+          <div class="hero-actions">
+            <button class="primary-button" type="button" data-scroll-target="#workspace" data-i18n="heroActionPrimary">进入工作台</button>
+            <button class="secondary-button" type="button" data-scroll-target="#pricing" data-i18n="heroActionSecondary">查看定价</button>
+          </div>
+          <div class="metric-row">
+            <article class="metric-card">
+              <strong id="metricUsers">128</strong>
+              <span data-i18n="metricOne">模拟注册用户</span>
+            </article>
+            <article class="metric-card">
+              <strong id="metricEssays">472</strong>
+              <span data-i18n="metricTwo">累计批改篇数</span>
+            </article>
+            <article class="metric-card">
+              <strong id="metricAvgBand">7.1</strong>
+              <span data-i18n="metricThree">平均预估分</span>
+            </article>
+          </div>
+        </div>
+
+        <div class="hero-panel">
+          <div class="panel-glow"></div>
+          <div class="score-preview">
+            <div class="preview-head">
+              <span data-i18n="previewLabel">产品状态</span>
+              <span class="live-pill" data-i18n="previewLive">MVP Ready</span>
+            </div>
+            <div class="preview-band">
+              <span data-i18n="overallBand">本次预估</span>
+              <strong id="heroBand">7.5</strong>
+            </div>
+            <div class="band-grid">
+              <div>
+                <span data-i18n="criterionTR">任务回应</span>
+                <strong>7.0</strong>
+              </div>
+              <div>
+                <span data-i18n="criterionCC">连贯衔接</span>
+                <strong>7.5</strong>
+              </div>
+              <div>
+                <span data-i18n="criterionLR">词汇资源</span>
+                <strong>7.5</strong>
+              </div>
+              <div>
+                <span data-i18n="criterionGRA">语法准确</span>
+                <strong>8.0</strong>
+              </div>
+            </div>
+            <div class="preview-feedback">
+              <p data-i18n="previewInsightTitle">现在这版已经具备</p>
+              <ul>
+                <li data-i18n="previewInsightOne">双语 UI 与 Task 1 / Task 2 批改工作流</li>
+                <li data-i18n="previewInsightTwo">登录态、套餐选择、作文历史本地持久化</li>
+                <li data-i18n="previewInsightThree">简易运营面板，方便继续接真实后端</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="workspace-section" id="workspace">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow" data-i18n="workspaceEyebrow">User Workspace</p>
+            <h2 data-i18n="workspaceTitle">用户工作台</h2>
+          </div>
+          <div class="status-banner" id="usageBanner">
+            <span data-i18n="usageLabel">剩余批改次数</span>
+            <strong id="usageCount">3</strong>
+          </div>
+        </div>
+
+        <div class="dashboard-grid">
+          <article class="summary-card">
+            <p data-i18n="summaryCurrentPlan">当前套餐</p>
+            <strong id="summaryPlan">Free</strong>
+            <span id="summaryPlanDesc" data-i18n="freePlanDesc">每月 3 次批改，适合体验</span>
+          </article>
+          <article class="summary-card">
+            <p data-i18n="summaryEssays">我的作文</p>
+            <strong id="summaryEssayCount">0</strong>
+            <span data-i18n="summaryEssaysDesc">已保存到历史记录</span>
+          </article>
+          <article class="summary-card">
+            <p data-i18n="summaryBestBand">最佳成绩</p>
+            <strong id="summaryBestBandValue">0.0</strong>
+            <span data-i18n="summaryBestBandDesc">按当前账号历史统计</span>
+          </article>
+          <article class="summary-card">
+            <p data-i18n="summaryMode">账号状态</p>
+            <strong id="summaryModeValue" data-i18n="guestName">游客模式</strong>
+            <span data-i18n="summaryModeDesc">登录后即可持续保存记录</span>
+          </article>
+        </div>
+
+        <div class="grader-layout">
+          <form class="grader-form" id="essayForm">
+            <div class="field-row">
+              <label class="field">
+                <span data-i18n="taskTypeLabel">写作类型</span>
+                <select id="taskType">
+                  <option value="task1" data-i18n="taskOneOption">Task 1</option>
+                  <option value="task2" selected data-i18n="taskTwoOption">Task 2</option>
+                </select>
+              </label>
+              <label class="field">
+                <span data-i18n="candidateLabel">考生昵称</span>
+                <input id="candidateName" type="text" data-i18n-placeholder="candidatePlaceholder" placeholder="Amy / 李同学">
+              </label>
+            </div>
+
+            <label class="field">
+              <span data-i18n="promptLabel">题目 / Prompt</span>
+              <textarea id="essayPrompt" rows="4" data-i18n-placeholder="promptPlaceholder">Some people think that children should begin formal education at a very early age. Others believe they should start school later. Discuss both views and give your own opinion.</textarea>
+            </label>
+
+            <label class="field">
+              <span data-i18n="essayLabel">作文内容 / Essay</span>
+              <textarea id="essayText" rows="12" data-i18n-placeholder="essayPlaceholder">It is often argued that children should attend school as early as possible, while others believe a later start is more beneficial. In my opinion, although early education can help children adapt to group learning, beginning school slightly later is better for emotional development.
+
+On the one hand, starting school early allows children to build basic literacy and social skills sooner. They can learn how to follow rules, communicate with classmates and become familiar with structured learning. This may reduce pressure when they grow older because they already have classroom experience.
+
+On the other hand, not all children are mentally prepared for formal education at a young age. If they are sent to school too early, they may feel stressed or lose interest in learning. By spending more time at home, children can develop emotional security and learn through play, which is also essential.
+
+In conclusion, both views have merit, but I believe children should start formal education a little later, when they are mature enough to benefit from it fully.</textarea>
+            </label>
+
+            <div class="form-footer">
+              <div class="word-count-box">
+                <span data-i18n="wordCountLabel">当前字数</span>
+                <strong id="wordCount">0</strong>
+              </div>
+              <div class="form-actions">
+                <button class="secondary-button" id="saveDraftButton" type="button" data-i18n="saveDraftButton">保存草稿</button>
+                <button class="primary-button large" type="submit" data-i18n="analyzeButton">生成 AI 批改报告</button>
+              </div>
+            </div>
+          </form>
+
+          <aside class="results-panel" id="resultsPanel">
+            <div class="results-placeholder" id="resultsPlaceholder">
+              <p data-i18n="resultsPlaceholderTitle">你的批改报告会显示在这里</p>
+              <span data-i18n="resultsPlaceholderText">提交作文后，系统会生成预估分数、维度分析、优点、问题和提升建议。</span>
+            </div>
+
+            <div class="results-content hidden" id="resultsContent">
+              <div class="results-head">
+                <div>
+                  <p class="results-label" data-i18n="resultsLabel">AI 评分结果</p>
+                  <h3 id="resultsName">Candidate Report</h3>
+                </div>
+                <div class="overall-score">
+                  <span data-i18n="overallBand">总分预估</span>
+                  <strong id="overallScore">0.0</strong>
+                </div>
+              </div>
+
+              <div class="criteria-grid" id="criteriaGrid"></div>
+
+              <div class="results-block">
+                <h4 data-i18n="strengthTitle">亮点</h4>
+                <ul id="strengthList"></ul>
+              </div>
+
+              <div class="results-block">
+                <h4 data-i18n="improveTitle">待提升点</h4>
+                <ul id="improveList"></ul>
+              </div>
+
+              <div class="results-block">
+                <h4 data-i18n="rewriteTitle">升级写法建议</h4>
+                <div class="rewrite-card" id="rewriteSuggestion"></div>
+              </div>
+
+              <div class="results-block">
+                <h4 data-i18n="coachTitle">AI 教练总结</h4>
+                <p id="coachSummary"></p>
+              </div>
+            </div>
+          </aside>
+        </div>
+      </section>
+
+      <section class="history-section" id="history">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow" data-i18n="historyEyebrow">Essay History</p>
+            <h2 data-i18n="historyTitle">批改历史</h2>
+          </div>
+          <button class="ghost-button" id="clearHistoryButton" type="button" data-i18n="clearHistoryButton">清空历史</button>
+        </div>
+        <div class="history-grid" id="historyGrid"></div>
+      </section>
+
+      <section class="pricing-section" id="pricing">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow" data-i18n="pricingEyebrow">Pricing</p>
+            <h2 data-i18n="pricingTitle">套餐设计</h2>
+          </div>
+        </div>
+        <div class="pricing-grid" id="pricingGrid"></div>
+      </section>
+
+      <section class="trust-section" id="trust">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow" data-i18n="trustEyebrow">Why Buyers Trust It</p>
+            <h2 data-i18n="trustTitle">为什么这版更接近可售卖产品</h2>
+          </div>
+        </div>
+        <div class="trust-grid">
+          <article class="trust-card">
+            <h3 data-i18n="trustCardOneTitle">真实数据流</h3>
+            <p data-i18n="trustCardOneText">用户、草稿、历史记录和套餐状态都已经有后端存储，不再只是前端假数据演示。</p>
+          </article>
+          <article class="trust-card">
+            <h3 data-i18n="trustCardTwoTitle">可升级 AI 批改</h3>
+            <p data-i18n="trustCardTwoText">配置 OpenAI API Key 后即可切到真实 AI 批改模式，便于逐步从 MVP 走向正式产品。</p>
+          </article>
+          <article class="trust-card">
+            <h3 data-i18n="trustCardThreeTitle">产品包装完整</h3>
+            <p data-i18n="trustCardThreeText">补齐 FAQ、隐私政策、用户协议和联系入口，减少“像 demo”的感觉，增强商业可信度。</p>
+          </article>
+        </div>
+      </section>
+
+      <section class="admin-section" id="admin">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow" data-i18n="adminEyebrow">Operator View</p>
+            <h2 data-i18n="adminTitle">简易运营后台视图</h2>
+          </div>
+        </div>
+        <div class="admin-grid">
+          <article class="admin-card">
+            <p data-i18n="adminUsers">累计用户</p>
+            <strong id="adminUsersValue">0</strong>
+          </article>
+          <article class="admin-card">
+            <p data-i18n="adminReports">累计报告</p>
+            <strong id="adminReportsValue">0</strong>
+          </article>
+          <article class="admin-card">
+            <p data-i18n="adminConversion">会员转化</p>
+            <strong id="adminConversionValue">0%</strong>
+          </article>
+          <article class="admin-card">
+            <p data-i18n="adminTopPlan">最热套餐</p>
+            <strong id="adminTopPlanValue">Free</strong>
+          </article>
+        </div>
+      </section>
+
+      <section class="faq-section" id="faq">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow" data-i18n="faqEyebrow">FAQ</p>
+            <h2 data-i18n="faqTitle">常见问题</h2>
+          </div>
+        </div>
+        <div class="faq-grid">
+          <article class="faq-card">
+            <h3 data-i18n="faqOneTitle">现在已经是真 AI 批改了吗？</h3>
+            <p data-i18n="faqOneText">如果服务器配置了 OpenAI API Key，就会走真实 AI 批改；如果没配置，会自动退回 demo 模式，方便本地开发与演示。</p>
+          </article>
+          <article class="faq-card">
+            <h3 data-i18n="faqTwoTitle">适合卖给谁？</h3>
+            <p data-i18n="faqTwoText">适合个人考生、英语老师、雅思培训机构，以及想快速测试 AI 教育产品市场的创业项目。</p>
+          </article>
+          <article class="faq-card">
+            <h3 data-i18n="faqThreeTitle">还差什么才能正式上线？</h3>
+            <p data-i18n="faqThreeText">最关键的是正式支付、真正的账号系统、部署到线上服务器，以及更完整的日志监控和客服支持能力。</p>
+          </article>
+        </div>
+      </section>
+
+      <section class="legal-section" id="legal">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow" data-i18n="legalEyebrow">Legal</p>
+            <h2 data-i18n="legalTitle">隐私、协议与联系</h2>
+          </div>
+        </div>
+        <div class="legal-grid">
+          <article class="legal-card">
+            <h3 data-i18n="privacyTitle">隐私政策摘要</h3>
+            <p data-i18n="privacyText">用户提交的作文内容仅用于生成批改结果、保存历史记录和改进产品体验。正式上线时应补充完整的合规文本、删除策略和用户数据导出机制。</p>
+          </article>
+          <article class="legal-card">
+            <h3 data-i18n="termsTitle">用户协议摘要</h3>
+            <p data-i18n="termsText">本产品提供 AI 辅助写作批改，不构成官方雅思评分承诺。用户需要对上传内容和使用方式负责，服务方保留更新功能与套餐的权利。</p>
+          </article>
+          <article class="legal-card">
+            <h3 data-i18n="contactTitle">联系与商务合作</h3>
+            <p data-i18n="contactText">邮箱：hello@writemate-ai.com<br>微信/商务：WriteMate-AI<br>适合用于教师合作、机构采购、白标定制和渠道分销。</p>
+          </article>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <p data-i18n="footerText">WriteMate AI MVP · IELTS Writing Task 1 / Task 2 · Built for commercial launch iteration</p>
+    </footer>
+  </div>
+
+  <div class="modal hidden" id="authModal">
+    <div class="modal-backdrop" data-close-modal="true"></div>
+    <div class="modal-card">
+      <div class="modal-head">
+        <div>
+          <p class="eyebrow" data-i18n="authEyebrow">Access</p>
+          <h3 data-i18n="authTitle">登录或创建体验账号</h3>
+        </div>
+        <button class="ghost-button small-icon" type="button" data-close-modal="true">×</button>
+      </div>
+      <form id="authForm" class="auth-form">
+        <label class="field">
+          <span data-i18n="authNameLabel">用户名</span>
+          <input id="authNameInput" type="text" data-i18n-placeholder="authNamePlaceholder" placeholder="Amy">
+        </label>
+        <label class="field">
+          <span data-i18n="authEmailLabel">邮箱</span>
+          <input id="authEmailInput" type="email" data-i18n-placeholder="authEmailPlaceholder" placeholder="amy@example.com">
+        </label>
+        <label class="field">
+          <span data-i18n="authPlanLabel">默认套餐</span>
+          <select id="authPlanInput"></select>
+        </label>
+        <button class="primary-button" type="submit" data-i18n="authSubmit">进入产品</button>
+      </form>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
