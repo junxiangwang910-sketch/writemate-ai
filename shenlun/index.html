@@ -127,6 +127,17 @@
               <button class="secondary-button" id="sampleButton" type="button">填入示例材料</button>
             </div>
 
+            <div class="activation-card">
+              <div>
+                <strong>已有激活码？</strong>
+                <p id="activationStatus">免费版可试用 3 次。付费后输入激活码，可解锁内测额度。</p>
+              </div>
+              <div class="activation-actions">
+                <input id="activationCode" type="text" placeholder="输入购买后收到的激活码">
+                <button class="secondary-button" id="activateButton" type="button">兑换激活码</button>
+              </div>
+            </div>
+
             <label>
               <span>题目要求</span>
               <textarea id="promptText" rows="4">请根据给定资料，概括当前基层治理中存在的主要问题，并提出有针对性的改进建议。要求：全面准确，条理清晰，不超过 400 字。</textarea>
@@ -212,6 +223,6 @@
     </main>
   </div>
 
-  <script src="app.js?v=20260407-ocr-sample"></script>
+  <script src="app.js?v=20260407-activation"></script>
 </body>
 </html>

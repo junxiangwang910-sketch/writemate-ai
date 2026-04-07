@@ -39,6 +39,7 @@ const OCR_PROVIDER = (process.env.OCR_PROVIDER || "auto").toLowerCase();
 const BAIDU_OCR_API_KEY = process.env.BAIDU_OCR_API_KEY || "";
 const BAIDU_OCR_SECRET_KEY = process.env.BAIDU_OCR_SECRET_KEY || "";
 const BAIDU_OCR_ENDPOINT = process.env.BAIDU_OCR_ENDPOINT || "general_basic";
+const ACTIVATION_CODES = process.env.ACTIVATION_CODES || "";
 
 const mimeTypes = {
   ".html": "text/html; charset=utf-8",
@@ -132,6 +133,14 @@ function openDatabase() {
       dimensions_json TEXT NOT NULL,
       focus_points_json TEXT NOT NULL
     );
+    CREATE TABLE IF NOT EXISTS activation_codes (
+      code TEXT PRIMARY KEY,
+      plan TEXT NOT NULL DEFAULT 'pro',
+      note TEXT NOT NULL DEFAULT '',
+      redeemed_by TEXT DEFAULT NULL,
+      redeemed_at TEXT DEFAULT NULL,
+      created_at TEXT NOT NULL
+    );
     CREATE TABLE IF NOT EXISTS app_meta (
       key TEXT PRIMARY KEY,
       value TEXT NOT NULL
@@ -141,6 +150,7 @@ function openDatabase() {
   migrateJsonIfNeeded(db);
   ensureMeta(db);
   seedShenlunRubrics(db);
+  seedActivationCodes(db);
   return db;
 }
 
@@ -187,6 +197,19 @@ function seedShenlunRubrics(db) {
   const stmt = db.prepare("INSERT OR IGNORE INTO shenlun_rubrics (question_type, label, dimensions_json, focus_points_json) VALUES (?, ?, ?, ?)");
   rubrics.forEach((rubric) => {
     stmt.run(rubric.questionType, rubric.label, JSON.stringify(rubric.dimensions), JSON.stringify(rubric.focusPoints));
+  });
+}
+
+function seedActivationCodes(db) {
+  const codes = [];
+  ACTIVATION_CODES.split(",")
+    .map((code) => code.trim().toUpperCase())
+    .filter(Boolean)
+    .forEach((code, index) => codes.push([code, "pro", `环境变量激活码 ${index + 1}`]));
+  if (!codes.length) return;
+  const stmt = db.prepare("INSERT OR IGNORE INTO activation_codes (code, plan, note, created_at) VALUES (?, ?, ?, ?)");
+  codes.forEach(([code, plan, note]) => {
+    stmt.run(code, plan, note, new Date().toISOString());
   });
 }
 
@@ -430,6 +453,25 @@ function saveUser(user) {
     user.plan,
     user.createdAt
   );
+}
+
+function redeemActivationCode(userId, rawCode) {
+  const code = String(rawCode || "").trim().toUpperCase();
+  if (!code) {
+    throw new Error("ACTIVATION_CODE_REQUIRED");
+  }
+  const row = db.prepare("SELECT * FROM activation_codes WHERE code = ?").get(code);
+  if (!row) {
+    throw new Error("ACTIVATION_CODE_INVALID");
+  }
+  if (row.redeemed_by) {
+    throw new Error("ACTIVATION_CODE_USED");
+  }
+  const plan = plans[row.plan] ? row.plan : "pro";
+  const redeemedAt = new Date().toISOString();
+  db.prepare("UPDATE activation_codes SET redeemed_by = ?, redeemed_at = ? WHERE code = ?").run(userId, redeemedAt, code);
+  db.prepare("UPDATE users SET plan = ? WHERE id = ?").run(plan, userId);
+  return { code, plan, redeemedAt };
 }
 
 function saveDraft(userId, draft) {
@@ -1099,6 +1141,12 @@ async function deepSeekShenlunReport({ questionType, maxScore, prompt, material,
 }
 
 async function gradeShenlun(body, user) {
+  const history = getShenlunHistory(user.id);
+  const plan = plans[user.plan] || plans.free;
+  if (history.length >= plan.quota) {
+    throw new Error("QUOTA_EXCEEDED");
+  }
+
   const provider = textProvider();
   const report = provider === "deepseek"
     ? await deepSeekShenlunReport(body)
@@ -1335,6 +1383,15 @@ const server = http.createServer(async (req, res) => {
       user.plan = body.plan;
       saveUser(user);
       json(res, 200, { user });
+      return;
+    }
+
+    if (req.method === "POST" && url.pathname === "/api/activate") {
+      const body = await parseBody(req);
+      const user = getOrCreateUser(body.userId);
+      const activation = redeemActivationCode(user.id, body.code);
+      const updatedUser = getOrCreateUser(user.id);
+      json(res, 200, { user: updatedUser, activation });
       return;
     }
 

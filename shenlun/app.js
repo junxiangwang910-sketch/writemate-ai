@@ -43,6 +43,9 @@ const ocrButton = document.querySelector("#ocrButton");
 const ocrStatus = document.querySelector("#ocrStatus");
 const submitButton = document.querySelector("#submitButton");
 const sampleButton = document.querySelector("#sampleButton");
+const activationCode = document.querySelector("#activationCode");
+const activateButton = document.querySelector("#activateButton");
+const activationStatus = document.querySelector("#activationStatus");
 
 const sampleShenlun = {
   questionType: "summary",
@@ -77,6 +80,7 @@ async function bootstrapUser() {
   state.userId = payload.user.id;
   window.localStorage.setItem("writemate-user-id", state.userId);
   await loadHistory();
+  return payload;
 }
 
 async function loadHistory() {
@@ -137,6 +141,48 @@ function fillSample() {
   materialText.value = sampleShenlun.material;
   answerText.value = sampleShenlun.answer;
   updateCount();
+}
+
+function updateActivationStatus(user) {
+  if (!user) return;
+  const planLabel = user.plan === "team" ? "机构版" : user.plan === "pro" ? "内测版" : "免费版";
+  const quotaLabel = user.plan === "team" ? "300 次" : user.plan === "pro" ? "50 次" : "3 次";
+  activationStatus.textContent = `当前账号：${planLabel}，可用额度约 ${quotaLabel}。`;
+}
+
+async function redeemCode() {
+  const code = activationCode.value.trim();
+  if (!code) {
+    window.alert("请先输入激活码。");
+    return;
+  }
+
+  activateButton.disabled = true;
+  activateButton.textContent = "正在兑换...";
+  try {
+    const payload = await api("/api/activate", {
+      method: "POST",
+      body: JSON.stringify({
+        userId: state.userId,
+        code
+      })
+    });
+    state.userId = payload.user.id;
+    window.localStorage.setItem("writemate-user-id", state.userId);
+    updateActivationStatus(payload.user);
+    activationCode.value = "";
+    window.alert("激活成功，已解锁内测额度。");
+  } catch (error) {
+    const messages = {
+      ACTIVATION_CODE_REQUIRED: "请先输入激活码。",
+      ACTIVATION_CODE_INVALID: "激活码无效，请检查后再试。",
+      ACTIVATION_CODE_USED: "这个激活码已经被使用过。"
+    };
+    window.alert(messages[error.message] || error.message);
+  } finally {
+    activateButton.disabled = false;
+    activateButton.textContent = "兑换激活码";
+  }
 }
 
 async function submitShenlun(event) {
@@ -228,6 +274,7 @@ submitButton.addEventListener("click", submitShenlun);
 });
 ocrButton.addEventListener("click", extractImageText);
 sampleButton.addEventListener("click", fillSample);
+activateButton.addEventListener("click", redeemCode);
 
 document.querySelectorAll("[data-target]").forEach((node) => {
   node.addEventListener("click", (event) => {
@@ -240,6 +287,8 @@ document.querySelectorAll("[data-target]").forEach((node) => {
 });
 
 updateCount();
-bootstrapUser().catch((error) => {
+bootstrapUser().then((payload) => {
+  updateActivationStatus(payload.user);
+}).catch((error) => {
   console.error(error);
 });

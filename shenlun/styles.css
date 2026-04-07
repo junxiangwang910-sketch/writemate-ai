@@ -351,22 +351,54 @@ button:disabled {
   background: rgba(255, 255, 255, 0.46);
 }
 
-.sample-card {
+.sample-card,
+.activation-card {
   grid-template-columns: 1fr auto;
 }
 
 .ocr-card strong,
 .ocr-card p,
 .sample-card strong,
-.sample-card p {
+.sample-card p,
+.activation-card strong,
+.activation-card p {
   margin: 0;
 }
 
 .ocr-card p,
 .sample-card p,
+.activation-card p,
 .ocr-status {
   color: var(--muted);
   line-height: 1.6;
+}
+
+.activation-card {
+  display: grid;
+  align-items: center;
+  gap: 14px;
+  padding: 16px;
+  border: 1px solid rgba(56, 90, 66, 0.22);
+  border-radius: 22px;
+  background: rgba(255, 255, 255, 0.46);
+}
+
+.activation-actions {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.activation-actions input {
+  width: min(280px, 100%);
+  border: 1px solid rgba(32, 22, 15, 0.16);
+  border-radius: 999px;
+  padding: 13px 16px;
+  color: var(--ink);
+  background: rgba(255, 255, 255, 0.66);
+  font: inherit;
+  outline: none;
 }
 
 .upload-box {
@@ -550,6 +582,7 @@ textarea {
   .grader-layout,
   .ocr-card,
   .sample-card,
+  .activation-card,
   .feature-grid,
   .pricing-grid {
     grid-template-columns: 1fr;
