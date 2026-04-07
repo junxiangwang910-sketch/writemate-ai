@@ -276,6 +276,12 @@ button:disabled {
   letter-spacing: -0.06em;
 }
 
+.section-heading h2.wide-heading {
+  max-width: 20ch;
+  font-size: clamp(2rem, 3.2vw, 2.9rem);
+  letter-spacing: -0.04em;
+}
+
 .feature-grid,
 .pricing-grid {
   display: grid;
