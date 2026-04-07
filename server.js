@@ -99,6 +99,32 @@ function openDatabase() {
       coach_summary TEXT NOT NULL,
       FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
     );
+    CREATE TABLE IF NOT EXISTS shenlun_reports (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL,
+      timestamp TEXT NOT NULL,
+      question_type TEXT NOT NULL,
+      question_label TEXT NOT NULL,
+      max_score INTEGER NOT NULL,
+      prompt TEXT NOT NULL,
+      material TEXT NOT NULL,
+      answer TEXT NOT NULL,
+      scaled_score INTEGER NOT NULL,
+      percent_score INTEGER NOT NULL,
+      dimensions_json TEXT NOT NULL,
+      strengths_json TEXT NOT NULL,
+      weaknesses_json TEXT NOT NULL,
+      missing_points_json TEXT NOT NULL,
+      rewrite TEXT NOT NULL,
+      provider TEXT NOT NULL,
+      FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
+    );
+    CREATE TABLE IF NOT EXISTS shenlun_rubrics (
+      question_type TEXT PRIMARY KEY,
+      label TEXT NOT NULL,
+      dimensions_json TEXT NOT NULL,
+      focus_points_json TEXT NOT NULL
+    );
     CREATE TABLE IF NOT EXISTS app_meta (
       key TEXT PRIMARY KEY,
       value TEXT NOT NULL
@@ -107,6 +133,7 @@ function openDatabase() {
 
   migrateJsonIfNeeded(db);
   ensureMeta(db);
+  seedShenlunRubrics(db);
   return db;
 }
 
@@ -115,6 +142,45 @@ function ensureMeta(db) {
   if (!existing) {
     db.prepare("INSERT INTO app_meta (key, value) VALUES (?, ?)").run("simulated_users", "128");
   }
+}
+
+function seedShenlunRubrics(db) {
+  const rubrics = [
+    {
+      questionType: "summary",
+      label: "归纳概括",
+      dimensions: ["审题准确", "要点覆盖", "材料提炼", "条理分层", "语言凝练", "字数控制"],
+      focusPoints: ["概括对象", "问题表现", "原因归纳", "材料原词", "分层表达"]
+    },
+    {
+      questionType: "solution",
+      label: "提出对策",
+      dimensions: ["问题对应", "措施可行", "主体明确", "逻辑结构", "语言规范", "材料依据"],
+      focusPoints: ["问题对应", "主体责任", "可操作措施", "长效机制", "群众反馈"]
+    },
+    {
+      questionType: "analysis",
+      label: "综合分析",
+      dimensions: ["观点明确", "原因分析", "影响分析", "辩证表达", "材料联系", "结论回扣"],
+      focusPoints: ["观点表态", "原因分析", "影响分析", "辩证表达", "结论回扣"]
+    },
+    {
+      questionType: "official",
+      label: "贯彻执行",
+      dimensions: ["文种格式", "对象意识", "任务目标", "措施安排", "语言场景", "号召总结"],
+      focusPoints: ["发文对象", "格式规范", "工作目标", "具体措施", "号召总结"]
+    },
+    {
+      questionType: "essay",
+      label: "申论大作文",
+      dimensions: ["中心论点", "分论点", "论证深度", "材料联系", "政策高度", "语言表达"],
+      focusPoints: ["中心论点", "分论点", "材料联系", "政策高度", "结尾升华"]
+    }
+  ];
+  const stmt = db.prepare("INSERT OR IGNORE INTO shenlun_rubrics (question_type, label, dimensions_json, focus_points_json) VALUES (?, ?, ?, ?)");
+  rubrics.forEach((rubric) => {
+    stmt.run(rubric.questionType, rubric.label, JSON.stringify(rubric.dimensions), JSON.stringify(rubric.focusPoints));
+  });
 }
 
 function migrateJsonIfNeeded(db) {
@@ -390,6 +456,78 @@ function insertSubmission(record) {
   );
 }
 
+function getShenlunRubric(questionType) {
+  const row = db.prepare("SELECT * FROM shenlun_rubrics WHERE question_type = ?").get(questionType);
+  if (!row) {
+    return {
+      questionType: "summary",
+      label: "归纳概括",
+      dimensions: ["审题准确", "要点覆盖", "材料提炼", "条理分层", "语言凝练", "字数控制"],
+      focusPoints: ["概括对象", "问题表现", "原因归纳", "材料原词", "分层表达"]
+    };
+  }
+  return {
+    questionType: row.question_type,
+    label: row.label,
+    dimensions: JSON.parse(row.dimensions_json),
+    focusPoints: JSON.parse(row.focus_points_json)
+  };
+}
+
+function mapShenlunReport(row) {
+  return {
+    id: row.id,
+    userId: row.user_id,
+    timestamp: row.timestamp,
+    type: row.question_type,
+    questionLabel: row.question_label,
+    targetMax: row.max_score,
+    prompt: row.prompt,
+    material: row.material,
+    answer: row.answer,
+    scaledScore: row.scaled_score,
+    percentScore: row.percent_score,
+    dimensions: JSON.parse(row.dimensions_json),
+    strengths: JSON.parse(row.strengths_json),
+    weaknesses: JSON.parse(row.weaknesses_json),
+    missing: JSON.parse(row.missing_points_json),
+    rewrite: row.rewrite,
+    provider: row.provider
+  };
+}
+
+function getShenlunHistory(userId) {
+  return db.prepare("SELECT * FROM shenlun_reports WHERE user_id = ? ORDER BY timestamp ASC").all(userId).map(mapShenlunReport);
+}
+
+function insertShenlunReport(record) {
+  db.prepare(`
+    INSERT INTO shenlun_reports (
+      id, user_id, timestamp, question_type, question_label, max_score, prompt, material, answer,
+      scaled_score, percent_score, dimensions_json, strengths_json, weaknesses_json,
+      missing_points_json, rewrite, provider
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `).run(
+    record.id,
+    record.userId,
+    record.timestamp,
+    record.type,
+    record.questionLabel,
+    record.targetMax,
+    record.prompt,
+    record.material,
+    record.answer,
+    record.scaledScore,
+    record.percentScore,
+    JSON.stringify(record.dimensions),
+    JSON.stringify(record.strengths),
+    JSON.stringify(record.weaknesses),
+    JSON.stringify(record.missing),
+    record.rewrite,
+    record.provider
+  );
+}
+
 function simulatedUsers() {
   return Number(db.prepare("SELECT value FROM app_meta WHERE key = ?").get("simulated_users")?.value || "128");
 }
@@ -635,6 +773,201 @@ async function gradeEssay(body, user) {
   };
 }
 
+function tokenizeChinese(text) {
+  return Array.from(new Set(
+    String(text || "")
+      .replace(/[，。；：、“”‘’（）《》？！\s]/g, "")
+      .split("")
+      .filter(Boolean)
+  ));
+}
+
+function chineseCoverage(source, answer) {
+  const tokens = tokenizeChinese(source);
+  if (!tokens.length) return 0.75;
+  const compactAnswer = String(answer || "").replace(/\s/g, "");
+  const matched = tokens.filter((token) => compactAnswer.includes(token)).length;
+  return matched / tokens.length;
+}
+
+function countChinesePolicyWords(text) {
+  const words = ["机制", "平台", "协同", "治理", "服务", "监督", "反馈", "考核", "群众", "基层", "落实", "规范", "责任", "制度", "统筹"];
+  return words.filter((word) => String(text || "").includes(word)).length;
+}
+
+function demoShenlunReport({ questionType, maxScore, prompt, material, answer }) {
+  const rubric = getShenlunRubric(questionType);
+  const answerText = String(answer || "");
+  const charTotal = answerText.replace(/\s/g, "").length;
+  const materialCoverage = chineseCoverage(material, answerText);
+  const promptCoverageValue = chineseCoverage(prompt, answerText);
+  const paragraphCount = answerText.split(/\n+/).filter((part) => part.trim()).length;
+  const policyWords = countChinesePolicyWords(answerText);
+  const hasNumbering = /一是|二是|三是|首先|其次|再次|第一|第二|第三/.test(answerText);
+
+  const rawDimensions = [
+    { label: rubric.dimensions[0], score: 62 + promptCoverageValue * 25, comment: "基本能够围绕题干作答，但还可进一步拆解限制条件与作答对象。" },
+    { label: rubric.dimensions[1], score: 58 + materialCoverage * 30 + Math.min(policyWords, 8), comment: "覆盖了部分核心信息，建议继续补齐材料中的关键对象、问题和措施。" },
+    { label: rubric.dimensions[2], score: 56 + materialCoverage * 28 + Math.min(policyWords, 10), comment: "能够联系材料，但提炼还可以更凝练、更贴近材料原意。" },
+    { label: rubric.dimensions[3], score: 60 + (hasNumbering ? 14 : 4) + Math.min(paragraphCount * 3, 12), comment: hasNumbering ? "分层较明显，阅卷识别度较好。" : "建议使用“一是、二是、三是”等结构标志增强条理。" },
+    { label: rubric.dimensions[4], score: 66 + Math.min(charTotal / 30, 12), comment: "表达基本规范，可继续减少口语化和泛泛表述。" },
+    { label: rubric.dimensions[5], score: 70 + (questionType === "official" && !/通知|倡议|讲话|提纲|简报/.test(answerText) ? -8 : 4), comment: "整体符合基本作答要求，特殊题型需进一步注意格式。" }
+  ].map((item) => ({
+    ...item,
+    score: Math.round(Math.min(92, Math.max(48, item.score)))
+  }));
+
+  const percentScore = Math.round(rawDimensions.reduce((sum, item) => sum + item.score, 0) / rawDimensions.length);
+  const targetMax = Number(maxScore || 30);
+  const scaledScore = Math.round((percentScore / 100) * targetMax);
+  const missing = rubric.focusPoints.filter((point) => !answerText.includes(point.slice(0, 2))).slice(0, 4);
+
+  return {
+    type: rubric.questionType,
+    questionLabel: rubric.label,
+    targetMax,
+    prompt,
+    material,
+    answer,
+    scaledScore,
+    percentScore,
+    dimensions: rawDimensions,
+    strengths: [
+      hasNumbering ? "答案有明显分层，阅卷时更容易识别要点。" : "答案基本回应了题目要求，具备初步作答方向。",
+      materialCoverage > 0.46 ? "能够提取部分材料信息，未完全脱离给定资料。" : "已经围绕题目作答，但材料提炼还可以更充分。",
+      policyWords >= 4 ? "使用了一定政策表达，语言有申论规范感。" : "表达较为清楚，具备继续优化的基础。"
+    ],
+    weaknesses: [
+      materialCoverage < 0.5 ? "材料要点覆盖不足，建议回到材料中提炼更多关键词。" : "要点仍可进一步压缩和合并，避免表达松散。",
+      !hasNumbering ? "层次标志不够明显，建议使用“一是、二是、三是”增强条理。" : "部分要点之间的逻辑递进还可以更清晰。",
+      charTotal < 180 ? "作答篇幅偏短，可能导致要点展开不足。" : "可以进一步提升语言的机关表达和对策可操作性。"
+    ],
+    missing: missing.length ? missing : ["材料关键词", "分层表达"],
+    rewrite: `建议围绕“${rubric.focusPoints.slice(0, 3).join("、")}”重新组织答案。作答时要尽量使用材料关键词，把问题、原因、影响和对策分层呈现，避免只写泛泛口号。`
+  };
+}
+
+async function openAiShenlunReport({ questionType, maxScore, prompt, material, answer }) {
+  const rubric = getShenlunRubric(questionType);
+  const schema = {
+    type: "object",
+    additionalProperties: false,
+    required: ["scaledScore", "percentScore", "dimensions", "strengths", "weaknesses", "missing", "rewrite"],
+    properties: {
+      scaledScore: { type: "integer", minimum: 0, maximum: Number(maxScore || 100) },
+      percentScore: { type: "integer", minimum: 0, maximum: 100 },
+      dimensions: {
+        type: "array",
+        items: {
+          type: "object",
+          additionalProperties: false,
+          required: ["label", "score", "comment"],
+          properties: {
+            label: { type: "string" },
+            score: { type: "integer", minimum: 0, maximum: 100 },
+            comment: { type: "string" }
+          }
+        }
+      },
+      strengths: { type: "array", items: { type: "string" } },
+      weaknesses: { type: "array", items: { type: "string" } },
+      missing: { type: "array", items: { type: "string" } },
+      rewrite: { type: "string" }
+    }
+  };
+
+  const response = await fetch("https://api.openai.com/v1/responses", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${OPENAI_API_KEY}`
+    },
+    body: JSON.stringify({
+      model: OPENAI_MODEL,
+      input: [
+        {
+          role: "developer",
+          content: [
+            {
+              type: "input_text",
+              text: [
+                "你是一位中国公务员考试申论阅卷与教研专家。",
+                "请按申论阅卷逻辑批改，不要按普通作文泛泛评价。",
+                `题型：${rubric.label}`,
+                `目标分值：${maxScore}`,
+                `评分维度：${rubric.dimensions.join("、")}`,
+                `核心关注点：${rubric.focusPoints.join("、")}`,
+                "输出必须是简体中文，反馈要具体、可操作、适合考生提分。"
+              ].join("\n")
+            }
+          ]
+        },
+        {
+          role: "user",
+          content: [
+            {
+              type: "input_text",
+              text: [
+                `题目要求：${prompt}`,
+                `给定资料：${material}`,
+                `考生作答：${answer}`
+              ].join("\n\n")
+            }
+          ]
+        }
+      ],
+      text: {
+        format: {
+          type: "json_schema",
+          name: "shenlun_report",
+          strict: true,
+          schema
+        }
+      }
+    })
+  });
+  const payload = await response.json();
+  if (!response.ok) {
+    throw new Error(payload?.error?.message || "OpenAI request failed");
+  }
+  const parsed = JSON.parse(payload.output_text);
+  return {
+    type: rubric.questionType,
+    questionLabel: rubric.label,
+    targetMax: Number(maxScore || 30),
+    prompt,
+    material,
+    answer,
+    scaledScore: parsed.scaledScore,
+    percentScore: parsed.percentScore,
+    dimensions: parsed.dimensions.slice(0, 6),
+    strengths: parsed.strengths.slice(0, 4),
+    weaknesses: parsed.weaknesses.slice(0, 4),
+    missing: parsed.missing.slice(0, 5),
+    rewrite: parsed.rewrite
+  };
+}
+
+async function gradeShenlun(body, user) {
+  const provider = OPENAI_API_KEY ? "openai" : "demo";
+  const report = OPENAI_API_KEY
+    ? await openAiShenlunReport(body)
+    : demoShenlunReport(body);
+  const record = {
+    id: randomUUID(),
+    userId: user.id,
+    timestamp: new Date().toLocaleString(),
+    provider,
+    ...report
+  };
+  insertShenlunReport(record);
+  return {
+    provider,
+    report: record,
+    history: getShenlunHistory(user.id)
+  };
+}
+
 function serveStatic(req, res) {
   const pathname = new URL(req.url, `http://${req.headers.host}`).pathname;
   let filePath = pathname === "/" ? path.join(ROOT, "index.html") : path.join(ROOT, pathname);
@@ -741,6 +1074,26 @@ const server = http.createServer(async (req, res) => {
         prompt: body.prompt,
         essay: body.essay,
         lang: body.lang || "zh"
+      }, user);
+      json(res, 200, result);
+      return;
+    }
+
+    if (req.method === "GET" && url.pathname === "/api/shenlun/history") {
+      const user = getOrCreateUser(url.searchParams.get("userId"));
+      json(res, 200, { history: getShenlunHistory(user.id) });
+      return;
+    }
+
+    if (req.method === "POST" && url.pathname === "/api/shenlun/grade") {
+      const body = await parseBody(req);
+      const user = getOrCreateUser(body.userId);
+      const result = await gradeShenlun({
+        questionType: body.questionType || "summary",
+        maxScore: body.maxScore || 30,
+        prompt: body.prompt || "",
+        material: body.material || "",
+        answer: body.answer || ""
       }, user);
       json(res, 200, result);
       return;
