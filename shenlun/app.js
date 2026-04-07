@@ -121,7 +121,7 @@ function renderLoading() {
     <article class="dimension-card">
       <h4>${dimension.label}</h4>
       <strong>...</strong>
-      <p>AI 正在分析该维度。</p>
+      <p>正在分析该维度。</p>
     </article>
   `).join("");
   strengthList.innerHTML = "<li>正在提炼优点。</li>";
@@ -145,7 +145,7 @@ function fillSample() {
 
 function updateActivationStatus(user) {
   if (!user) return;
-  const planLabel = user.plan === "team" ? "机构版" : user.plan === "pro" ? "内测版" : "免费版";
+  const planLabel = user.plan === "team" ? "高级版" : user.plan === "pro" ? "内测版" : "免费版";
   const quotaLabel = user.plan === "team" ? "300 次" : user.plan === "pro" ? "50 次" : "3 次";
   activationStatus.textContent = `当前账号：${planLabel}，可用额度约 ${quotaLabel}。`;
 }
@@ -261,7 +261,7 @@ async function extractImageText() {
     ocrStatus.textContent = result.notes || "识别完成，请检查文字是否准确，再点击生成批改报告。";
   } catch (error) {
     ocrStatus.textContent = "识别失败，请检查 API key 或换一张更清晰的图片。";
-    window.alert(error.message === "OCR_REQUIRES_OPENAI_API_KEY" ? "图片识别需要先配置 OpenAI API Key。" : error.message);
+    window.alert(error.message === "OCR_REQUIRES_OPENAI_API_KEY" ? "图片识别暂不可用，请稍后再试。" : error.message);
   } finally {
     ocrButton.disabled = false;
   }
