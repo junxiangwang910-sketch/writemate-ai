@@ -187,6 +187,22 @@ button {
   margin-top: 26px;
 }
 
+.trust-row {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 22px;
+}
+
+.trust-row span {
+  padding: 8px 12px;
+  border: 1px solid rgba(158, 47, 36, 0.24);
+  border-radius: 999px;
+  color: var(--red-deep);
+  background: rgba(255, 250, 241, 0.7);
+  font-weight: 800;
+}
+
 .primary-button,
 .secondary-button {
   display: inline-flex;
@@ -260,7 +276,10 @@ button:disabled {
 
 .feature-section,
 .grader-section,
-.pricing-section {
+.pricing-section,
+.pain-section,
+.sample-report-section,
+.contact-section {
   margin-top: 56px;
 }
 
@@ -283,14 +302,30 @@ button:disabled {
 }
 
 .feature-grid,
-.pricing-grid {
+.pricing-grid,
+.pain-grid,
+.report-sample-grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 16px;
 }
 
+.feature-grid,
+.pricing-grid,
+.report-sample-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.pain-grid {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
 .feature-grid article,
-.pricing-grid article {
+.pricing-grid article,
+.pain-grid article,
+.report-sample-grid article,
+.notice-card,
+.sample-report-card,
+.contact-card {
   min-height: 210px;
   padding: 24px;
   border: 1px solid var(--line);
@@ -300,13 +335,22 @@ button:disabled {
 }
 
 .feature-grid h3,
-.pricing-grid h3 {
+.pricing-grid h3,
+.pain-grid h3,
+.report-sample-grid h3,
+.sample-report-card h3,
+.contact-card h3 {
   margin: 0 0 12px;
   font-size: 1.3rem;
 }
 
 .feature-grid p,
 .pricing-grid p,
+.pain-grid p,
+.report-sample-grid p,
+.notice-card p,
+.sample-report-card p,
+.contact-card p,
 .report-block li,
 #rewriteText {
   line-height: 1.8;
@@ -317,6 +361,32 @@ button:disabled {
   margin: 12px 0;
   font-size: 2rem;
   color: var(--red);
+}
+
+.notice-card,
+.sample-report-card,
+.contact-card {
+  min-height: 0;
+  margin-top: 16px;
+}
+
+.notice-card strong {
+  display: block;
+  margin-bottom: 8px;
+  color: var(--red-deep);
+}
+
+.sample-report-card p,
+.notice-card p,
+.contact-card p {
+  margin: 0;
+  color: var(--muted);
+}
+
+.contact-card {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
 }
 
 .grader-layout {
@@ -584,7 +654,10 @@ textarea {
   .sample-card,
   .activation-card,
   .feature-grid,
-  .pricing-grid {
+  .pricing-grid,
+  .pain-grid,
+  .report-sample-grid,
+  .contact-card {
     grid-template-columns: 1fr;
   }
 
