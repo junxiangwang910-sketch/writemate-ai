@@ -262,7 +262,7 @@ function parseBody(req) {
     let data = "";
     req.on("data", (chunk) => {
       data += chunk;
-      if (data.length > 2_000_000) {
+      if (data.length > 8_000_000) {
         reject(new Error("Payload too large"));
         req.destroy();
       }
