@@ -17,7 +17,8 @@ const dimensions = [
 
 const state = {
   userId: window.localStorage.getItem("writemate-user-id") || "",
-  history: []
+  history: [],
+  isSubmitting: false
 };
 
 const promptText = document.querySelector("#promptText");
@@ -40,6 +41,7 @@ const rewriteText = document.querySelector("#rewriteText");
 const imageInput = document.querySelector("#imageInput");
 const ocrButton = document.querySelector("#ocrButton");
 const ocrStatus = document.querySelector("#ocrStatus");
+const submitButton = document.querySelector("#submitButton");
 
 function countChars(text) {
   return text.replace(/\s/g, "").length;
@@ -121,11 +123,16 @@ function updateCount() {
 
 async function submitShenlun(event) {
   event.preventDefault();
+  if (state.isSubmitting) return;
+
   if (!promptText.value.trim() || !materialText.value.trim() || !answerText.value.trim()) {
     window.alert("请先填写题目、材料和考生作答。");
     return;
   }
 
+  state.isSubmitting = true;
+  submitButton.disabled = true;
+  submitButton.textContent = "正在批改...";
   renderLoading();
   try {
     const payload = await api("/api/shenlun/grade", {
@@ -145,6 +152,10 @@ async function submitShenlun(event) {
     window.alert(error.message);
     reportContent.classList.add("hidden");
     emptyState.classList.remove("hidden");
+  } finally {
+    state.isSubmitting = false;
+    submitButton.disabled = false;
+    submitButton.textContent = "生成批改报告";
   }
 }
 
@@ -193,13 +204,19 @@ async function extractImageText() {
 }
 
 form.addEventListener("submit", submitShenlun);
-answerText.addEventListener("input", updateCount);
+submitButton.addEventListener("click", submitShenlun);
+["input", "change", "keyup", "paste"].forEach((eventName) => {
+  answerText.addEventListener(eventName, () => window.setTimeout(updateCount, 0));
+});
 ocrButton.addEventListener("click", extractImageText);
 
-document.querySelectorAll("[data-target]").forEach((button) => {
-  button.addEventListener("click", () => {
-    const target = document.querySelector(button.dataset.target);
-    if (target) target.scrollIntoView({ behavior: "smooth", block: "start" });
+document.querySelectorAll("[data-target]").forEach((node) => {
+  node.addEventListener("click", (event) => {
+    const target = document.querySelector(node.dataset.target);
+    if (target) {
+      event.preventDefault();
+      target.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
   });
 });
 
