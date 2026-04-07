@@ -42,6 +42,15 @@ const imageInput = document.querySelector("#imageInput");
 const ocrButton = document.querySelector("#ocrButton");
 const ocrStatus = document.querySelector("#ocrStatus");
 const submitButton = document.querySelector("#submitButton");
+const sampleButton = document.querySelector("#sampleButton");
+
+const sampleShenlun = {
+  questionType: "summary",
+  maxScore: "20",
+  prompt: "根据给定资料，概括 M 市在推进数字化基层治理过程中的主要做法。要求：全面、准确、有条理，不超过 250 字。",
+  material: "材料 3：M 市部分社区曾面临治理信息分散、群众诉求响应慢、基层重复填报、部门协同不足等问题。为提升治理效能，M 市建立统一数据共享平台，将民政、社保、城管、社区网格等数据接入同一系统，减少基层重复录入。各社区设置线上群众反馈入口，居民可以通过小程序提交诉求，由平台自动分派至相关部门。针对跨部门事项，街道建立联席会商机制，明确牵头单位和办理时限，并将办理结果纳入绩效考核。部分社区还组织网格员定期回访群众，收集服务评价，推动治理流程持续优化。",
+  answer: "M 市主要做法包括：一是搭建统一数据共享平台，整合民政、社保、城管和网格等信息，减少重复填报；二是开通线上群众反馈入口，对居民诉求进行平台分派；三是建立跨部门联席会商机制，明确牵头单位、办理时限和考核要求；四是组织网格员回访群众，收集评价并优化治理流程。"
+};
 
 function countChars(text) {
   return text.replace(/\s/g, "").length;
@@ -119,6 +128,15 @@ function renderLoading() {
 
 function updateCount() {
   charCount.textContent = String(countChars(answerText.value));
+}
+
+function fillSample() {
+  questionType.value = sampleShenlun.questionType;
+  maxScore.value = sampleShenlun.maxScore;
+  promptText.value = sampleShenlun.prompt;
+  materialText.value = sampleShenlun.material;
+  answerText.value = sampleShenlun.answer;
+  updateCount();
 }
 
 async function submitShenlun(event) {
@@ -209,6 +227,7 @@ submitButton.addEventListener("click", submitShenlun);
   answerText.addEventListener(eventName, () => window.setTimeout(updateCount, 0));
 });
 ocrButton.addEventListener("click", extractImageText);
+sampleButton.addEventListener("click", fillSample);
 
 document.querySelectorAll("[data-target]").forEach((node) => {
   node.addEventListener("click", (event) => {

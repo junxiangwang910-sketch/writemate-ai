@@ -35,6 +35,10 @@ const OPENAI_API_KEY = process.env.OPENAI_API_KEY || "";
 const OPENAI_MODEL = process.env.OPENAI_MODEL || "gpt-5-mini";
 const DEEPSEEK_API_KEY = process.env.DEEPSEEK_API_KEY || "";
 const DEEPSEEK_MODEL = process.env.DEEPSEEK_MODEL || "deepseek-chat";
+const OCR_PROVIDER = (process.env.OCR_PROVIDER || "auto").toLowerCase();
+const BAIDU_OCR_API_KEY = process.env.BAIDU_OCR_API_KEY || "";
+const BAIDU_OCR_SECRET_KEY = process.env.BAIDU_OCR_SECRET_KEY || "";
+const BAIDU_OCR_ENDPOINT = process.env.BAIDU_OCR_ENDPOINT || "general_basic";
 
 const mimeTypes = {
   ".html": "text/html; charset=utf-8",
@@ -266,6 +270,14 @@ function textProvider() {
   if (DEEPSEEK_API_KEY) return "deepseek";
   if (OPENAI_API_KEY) return "openai";
   return "demo";
+}
+
+function imageOcrProvider() {
+  if (OCR_PROVIDER === "baidu") return BAIDU_OCR_API_KEY && BAIDU_OCR_SECRET_KEY ? "baidu" : (OPENAI_API_KEY ? "openai" : "none");
+  if (OCR_PROVIDER === "openai") return OPENAI_API_KEY ? "openai" : (BAIDU_OCR_API_KEY && BAIDU_OCR_SECRET_KEY ? "baidu" : "none");
+  if (BAIDU_OCR_API_KEY && BAIDU_OCR_SECRET_KEY) return "baidu";
+  if (OPENAI_API_KEY) return "openai";
+  return "none";
 }
 
 function safeJsonParse(text) {
@@ -1109,6 +1121,10 @@ async function gradeShenlun(body, user) {
 }
 
 async function extractShenlunImage({ imageDataUrl }) {
+  const provider = imageOcrProvider();
+  if (provider === "baidu") {
+    return baiduOcrShenlunImage({ imageDataUrl });
+  }
   if (!OPENAI_API_KEY) {
     throw new Error("OCR_REQUIRES_OPENAI_API_KEY");
   }
@@ -1180,6 +1196,72 @@ async function extractShenlunImage({ imageDataUrl }) {
   return JSON.parse(payload.output_text);
 }
 
+function stripDataUrlPrefix(imageDataUrl) {
+  return String(imageDataUrl || "").replace(/^data:image\/[a-zA-Z0-9.+-]+;base64,/, "");
+}
+
+let baiduAccessTokenCache = { token: "", expiresAt: 0 };
+
+async function getBaiduAccessToken() {
+  const now = Date.now();
+  if (baiduAccessTokenCache.token && baiduAccessTokenCache.expiresAt > now + 60_000) {
+    return baiduAccessTokenCache.token;
+  }
+
+  const tokenUrl = new URL("https://aip.baidubce.com/oauth/2.0/token");
+  tokenUrl.searchParams.set("grant_type", "client_credentials");
+  tokenUrl.searchParams.set("client_id", BAIDU_OCR_API_KEY);
+  tokenUrl.searchParams.set("client_secret", BAIDU_OCR_SECRET_KEY);
+
+  const response = await fetch(tokenUrl);
+  const payload = await response.json();
+  if (!response.ok || !payload.access_token) {
+    throw new Error(payload?.error_description || payload?.error || "BAIDU_OCR_TOKEN_FAILED");
+  }
+
+  baiduAccessTokenCache = {
+    token: payload.access_token,
+    expiresAt: now + Number(payload.expires_in || 2_592_000) * 1000
+  };
+  return baiduAccessTokenCache.token;
+}
+
+async function baiduOcrShenlunImage({ imageDataUrl }) {
+  if (!BAIDU_OCR_API_KEY || !BAIDU_OCR_SECRET_KEY) {
+    throw new Error("BAIDU_OCR_REQUIRES_KEYS");
+  }
+
+  const accessToken = await getBaiduAccessToken();
+  const endpoint = String(BAIDU_OCR_ENDPOINT || "general_basic").replace(/[^a-z_]/g, "") || "general_basic";
+  const ocrUrl = new URL(`https://aip.baidubce.com/rest/2.0/ocr/v1/${endpoint}`);
+  ocrUrl.searchParams.set("access_token", accessToken);
+
+  const body = new URLSearchParams();
+  body.set("image", stripDataUrlPrefix(imageDataUrl));
+  body.set("paragraph", "true");
+
+  const response = await fetch(ocrUrl, {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body
+  });
+  const payload = await response.json();
+  if (!response.ok || payload.error_code) {
+    throw new Error(payload?.error_msg || "BAIDU_OCR_REQUEST_FAILED");
+  }
+
+  const words = (payload.words_result || []).map((item) => item.words).filter(Boolean);
+  const text = words.join("\n").trim();
+  return {
+    prompt: "",
+    material: text,
+    answer: "",
+    notes: text
+      ? "百度 OCR 识别完成，已先填入材料框。请按图片内容把题目/材料/作答再校对一下。"
+      : "百度 OCR 没有识别到明显文字，请换一张更清晰的图片。"
+  };
+}
+
 function serveStatic(req, res) {
   const pathname = new URL(req.url, `http://${req.headers.host}`).pathname;
   let filePath = pathname === "/" ? path.join(ROOT, "index.html") : path.join(ROOT, pathname);
@@ -1209,7 +1291,7 @@ const server = http.createServer(async (req, res) => {
     const url = new URL(req.url, `http://${req.headers.host}`);
 
     if (req.method === "GET" && url.pathname === "/health") {
-      json(res, 200, { ok: true, storage: "sqlite", provider: textProvider(), ocrProvider: OPENAI_API_KEY ? "openai" : "none" });
+      json(res, 200, { ok: true, storage: "sqlite", provider: textProvider(), ocrProvider: imageOcrProvider() });
       return;
     }
 

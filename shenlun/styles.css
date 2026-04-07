@@ -339,7 +339,8 @@ button:disabled {
   gap: 18px;
 }
 
-.ocr-card {
+.ocr-card,
+.sample-card {
   display: grid;
   grid-template-columns: 1fr auto auto;
   align-items: center;
@@ -350,12 +351,19 @@ button:disabled {
   background: rgba(255, 255, 255, 0.46);
 }
 
+.sample-card {
+  grid-template-columns: 1fr auto;
+}
+
 .ocr-card strong,
-.ocr-card p {
+.ocr-card p,
+.sample-card strong,
+.sample-card p {
   margin: 0;
 }
 
 .ocr-card p,
+.sample-card p,
 .ocr-status {
   color: var(--muted);
   line-height: 1.6;
@@ -541,6 +549,7 @@ textarea {
   .hero,
   .grader-layout,
   .ocr-card,
+  .sample-card,
   .feature-grid,
   .pricing-grid {
     grid-template-columns: 1fr;
