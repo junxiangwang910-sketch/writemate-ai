@@ -298,6 +298,49 @@ button:hover {
   gap: 18px;
 }
 
+.ocr-card {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  align-items: center;
+  gap: 14px;
+  padding: 16px;
+  border: 1px dashed rgba(158, 47, 36, 0.28);
+  border-radius: 22px;
+  background: rgba(255, 255, 255, 0.46);
+}
+
+.ocr-card strong,
+.ocr-card p {
+  margin: 0;
+}
+
+.ocr-card p,
+.ocr-status {
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+.upload-box {
+  width: fit-content;
+  cursor: pointer;
+}
+
+.upload-box span {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 46px;
+  padding: 0 18px;
+  border-radius: 999px;
+  color: var(--ink);
+  border: 1px solid var(--line);
+  background: rgba(255, 250, 241, 0.78);
+}
+
+.upload-box input {
+  display: none;
+}
+
 .field-row {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -456,6 +499,7 @@ textarea {
 @media (max-width: 980px) {
   .hero,
   .grader-layout,
+  .ocr-card,
   .feature-grid,
   .pricing-grid {
     grid-template-columns: 1fr;

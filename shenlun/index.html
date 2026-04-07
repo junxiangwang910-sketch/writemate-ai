@@ -80,6 +80,19 @@
         </div>
         <div class="grader-layout">
           <form class="grader-form" id="shenlunForm">
+            <div class="ocr-card">
+              <div>
+                <strong>图片识别文字</strong>
+                <p>上传题目/材料/作答截图，AI 会先识别文字并回填到下方输入框，确认无误后再批改。</p>
+              </div>
+              <label class="upload-box">
+                <span>选择图片</span>
+                <input id="imageInput" type="file" accept="image/*">
+              </label>
+              <button class="secondary-button" id="ocrButton" type="button">识别图片文字</button>
+              <p class="ocr-status" id="ocrStatus">支持截图、照片和扫描图。识别后请人工检查。</p>
+            </div>
+
             <div class="field-row">
               <label>
                 <span>题型</span>

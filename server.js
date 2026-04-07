@@ -968,6 +968,78 @@ async function gradeShenlun(body, user) {
   };
 }
 
+async function extractShenlunImage({ imageDataUrl }) {
+  if (!OPENAI_API_KEY) {
+    throw new Error("OCR_REQUIRES_OPENAI_API_KEY");
+  }
+
+  const schema = {
+    type: "object",
+    additionalProperties: false,
+    required: ["prompt", "material", "answer", "notes"],
+    properties: {
+      prompt: { type: "string" },
+      material: { type: "string" },
+      answer: { type: "string" },
+      notes: { type: "string" }
+    }
+  };
+
+  const response = await fetch("https://api.openai.com/v1/responses", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${OPENAI_API_KEY}`
+    },
+    body: JSON.stringify({
+      model: OPENAI_MODEL,
+      input: [
+        {
+          role: "developer",
+          content: [
+            {
+              type: "input_text",
+              text: [
+                "你是一个中文 OCR 和申论题目整理助手。",
+                "请识别图片中的文字，并尽量区分：题目要求、给定资料/材料、考生作答。",
+                "如果图片里只有其中一部分，就把能识别的内容填入对应字段，其他字段留空。",
+                "不要编造图片里没有的内容。输出简体中文 JSON。"
+              ].join("\n")
+            }
+          ]
+        },
+        {
+          role: "user",
+          content: [
+            {
+              type: "input_text",
+              text: "请识别这张图片中的申论相关文字，并整理为 prompt/material/answer。"
+            },
+            {
+              type: "input_image",
+              image_url: imageDataUrl
+            }
+          ]
+        }
+      ],
+      text: {
+        format: {
+          type: "json_schema",
+          name: "shenlun_ocr",
+          strict: true,
+          schema
+        }
+      }
+    })
+  });
+
+  const payload = await response.json();
+  if (!response.ok) {
+    throw new Error(payload?.error?.message || "OpenAI OCR request failed");
+  }
+  return JSON.parse(payload.output_text);
+}
+
 function serveStatic(req, res) {
   const pathname = new URL(req.url, `http://${req.headers.host}`).pathname;
   let filePath = pathname === "/" ? path.join(ROOT, "index.html") : path.join(ROOT, pathname);
@@ -1095,6 +1167,15 @@ const server = http.createServer(async (req, res) => {
         material: body.material || "",
         answer: body.answer || ""
       }, user);
+      json(res, 200, result);
+      return;
+    }
+
+    if (req.method === "POST" && url.pathname === "/api/shenlun/ocr") {
+      const body = await parseBody(req);
+      const result = await extractShenlunImage({
+        imageDataUrl: body.imageDataUrl || ""
+      });
       json(res, 200, result);
       return;
     }

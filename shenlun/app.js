@@ -37,6 +37,9 @@ const strengthList = document.querySelector("#strengthList");
 const weaknessList = document.querySelector("#weaknessList");
 const missingTags = document.querySelector("#missingTags");
 const rewriteText = document.querySelector("#rewriteText");
+const imageInput = document.querySelector("#imageInput");
+const ocrButton = document.querySelector("#ocrButton");
+const ocrStatus = document.querySelector("#ocrStatus");
 
 function countChars(text) {
   return text.replace(/\s/g, "").length;
@@ -145,8 +148,53 @@ async function submitShenlun(event) {
   }
 }
 
+function readImageAsDataUrl(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = () => reject(new Error("图片读取失败"));
+    reader.readAsDataURL(file);
+  });
+}
+
+async function extractImageText() {
+  const file = imageInput.files?.[0];
+  if (!file) {
+    window.alert("请先选择一张图片。");
+    return;
+  }
+
+  if (file.size > 5 * 1024 * 1024) {
+    window.alert("图片太大了，请先压缩到 5MB 以内。");
+    return;
+  }
+
+  ocrButton.disabled = true;
+  ocrStatus.textContent = "正在识别图片文字，请稍等...";
+
+  try {
+    const imageDataUrl = await readImageAsDataUrl(file);
+    const result = await api("/api/shenlun/ocr", {
+      method: "POST",
+      body: JSON.stringify({ imageDataUrl })
+    });
+
+    if (result.prompt) promptText.value = result.prompt;
+    if (result.material) materialText.value = result.material;
+    if (result.answer) answerText.value = result.answer;
+    updateCount();
+    ocrStatus.textContent = result.notes || "识别完成，请检查文字是否准确，再点击生成批改报告。";
+  } catch (error) {
+    ocrStatus.textContent = "识别失败，请检查 API key 或换一张更清晰的图片。";
+    window.alert(error.message === "OCR_REQUIRES_OPENAI_API_KEY" ? "图片识别需要先配置 OpenAI API Key。" : error.message);
+  } finally {
+    ocrButton.disabled = false;
+  }
+}
+
 form.addEventListener("submit", submitShenlun);
 answerText.addEventListener("input", updateCount);
+ocrButton.addEventListener("click", extractImageText);
 
 document.querySelectorAll("[data-target]").forEach((button) => {
   button.addEventListener("click", () => {
