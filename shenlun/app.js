@@ -122,7 +122,7 @@ function updateCount() {
 }
 
 async function submitShenlun(event) {
-  event.preventDefault();
+  event?.preventDefault();
   if (state.isSubmitting) return;
 
   if (!promptText.value.trim() || !materialText.value.trim() || !answerText.value.trim()) {
