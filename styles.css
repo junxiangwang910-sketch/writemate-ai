@@ -153,6 +153,7 @@ body::before {
   background: transparent;
   font: inherit;
   cursor: pointer;
+  text-decoration: none;
 }
 
 .account-chip {
@@ -217,6 +218,12 @@ button:hover {
   color: var(--ink);
   border: 1px solid var(--line);
   background: rgba(255, 250, 244, 0.84);
+}
+
+.action-link {
+  display: inline-flex;
+  align-items: center;
+  text-decoration: none;
 }
 
 .small-icon {

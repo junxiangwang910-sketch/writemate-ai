@@ -637,11 +637,15 @@ async function gradeEssay(body, user) {
 
 function serveStatic(req, res) {
   const pathname = new URL(req.url, `http://${req.headers.host}`).pathname;
-  const filePath = pathname === "/" ? path.join(ROOT, "index.html") : path.join(ROOT, pathname);
+  let filePath = pathname === "/" ? path.join(ROOT, "index.html") : path.join(ROOT, pathname);
 
   if (!filePath.startsWith(ROOT)) {
     json(res, 403, { error: "Forbidden" });
     return;
+  }
+
+  if (fs.existsSync(filePath) && fs.statSync(filePath).isDirectory()) {
+    filePath = path.join(filePath, "index.html");
   }
 
   fs.readFile(filePath, (error, data) => {
