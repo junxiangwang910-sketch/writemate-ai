@@ -7,6 +7,7 @@ COPY index.html ./
 COPY styles.css ./
 COPY app.js ./
 COPY server.js ./
+COPY shenlun ./shenlun
 COPY data ./data
 
 ENV NODE_ENV=production
