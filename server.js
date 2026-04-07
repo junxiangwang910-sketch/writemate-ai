@@ -30,8 +30,11 @@ loadEnvFile();
 
 const PORT = Number(process.env.PORT || 3000);
 const HOST = process.env.HOST || "127.0.0.1";
+const AI_PROVIDER = (process.env.AI_PROVIDER || "auto").toLowerCase();
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY || "";
 const OPENAI_MODEL = process.env.OPENAI_MODEL || "gpt-5-mini";
+const DEEPSEEK_API_KEY = process.env.DEEPSEEK_API_KEY || "";
+const DEEPSEEK_MODEL = process.env.DEEPSEEK_MODEL || "deepseek-chat";
 
 const mimeTypes = {
   ".html": "text/html; charset=utf-8",
@@ -255,6 +258,31 @@ const db = openDatabase();
 function json(res, statusCode, payload) {
   res.writeHead(statusCode, { "Content-Type": "application/json; charset=utf-8" });
   res.end(JSON.stringify(payload));
+}
+
+function textProvider() {
+  if (AI_PROVIDER === "deepseek") return DEEPSEEK_API_KEY ? "deepseek" : (OPENAI_API_KEY ? "openai" : "demo");
+  if (AI_PROVIDER === "openai") return OPENAI_API_KEY ? "openai" : (DEEPSEEK_API_KEY ? "deepseek" : "demo");
+  if (DEEPSEEK_API_KEY) return "deepseek";
+  if (OPENAI_API_KEY) return "openai";
+  return "demo";
+}
+
+function safeJsonParse(text) {
+  const trimmed = String(text || "").trim();
+  if (!trimmed) throw new Error("EMPTY_MODEL_RESPONSE");
+  try {
+    return JSON.parse(trimmed);
+  } catch (error) {
+    const fenced = trimmed.match(/```(?:json)?\s*([\s\S]*?)```/i);
+    if (fenced) return JSON.parse(fenced[1].trim());
+    const start = trimmed.indexOf("{");
+    const end = trimmed.lastIndexOf("}");
+    if (start !== -1 && end !== -1 && end > start) {
+      return JSON.parse(trimmed.slice(start, end + 1));
+    }
+    throw error;
+  }
 }
 
 function parseBody(req) {
@@ -744,6 +772,74 @@ async function openAiReport({ task, candidateName, prompt, essay, lang }) {
   };
 }
 
+async function deepSeekJsonChat({ systemPrompt, userPrompt, fallbackError = "DeepSeek request failed" }) {
+  const response = await fetch("https://api.deepseek.com/chat/completions", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${DEEPSEEK_API_KEY}`
+    },
+    body: JSON.stringify({
+      model: DEEPSEEK_MODEL,
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: userPrompt }
+      ],
+      response_format: { type: "json_object" },
+      stream: false
+    })
+  });
+
+  const payload = await response.json();
+  if (!response.ok) {
+    throw new Error(payload?.error?.message || fallbackError);
+  }
+  return safeJsonParse(payload?.choices?.[0]?.message?.content || "");
+}
+
+async function deepSeekReport({ task, candidateName, prompt, essay, lang }) {
+  const isZh = lang === "zh";
+  const parsed = await deepSeekJsonChat({
+    systemPrompt: [
+      isZh
+        ? "你是一位专业的 IELTS Writing examiner。请根据雅思写作评分标准给出接近真实考试的分数和反馈，输出简体中文。"
+        : "You are a professional IELTS Writing examiner. Score the essay using IELTS-style logic and return concise, practical feedback in English.",
+      "只返回 JSON，不要输出 Markdown。",
+      "JSON 字段必须包含：overall, taskResponse, coherence, lexical, grammar, taskResponseFeedback, coherenceFeedback, lexicalFeedback, grammarFeedback, strengths, improvements, rewriteSuggestion, coachSummary。",
+      "overall/taskResponse/coherence/lexical/grammar 为 0-9 数字，允许 0.5；strengths/improvements 为字符串数组，各 3 条。"
+    ].join("\n"),
+    userPrompt: [
+      `Task type: ${task}`,
+      `Candidate: ${candidateName || "Anonymous"}`,
+      `Prompt: ${prompt}`,
+      "Essay:",
+      essay
+    ].join("\n"),
+    fallbackError: "DeepSeek IELTS request failed"
+  });
+
+  return {
+    name: candidateName || (isZh ? "匿名考生" : "Anonymous Candidate"),
+    task,
+    taskLabel: task === "task1" ? "Task 1" : "Task 2",
+    prompt,
+    essay,
+    overall: band(Number(parsed.overall)),
+    taskResponse: band(Number(parsed.taskResponse)),
+    coherence: band(Number(parsed.coherence)),
+    lexical: band(Number(parsed.lexical)),
+    grammar: band(Number(parsed.grammar)),
+    taskResponseFeedback: parsed.taskResponseFeedback || "",
+    coherenceFeedback: parsed.coherenceFeedback || "",
+    lexicalFeedback: parsed.lexicalFeedback || "",
+    grammarFeedback: parsed.grammarFeedback || "",
+    strengths: (parsed.strengths || []).slice(0, 3),
+    improvements: (parsed.improvements || []).slice(0, 3),
+    rewriteSuggestion: parsed.rewriteSuggestion || "",
+    coachSummary: parsed.coachSummary || ""
+  };
+}
+
 async function gradeEssay(body, user) {
   const history = getUserHistory(user.id);
   const plan = plans[user.plan] || plans.free;
@@ -751,10 +847,12 @@ async function gradeEssay(body, user) {
     throw new Error("QUOTA_EXCEEDED");
   }
 
-  const provider = OPENAI_API_KEY ? "openai" : "demo";
-  const report = OPENAI_API_KEY
-    ? await openAiReport(body)
-    : heuristicReport(body);
+  const provider = textProvider();
+  const report = provider === "deepseek"
+    ? await deepSeekReport(body)
+    : provider === "openai"
+      ? await openAiReport(body)
+      : heuristicReport(body);
 
   const record = {
     id: randomUUID(),
@@ -948,11 +1046,53 @@ async function openAiShenlunReport({ questionType, maxScore, prompt, material, a
   };
 }
 
+async function deepSeekShenlunReport({ questionType, maxScore, prompt, material, answer }) {
+  const rubric = getShenlunRubric(questionType);
+  const targetMax = Number(maxScore || 30);
+  const parsed = await deepSeekJsonChat({
+    systemPrompt: [
+      "你是一位中国公务员考试申论阅卷与教研专家。",
+      "请按申论阅卷逻辑批改，不要按普通作文泛泛评价。",
+      `题型：${rubric.label}`,
+      `目标分值：${targetMax}`,
+      `评分维度：${rubric.dimensions.join("、")}`,
+      `核心关注点：${rubric.focusPoints.join("、")}`,
+      "只返回 JSON，不要输出 Markdown。",
+      "JSON 字段必须包含：scaledScore, percentScore, dimensions, strengths, weaknesses, missing, rewrite。",
+      "scaledScore 为 0 到目标分值的整数；percentScore 为 0 到 100 的整数；dimensions 是数组，每项包含 label, score, comment；strengths/weaknesses/missing 是字符串数组；rewrite 是参考优化建议。"
+    ].join("\n"),
+    userPrompt: [
+      `题目要求：${prompt}`,
+      `给定资料：${material}`,
+      `考生作答：${answer}`
+    ].join("\n\n"),
+    fallbackError: "DeepSeek Shenlun request failed"
+  });
+
+  return {
+    type: rubric.questionType,
+    questionLabel: rubric.label,
+    targetMax,
+    prompt,
+    material,
+    answer,
+    scaledScore: Math.max(0, Math.min(targetMax, Math.round(Number(parsed.scaledScore || 0)))),
+    percentScore: Math.max(0, Math.min(100, Math.round(Number(parsed.percentScore || 0)))),
+    dimensions: (parsed.dimensions || []).slice(0, 6),
+    strengths: (parsed.strengths || []).slice(0, 4),
+    weaknesses: (parsed.weaknesses || []).slice(0, 4),
+    missing: (parsed.missing || []).slice(0, 5),
+    rewrite: parsed.rewrite || ""
+  };
+}
+
 async function gradeShenlun(body, user) {
-  const provider = OPENAI_API_KEY ? "openai" : "demo";
-  const report = OPENAI_API_KEY
-    ? await openAiShenlunReport(body)
-    : demoShenlunReport(body);
+  const provider = textProvider();
+  const report = provider === "deepseek"
+    ? await deepSeekShenlunReport(body)
+    : provider === "openai"
+      ? await openAiShenlunReport(body)
+      : demoShenlunReport(body);
   const record = {
     id: randomUUID(),
     userId: user.id,
@@ -1069,7 +1209,7 @@ const server = http.createServer(async (req, res) => {
     const url = new URL(req.url, `http://${req.headers.host}`);
 
     if (req.method === "GET" && url.pathname === "/health") {
-      json(res, 200, { ok: true, storage: "sqlite", provider: OPENAI_API_KEY ? "openai" : "demo" });
+      json(res, 200, { ok: true, storage: "sqlite", provider: textProvider(), ocrProvider: OPENAI_API_KEY ? "openai" : "none" });
       return;
     }
 
@@ -1188,6 +1328,11 @@ const server = http.createServer(async (req, res) => {
 
 server.listen(PORT, HOST, () => {
   console.log(`WriteMate AI server running at http://${HOST}:${PORT}`);
-  console.log(`Provider mode: ${OPENAI_API_KEY ? `OpenAI (${OPENAI_MODEL})` : "demo fallback"}`);
+  const providerLabel = textProvider() === "deepseek"
+    ? `DeepSeek (${DEEPSEEK_MODEL})`
+    : textProvider() === "openai"
+      ? `OpenAI (${OPENAI_MODEL})`
+      : "demo fallback";
+  console.log(`Provider mode: ${providerLabel}`);
   console.log(`Storage mode: SQLite at ${SQLITE_DB_PATH}`);
 });
