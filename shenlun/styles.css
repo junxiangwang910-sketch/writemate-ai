@@ -383,6 +383,24 @@ button:disabled {
   color: var(--muted);
 }
 
+.essay-example details {
+  margin-top: 14px;
+  padding: 14px 16px;
+  border: 1px solid rgba(32, 22, 15, 0.12);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.48);
+}
+
+.essay-example summary {
+  cursor: pointer;
+  color: var(--red-deep);
+  font-weight: 800;
+}
+
+.essay-example details p {
+  margin-top: 12px;
+}
+
 .contact-card {
   display: grid;
   grid-template-columns: 1fr 1fr;
