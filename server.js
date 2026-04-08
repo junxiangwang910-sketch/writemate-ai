@@ -943,8 +943,65 @@ function chineseCoverage(source, answer) {
 }
 
 function countChinesePolicyWords(text) {
-  const words = ["机制", "平台", "协同", "治理", "服务", "监督", "反馈", "考核", "群众", "基层", "落实", "规范", "责任", "制度", "统筹"];
+  const words = [
+    "机制", "平台", "协同", "治理", "服务", "监督", "反馈", "考核", "群众", "基层", "落实", "规范", "责任", "制度", "统筹",
+    "问题", "原因", "对策", "矛盾", "张力", "温度", "效率", "差异", "精准", "弹性", "公共", "民生", "执行", "参与"
+  ];
   return words.filter((word) => String(text || "").includes(word)).length;
+}
+
+function countMatches(text, patterns) {
+  const source = String(text || "");
+  return patterns.reduce((sum, pattern) => sum + (pattern.test(source) ? 1 : 0), 0);
+}
+
+function countSentences(text) {
+  return String(text || "").split(/[。！？!?；;]+/).map((part) => part.trim()).filter(Boolean).length;
+}
+
+function countMaterialMarkers(text) {
+  return countMatches(text, [/材料一|材料1|材料二|材料2|材料三|材料3|材料四|材料4/, /加装电梯|电梯/, /智能水表|智能电表|数字乡村|数据/, /水冲式公厕|垃圾分类|村规民约|一刀切/, /效率与温度|统一与差异|技术理性|人文关怀/]);
+}
+
+function essayStyleProfile(answerText) {
+  const charTotal = answerText.replace(/\s/g, "").length;
+  const paragraphCount = answerText.split(/\n+/).filter((part) => part.trim()).length;
+  const sentenceCount = countSentences(answerText);
+  const avgSentenceLength = sentenceCount ? charTotal / sentenceCount : charTotal;
+  const hasTitle = /^.{4,40}\n/.test(answerText.trim());
+  const hasCentralThesis = /我认为|关键在于|核心在于|本质上|归根到底|必须|应当|要在/.test(answerText);
+  const hasTension = /效率.*温度|温度.*效率|统一.*差异|差异.*统一|技术.*人文|人文.*技术|利益.*情感|规则.*情感|张力|平衡/.test(answerText);
+  const hasPolicyLanding = /制度|机制|协商|参与|因地制宜|分类施策|群众|基层干部|治理现代化|公共服务|执行/.test(answerText);
+  const materialMarkers = countMaterialMarkers(answerText);
+  const colloquialHits = countMatches(answerText, [/说实话|脑子里|打脸|土得掉渣|白嫖|玄学|很香|救场|狂喜/]);
+  const emptySloganHits = countMatches(answerText, [/高度重视|加大力度|多措并举|久久为功|形成合力|相关部门|提升能力|完善机制/g]);
+  return {
+    charTotal,
+    paragraphCount,
+    avgSentenceLength,
+    hasTitle,
+    hasCentralThesis,
+    hasTension,
+    hasPolicyLanding,
+    materialMarkers,
+    colloquialHits,
+    emptySloganHits
+  };
+}
+
+function strictScore(score, penalties = 0, bonus = 0) {
+  return Math.round(Math.min(88, Math.max(32, score + bonus - penalties)));
+}
+
+function shenlunScoringGuide(rubric, targetMax) {
+  return [
+    "评分必须偏严格，按真实申论阅卷口径，不要鼓励式打高分。",
+    "不要让所有维度分数接近或相同；除非答案高度均衡，否则最高维度与最低维度至少拉开 8 分。",
+    "总分校准：普通但完整的答案通常在 58-70；有明确立意和材料转化但仍有不足通常在 70-78；只有立意深刻、结构稳定、材料使用充分、语言规范的答案才能超过 80；空泛套话、材料使用弱、结构散乱应低于 60。",
+    "大作文高分特征：标题能承载中心论点；开头能从材料抽象出核心矛盾；分论点之间有递进或并列逻辑；能把材料细节转化为治理原则；结尾能回扣主题而不是喊口号。",
+    "大作文扣分点：只写提升治理能力但没有矛盾分析；材料只堆例子不提炼；分论点互相重复；口语化过重；大量万能套话；没有联系现实治理场景。",
+    `本题型评分维度：${rubric.dimensions.join("、")}；目标分值：${targetMax}。`
+  ].join("\n");
 }
 
 function demoShenlunReport({ questionType, maxScore, prompt, material, answer }) {
@@ -956,20 +1013,40 @@ function demoShenlunReport({ questionType, maxScore, prompt, material, answer })
   const paragraphCount = answerText.split(/\n+/).filter((part) => part.trim()).length;
   const policyWords = countChinesePolicyWords(answerText);
   const hasNumbering = /一是|二是|三是|首先|其次|再次|第一|第二|第三/.test(answerText);
+  const style = essayStyleProfile(answerText);
+  const isEssay = questionType === "essay" || Number(maxScore || 0) >= 80;
+  const lengthPenalty = isEssay
+    ? (style.charTotal < 800 ? 12 : style.charTotal < 1000 ? 5 : style.charTotal > 1250 ? 4 : 0)
+    : (style.charTotal < 120 ? 8 : 0);
+  const stylePenalty = (style.colloquialHits * 3) + Math.min(style.emptySloganHits * 2, 8);
+  const essayBonus = isEssay
+    ? (style.hasTitle ? 4 : -4) + (style.hasTension ? 8 : -6) + Math.min(style.materialMarkers * 3, 12) + (style.hasPolicyLanding ? 4 : -3)
+    : 0;
 
-  const rawDimensions = [
-    { label: rubric.dimensions[0], score: 62 + promptCoverageValue * 25, comment: "基本能够围绕题干作答，但还可进一步拆解限制条件与作答对象。" },
-    { label: rubric.dimensions[1], score: 58 + materialCoverage * 30 + Math.min(policyWords, 8), comment: "覆盖了部分核心信息，建议继续补齐材料中的关键对象、问题和措施。" },
-    { label: rubric.dimensions[2], score: 56 + materialCoverage * 28 + Math.min(policyWords, 10), comment: "能够联系材料，但提炼还可以更凝练、更贴近材料原意。" },
-    { label: rubric.dimensions[3], score: 60 + (hasNumbering ? 14 : 4) + Math.min(paragraphCount * 3, 12), comment: hasNumbering ? "分层较明显，阅卷识别度较好。" : "建议使用“一是、二是、三是”等结构标志增强条理。" },
-    { label: rubric.dimensions[4], score: 66 + Math.min(charTotal / 30, 12), comment: "表达基本规范，可继续减少口语化和泛泛表述。" },
-    { label: rubric.dimensions[5], score: 70 + (questionType === "official" && !/通知|倡议|讲话|提纲|简报/.test(answerText) ? -8 : 4), comment: "整体符合基本作答要求，特殊题型需进一步注意格式。" }
+  const rawDimensions = isEssay ? [
+    { label: rubric.dimensions[0], score: 54 + promptCoverageValue * 18 + (style.hasCentralThesis ? 8 : -5) + (style.hasTension ? 8 : -6), comment: style.hasTension ? "中心论点能够触及材料背后的治理张力，但还要进一步压实政策表达。" : "立意仍偏表层，建议从材料中提炼更明确的核心矛盾。" },
+    { label: rubric.dimensions[1], score: 52 + (paragraphCount >= 5 ? 12 : 4) + (style.hasTension ? 8 : 0) + Math.min(policyWords, 8), comment: paragraphCount >= 5 ? "分论点结构基本清楚，但分论点之间的递进关系仍可增强。" : "分论点层次不够稳定，建议用更清晰的并列或递进结构展开。" },
+    { label: rubric.dimensions[2], score: 50 + Math.min(style.materialMarkers * 6, 24) + (style.hasPolicyLanding ? 8 : -4), comment: style.materialMarkers >= 3 ? "能够调用材料细节支撑观点，但部分材料还可进一步抽象为治理原则。" : "材料使用偏弱，容易显得空泛或脱离给定资料。" },
+    { label: rubric.dimensions[3], score: 52 + materialCoverage * 18 + Math.min(policyWords, 10), comment: "材料联系需要服务于论证，不宜只罗列故事或只提口号。" },
+    { label: rubric.dimensions[4], score: 50 + (style.hasPolicyLanding ? 14 : 4) + (style.hasTension ? 6 : 0), comment: style.hasPolicyLanding ? "能落到治理机制与群众参与，但政策高度还可更稳。" : "建议把个人感受进一步转化为制度弹性、协商治理等公共治理表达。" },
+    { label: rubric.dimensions[5], score: 60 + Math.min(charTotal / 90, 10) - style.colloquialHits * 4 - Math.min(style.emptySloganHits, 6), comment: style.colloquialHits ? "部分表达偏口语化，正式考场文章需更稳健。" : "语言整体较通顺，但仍要避免万能套话。" }
+  ] : [
+    { label: rubric.dimensions[0], score: 56 + promptCoverageValue * 22, comment: "基本能够围绕题干作答，但还可进一步拆解限制条件与作答对象。" },
+    { label: rubric.dimensions[1], score: 52 + materialCoverage * 28 + Math.min(policyWords, 8), comment: "覆盖了部分核心信息，建议继续补齐材料中的关键对象、问题和措施。" },
+    { label: rubric.dimensions[2], score: 52 + materialCoverage * 24 + Math.min(policyWords, 10), comment: "能够联系材料，但提炼还可以更凝练、更贴近材料原意。" },
+    { label: rubric.dimensions[3], score: 54 + (hasNumbering ? 12 : 2) + Math.min(paragraphCount * 3, 10), comment: hasNumbering ? "分层较明显，阅卷识别度较好。" : "建议使用“一是、二是、三是”等结构标志增强条理。" },
+    { label: rubric.dimensions[4], score: 60 + Math.min(charTotal / 35, 10) - style.colloquialHits * 3, comment: "表达基本规范，可继续减少口语化和泛泛表述。" },
+    { label: rubric.dimensions[5], score: 62 + (questionType === "official" && !/通知|倡议|讲话|提纲|简报/.test(answerText) ? -12 : 3), comment: "整体符合基本作答要求，特殊题型需进一步注意格式。" }
   ].map((item) => ({
     ...item,
-    score: Math.round(Math.min(92, Math.max(48, item.score)))
+    score: strictScore(item.score, lengthPenalty + stylePenalty, essayBonus)
   }));
 
-  const percentScore = Math.round(rawDimensions.reduce((sum, item) => sum + item.score, 0) / rawDimensions.length);
+  const spreadAdjusted = rawDimensions.map((item, index) => ({
+    ...item,
+    score: strictScore(item.score + [-3, 2, -2, 3, -1, 1][index % 6])
+  }));
+  const percentScore = Math.round(spreadAdjusted.reduce((sum, item) => sum + item.score, 0) / spreadAdjusted.length);
   const targetMax = Number(maxScore || 30);
   const scaledScore = Math.round((percentScore / 100) * targetMax);
   const missing = rubric.focusPoints.filter((point) => !answerText.includes(point.slice(0, 2))).slice(0, 4);
@@ -983,7 +1060,7 @@ function demoShenlunReport({ questionType, maxScore, prompt, material, answer })
     answer,
     scaledScore,
     percentScore,
-    dimensions: rawDimensions,
+    dimensions: spreadAdjusted,
     strengths: [
       hasNumbering ? "答案有明显分层，阅卷时更容易识别要点。" : "答案基本回应了题目要求，具备初步作答方向。",
       materialCoverage > 0.46 ? "能够提取部分材料信息，未完全脱离给定资料。" : "已经围绕题目作答，但材料提炼还可以更充分。",
@@ -992,7 +1069,8 @@ function demoShenlunReport({ questionType, maxScore, prompt, material, answer })
     weaknesses: [
       materialCoverage < 0.5 ? "材料要点覆盖不足，建议回到材料中提炼更多关键词。" : "要点仍可进一步压缩和合并，避免表达松散。",
       !hasNumbering ? "层次标志不够明显，建议使用“一是、二是、三是”增强条理。" : "部分要点之间的逻辑递进还可以更清晰。",
-      charTotal < 180 ? "作答篇幅偏短，可能导致要点展开不足。" : "可以进一步提升语言的机关表达和对策可操作性。"
+      charTotal < (isEssay ? 900 : 180) ? "作答篇幅偏短，可能导致要点展开不足。" : "可以进一步提升语言的机关表达和对策可操作性。",
+      isEssay && style.colloquialHits ? "个别表达偏口语化，建议改成更稳健的议论文表达。" : "评分会继续按立意、材料转化和表达规范拉开维度差距。"
     ],
     missing: missing.length ? missing : ["材料关键词", "分层表达"],
     rewrite: `建议围绕“${rubric.focusPoints.slice(0, 3).join("、")}”重新组织答案。作答时要尽量使用材料关键词，把问题、原因、影响和对策分层呈现，避免只写泛泛口号。`
@@ -1045,11 +1123,13 @@ async function openAiShenlunReport({ questionType, maxScore, prompt, material, a
               text: [
                 "你是一位中国公务员考试申论阅卷与教研专家。",
                 "请按申论阅卷逻辑批改，不要按普通作文泛泛评价。",
+                shenlunScoringGuide(rubric, maxScore),
                 `题型：${rubric.label}`,
                 `目标分值：${maxScore}`,
                 `评分维度：${rubric.dimensions.join("、")}`,
                 `核心关注点：${rubric.focusPoints.join("、")}`,
-                "输出必须是简体中文，反馈要具体、可操作、适合考生提分。"
+                "输出必须是简体中文，反馈要具体、可操作、适合考生提分。",
+                "如果答案只是套话完整但材料转化弱，分数必须控制在中等区间；如果口语化明显，要在语言表达或论证深度中扣分。"
               ].join("\n")
             }
           ]
@@ -1107,13 +1187,15 @@ async function deepSeekShenlunReport({ questionType, maxScore, prompt, material,
     systemPrompt: [
       "你是一位中国公务员考试申论阅卷与教研专家。",
       "请按申论阅卷逻辑批改，不要按普通作文泛泛评价。",
+      shenlunScoringGuide(rubric, targetMax),
       `题型：${rubric.label}`,
       `目标分值：${targetMax}`,
       `评分维度：${rubric.dimensions.join("、")}`,
       `核心关注点：${rubric.focusPoints.join("、")}`,
       "只返回 JSON，不要输出 Markdown。",
       "JSON 字段必须包含：scaledScore, percentScore, dimensions, strengths, weaknesses, missing, rewrite。",
-      "scaledScore 为 0 到目标分值的整数；percentScore 为 0 到 100 的整数；dimensions 是数组，每项包含 label, score, comment；strengths/weaknesses/missing 是字符串数组；rewrite 是参考优化建议。"
+      "scaledScore 为 0 到目标分值的整数；percentScore 为 0 到 100 的整数；dimensions 是数组，每项包含 label, score, comment；strengths/weaknesses/missing 是字符串数组；rewrite 是参考优化建议。",
+      "必须先指出最主要扣分原因，再给优点；评分要有区分度，不要所有维度都给相同或相近分。"
     ].join("\n"),
     userPrompt: [
       `题目要求：${prompt}`,
