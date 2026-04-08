@@ -21,6 +21,7 @@
       </div>
       <nav class="nav">
         <a href="#grader" data-target="#grader">开始批改</a>
+        <a href="#interview" data-target="#interview">面试测评</a>
         <a href="#features" data-target="#features">产品能力</a>
         <a href="#sample-report" data-target="#sample-report">报告样例</a>
         <a href="#pricing" data-target="#pricing">激活码</a>
@@ -105,6 +106,95 @@
             <h3>想马上知道怎么改</h3>
             <p>经过大量数据训练的大模型会自动生成要点覆盖、逻辑结构和语言表达层面的修改方向，适合写完立即复盘。</p>
           </article>
+        </div>
+      </section>
+
+      <section class="interview-section" id="interview">
+        <div class="section-heading">
+          <p class="eyebrow">Interview Evaluator</p>
+          <h2 class="wide-heading">公务员考试面试测评</h2>
+          <p>适合结构化面试练习。输入面试题、作答文字，再补充语音和视频观察项，系统会按内容、自然度、表情、流畅度和声音底气生成评分。</p>
+        </div>
+        <div class="interview-layout">
+          <form class="interview-form" id="interviewForm" onsubmit="return false;">
+            <div class="module-strip">
+              <span>视频模块</span>
+              <span>语音模块</span>
+              <span>内容模块</span>
+            </div>
+            <label>
+              <span>面试题目</span>
+              <textarea id="interviewQuestion" rows="3">有人说基层工作要讲原则，也有人说基层工作要讲人情。对此你怎么看？</textarea>
+            </label>
+            <label>
+              <span>你的作答文字</span>
+              <textarea id="interviewAnswer" rows="8">我认为基层工作既要讲原则，也要讲人情。原则是底线，能够保证政策执行公平规范；人情是温度，能够让群众感受到被理解。实际工作中，基层干部要在规则范围内做好沟通解释，既不能突破制度底线，也不能简单机械执行。比如面对群众诉求，要先听清楚困难，再说明政策依据，最后尽量寻找可行的解决办法。</textarea>
+            </label>
+            <div class="field-row">
+              <label>
+                <span>语音状态</span>
+                <select id="voiceSignal">
+                  <option>声音稳定，有一定底气</option>
+                  <option>声音偏小，底气不足</option>
+                  <option>语速偏快，句尾不稳</option>
+                  <option>停顿较多，紧张感明显</option>
+                </select>
+              </label>
+              <label>
+                <span>视频状态</span>
+                <select id="videoSignal">
+                  <option>表情自然，眼神较稳定</option>
+                  <option>表情偏僵，亲和力不足</option>
+                  <option>眼神飘，低头较多</option>
+                  <option>身体晃动，仪态不够稳</option>
+                </select>
+              </label>
+            </div>
+            <label>
+              <span>表达流畅度</span>
+              <select id="fluencySignal">
+                <option>整体流畅，少量停顿</option>
+                <option>有明显卡顿和重复</option>
+                <option>语速过快，层次不清</option>
+                <option>语速过慢，信息密度不足</option>
+              </select>
+            </label>
+            <button class="primary-button" id="interviewButton" type="button">生成面试测评</button>
+          </form>
+
+          <aside class="interview-panel">
+            <div class="empty-state" id="interviewEmptyState">
+              <p>面试测评报告会显示在这里</p>
+              <span>重点检测说话是否自然、表情是否合适、表达是否流畅、声音是否有底气。</span>
+            </div>
+            <div class="report-content hidden" id="interviewReportContent">
+              <div class="report-head">
+                <div>
+                  <p>面试预估分</p>
+                  <h3 id="interviewReportTitle">公务员面试测评报告</h3>
+                </div>
+                <strong id="interviewOverallScore">0</strong>
+              </div>
+              <div class="score-range">常见可用区间：73-85 分，系统会按真实面试观感拉开维度差距。</div>
+              <div class="dimension-grid" id="interviewDimensionGrid"></div>
+              <section class="report-block">
+                <h4>优势</h4>
+                <ul id="interviewStrengthList"></ul>
+              </section>
+              <section class="report-block">
+                <h4>主要扣分点</h4>
+                <ul id="interviewWeaknessList"></ul>
+              </section>
+              <section class="report-block">
+                <h4>下一次训练重点</h4>
+                <div class="missing-tags" id="interviewMissingTags"></div>
+              </section>
+              <section class="report-block">
+                <h4>训练建议</h4>
+                <p id="interviewRewriteText"></p>
+              </section>
+            </div>
+          </aside>
         </div>
       </section>
 

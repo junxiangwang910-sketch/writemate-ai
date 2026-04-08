@@ -192,6 +192,12 @@ function seedShenlunRubrics(db) {
       label: "申论大作文",
       dimensions: ["中心论点", "分论点", "论证深度", "材料联系", "政策高度", "语言表达"],
       focusPoints: ["中心论点", "分论点", "材料联系", "政策高度", "结尾升华"]
+    },
+    {
+      questionType: "interview",
+      label: "公务员面试",
+      dimensions: ["内容契合", "表达流畅", "语言自然", "声音状态", "表情仪态", "临场感"],
+      focusPoints: ["审题回应", "观点结构", "自然表达", "声音底气", "表情管理", "岗位匹配"]
     }
   ];
   const stmt = db.prepare("INSERT OR IGNORE INTO shenlun_rubrics (question_type, label, dimensions_json, focus_points_json) VALUES (?, ?, ?, ?)");
@@ -1250,6 +1256,173 @@ async function gradeShenlun(body, user) {
   };
 }
 
+function normalizeInterviewInput(body) {
+  return {
+    questionType: "interview",
+    maxScore: 100,
+    prompt: body.prompt || body.question || "",
+    material: [
+      `语音状态：${body.voiceSignal || "未说明"}`,
+      `视频状态：${body.videoSignal || "未说明"}`,
+      `流畅度：${body.fluencySignal || "未说明"}`,
+      body.context ? `考试场景：${body.context}` : ""
+    ].filter(Boolean).join("\n"),
+    answer: body.answer || ""
+  };
+}
+
+function demoInterviewReport(body) {
+  const normalized = normalizeInterviewInput(body);
+  const rubric = getShenlunRubric("interview");
+  const answerText = String(normalized.answer || "");
+  const charTotal = answerText.replace(/\s/g, "").length;
+  const sentenceCount = countSentences(answerText);
+  const hasStructure = /第一|第二|第三|首先|其次|最后|一方面|另一方面|我认为|我的理解|具体来说/.test(answerText);
+  const hasPublicService = /群众|基层|服务|责任|担当|沟通|协商|问题|落实|政策|岗位|公共/.test(answerText);
+  const colloquialHits = countMatches(answerText, [/嗯|啊|然后然后|就是就是|这个这个|那个那个|说白了|咋说/]);
+  const voiceSignal = String(body.voiceSignal || "");
+  const videoSignal = String(body.videoSignal || "");
+  const fluencySignal = String(body.fluencySignal || "");
+  const weakVoice = /偏小|发虚|紧张|停顿多|不稳/.test(voiceSignal);
+  const strongVoice = /底气足|稳定|清楚/.test(voiceSignal);
+  const weakVideo = /表情僵|眼神飘|晃动|低头|不自然/.test(videoSignal);
+  const strongVideo = /自然|合适|稳定/.test(videoSignal);
+  const weakFluency = /明显卡顿|停顿较多|停顿多|重复|过快|过慢/.test(fluencySignal);
+  const strongFluency = /流畅|节奏/.test(fluencySignal);
+  const lengthPenalty = charTotal < 140 ? 8 : charTotal < 220 ? 4 : charTotal > 900 ? 5 : 0;
+  const contentBonus = (hasStructure ? 5 : -5) + (hasPublicService ? 5 : -4);
+
+  const dimensions = [
+    {
+      label: "内容契合",
+      score: 74 + contentBonus - lengthPenalty,
+      comment: hasPublicService ? "能够围绕公共服务或基层治理展开，但还需要更贴近题干情境。" : "内容回应偏泛，建议把观点落到具体岗位、群众诉求和治理场景。"
+    },
+    {
+      label: "表达流畅",
+      score: 76 + (strongFluency ? 5 : 0) - (weakFluency ? 8 : 0) - colloquialHits * 3,
+      comment: weakFluency ? "表达节奏有卡顿或重复，面试中会影响考官接收信息。" : "表达基本连贯，下一步要减少重复铺垫。"
+    },
+    {
+      label: "语言自然",
+      score: 75 + (sentenceCount >= 4 ? 3 : -3) - colloquialHits * 4,
+      comment: colloquialHits ? "口头填充词偏多，建议把“嗯、然后、就是”等替换成更稳定的连接表达。" : "语言比较自然，但仍要避免背稿感。"
+    },
+    {
+      label: "声音状态",
+      score: 76 + (strongVoice ? 6 : 0) - (weakVoice ? 9 : 0),
+      comment: weakVoice ? "声音底气不足或稳定性偏弱，建议训练开头 15 秒的音量和停顿。" : "声音状态基本可用，注意保持句尾不下坠。"
+    },
+    {
+      label: "表情仪态",
+      score: 75 + (strongVideo ? 5 : 0) - (weakVideo ? 8 : 0),
+      comment: weakVideo ? "表情和眼神管理会影响亲和力，建议练习看镜头、轻微点头和稳定坐姿。" : "表情仪态风险不高，注意不要全程僵住。"
+    },
+    {
+      label: "临场感",
+      score: 74 + (hasStructure ? 4 : -4) + (strongVoice ? 2 : 0) - (weakFluency ? 5 : 0),
+      comment: "面试分数不仅看内容，还看能不能像现场交流一样稳定输出。"
+    }
+  ].map((item, index) => ({
+    ...item,
+    score: Math.max(58, Math.min(88, Math.round(item.score + [-2, 2, -1, 1, -3, 3][index])))
+  }));
+
+  const percentScore = Math.round(dimensions.reduce((sum, item) => sum + item.score, 0) / dimensions.length);
+  return {
+    type: "interview",
+    questionLabel: rubric.label,
+    targetMax: 100,
+    prompt: normalized.prompt,
+    material: normalized.material,
+    answer: normalized.answer,
+    scaledScore: percentScore,
+    percentScore,
+    dimensions,
+    strengths: [
+      hasStructure ? "回答有基本结构，考官能较快抓到层次。" : "已经形成初步回答，但结构标志还不够清楚。",
+      hasPublicService ? "内容能联系公共服务、群众或基层治理语境。" : "作答有主题意识，但公共服务和岗位匹配表达不足。",
+      strongVoice ? "声音状态较稳定，有一定底气。" : "声音表现仍有提升空间，适合用短题反复练开头。"
+    ],
+    weaknesses: [
+      weakFluency ? "流畅度是主要扣分点，建议先把答题框架练熟，再追求表达高级。" : "主要问题是内容还可以更具体，不要停留在原则性表态。",
+      weakVideo ? "视频表现中表情或眼神管理偏弱，会拉低整体面试观感。" : "仪态风险可控，但仍要保持自然交流感。",
+      charTotal < 220 ? "作答信息量偏少，容易给人准备不足的感觉。" : "建议进一步压缩重复表达，让每句话都服务于观点。"
+    ],
+    missing: ["自然表达", "声音底气", "表情管理", "岗位匹配"].filter((point) => !normalized.answer.includes(point.slice(0, 2))).slice(0, 4),
+    rewrite: "建议按“亮明观点—分析原因—结合岗位—提出做法—自然收束”的顺序重组。开头控制在 10-15 秒内，先稳住声音和节奏，再展开两到三层内容。"
+  };
+}
+
+function interviewScoringGuide() {
+  return [
+    "你是一位公务员结构化面试考官和备考教研专家。",
+    "请按真实面试观感严苛评分，不要给鼓励式高分。",
+    "常规可用但不突出的回答通常在 73-80；内容清楚、表达自然、声音稳定可到 80-85；只有内容深刻、表达非常稳定、仪态自然才可高于 85；空泛、卡顿、声音发虚或仪态明显紧张应低于 73。",
+    "评分必须覆盖：内容契合、表达流畅、语言自然、声音状态、表情仪态、临场感。",
+    "必须明确指出：说话是否自然、表情是否合适、表达是否流畅、声音是否有底气。",
+    "不要所有维度给相同分数，最高和最低维度应有明显差距。"
+  ].join("\n");
+}
+
+async function deepSeekInterviewReport(body) {
+  const normalized = normalizeInterviewInput(body);
+  const parsed = await deepSeekJsonChat({
+    systemPrompt: [
+      interviewScoringGuide(),
+      "只返回 JSON，不要输出 Markdown。",
+      "JSON 字段必须包含：scaledScore, percentScore, dimensions, strengths, weaknesses, missing, rewrite。",
+      "scaledScore 和 percentScore 都是 0-100 的整数；dimensions 是数组，每项包含 label, score, comment；strengths/weaknesses/missing 是字符串数组；rewrite 是下一次面试训练建议。"
+    ].join("\n"),
+    userPrompt: [
+      `面试题目：${normalized.prompt}`,
+      `作答文字：${normalized.answer}`,
+      normalized.material
+    ].join("\n\n"),
+    fallbackError: "DeepSeek interview request failed"
+  });
+
+  const percentScore = Math.max(0, Math.min(100, Math.round(Number(parsed.percentScore || parsed.scaledScore || 0))));
+  return {
+    type: "interview",
+    questionLabel: "公务员面试",
+    targetMax: 100,
+    prompt: normalized.prompt,
+    material: normalized.material,
+    answer: normalized.answer,
+    scaledScore: Math.max(0, Math.min(100, Math.round(Number(parsed.scaledScore || percentScore)))),
+    percentScore,
+    dimensions: (parsed.dimensions || []).slice(0, 6),
+    strengths: (parsed.strengths || []).slice(0, 4),
+    weaknesses: (parsed.weaknesses || []).slice(0, 4),
+    missing: (parsed.missing || []).slice(0, 5),
+    rewrite: parsed.rewrite || ""
+  };
+}
+
+async function gradeInterview(body, user) {
+  const history = getShenlunHistory(user.id);
+  const plan = plans[user.plan] || plans.free;
+  if (history.length >= plan.quota) {
+    throw new Error("QUOTA_EXCEEDED");
+  }
+  const provider = textProvider();
+  const report = provider === "deepseek" ? await deepSeekInterviewReport(body) : demoInterviewReport(body);
+  const record = {
+    id: randomUUID(),
+    userId: user.id,
+    timestamp: new Date().toLocaleString(),
+    provider,
+    ...report
+  };
+  insertShenlunReport(record);
+  return {
+    provider,
+    report: record,
+    history: getShenlunHistory(user.id)
+  };
+}
+
 async function extractShenlunImage({ imageDataUrl }) {
   const provider = imageOcrProvider();
   if (provider === "baidu") {
@@ -1527,6 +1700,21 @@ const server = http.createServer(async (req, res) => {
         prompt: body.prompt || "",
         material: body.material || "",
         answer: body.answer || ""
+      }, user);
+      json(res, 200, result);
+      return;
+    }
+
+    if (req.method === "POST" && url.pathname === "/api/shenlun/interview") {
+      const body = await parseBody(req);
+      const user = getOrCreateUser(body.userId);
+      const result = await gradeInterview({
+        question: body.question || "",
+        answer: body.answer || "",
+        voiceSignal: body.voiceSignal || "",
+        videoSignal: body.videoSignal || "",
+        fluencySignal: body.fluencySignal || "",
+        context: body.context || ""
       }, user);
       json(res, 200, result);
       return;

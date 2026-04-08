@@ -276,6 +276,7 @@ button:disabled {
 
 .feature-section,
 .grader-section,
+.interview-section,
 .pricing-section,
 .pain-section,
 .sample-report-section,
@@ -413,8 +414,16 @@ button:disabled {
   gap: 20px;
 }
 
+.interview-layout {
+  display: grid;
+  grid-template-columns: 0.94fr 1.06fr;
+  gap: 20px;
+}
+
 .grader-form,
-.report-panel {
+.report-panel,
+.interview-form,
+.interview-panel {
   padding: 24px;
   border: 1px solid var(--line);
   border-radius: 30px;
@@ -422,9 +431,41 @@ button:disabled {
   box-shadow: var(--shadow);
 }
 
-.grader-form {
+.grader-form,
+.interview-form {
   display: grid;
   gap: 18px;
+}
+
+.module-strip {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  padding: 8px;
+  border-radius: 22px;
+  background: rgba(32, 22, 15, 0.08);
+}
+
+.module-strip span {
+  display: grid;
+  place-items: center;
+  min-height: 54px;
+  border-radius: 18px;
+  color: #fff8ed;
+  background: linear-gradient(135deg, var(--red-deep), var(--red));
+  font-size: 1.08rem;
+  font-weight: 800;
+}
+
+.score-range {
+  margin: 14px 0 4px;
+  padding: 12px 14px;
+  border: 1px dashed rgba(158, 47, 36, 0.3);
+  border-radius: 18px;
+  color: var(--red-deep);
+  background: rgba(255, 255, 255, 0.44);
+  line-height: 1.7;
+  font-weight: 800;
 }
 
 .ocr-card,
@@ -668,6 +709,7 @@ textarea {
 @media (max-width: 980px) {
   .hero,
   .grader-layout,
+  .interview-layout,
   .ocr-card,
   .sample-card,
   .activation-card,
@@ -702,7 +744,8 @@ textarea {
 
   .field-row,
   .mini-grid,
-  .dimension-grid {
+  .dimension-grid,
+  .module-strip {
     grid-template-columns: 1fr;
   }
 }

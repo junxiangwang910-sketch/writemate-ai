@@ -3,7 +3,8 @@ const typeLabels = {
   solution: "提出对策",
   analysis: "综合分析",
   official: "贯彻执行",
-  essay: "申论大作文"
+  essay: "申论大作文",
+  interview: "公务员面试"
 };
 
 const dimensions = [
@@ -18,7 +19,8 @@ const dimensions = [
 const state = {
   userId: window.localStorage.getItem("writemate-user-id") || "",
   history: [],
-  isSubmitting: false
+  isSubmitting: false,
+  isInterviewSubmitting: false
 };
 
 const promptText = document.querySelector("#promptText");
@@ -46,6 +48,22 @@ const sampleButton = document.querySelector("#sampleButton");
 const activationCode = document.querySelector("#activationCode");
 const activateButton = document.querySelector("#activateButton");
 const activationStatus = document.querySelector("#activationStatus");
+const interviewForm = document.querySelector("#interviewForm");
+const interviewQuestion = document.querySelector("#interviewQuestion");
+const interviewAnswer = document.querySelector("#interviewAnswer");
+const voiceSignal = document.querySelector("#voiceSignal");
+const videoSignal = document.querySelector("#videoSignal");
+const fluencySignal = document.querySelector("#fluencySignal");
+const interviewButton = document.querySelector("#interviewButton");
+const interviewEmptyState = document.querySelector("#interviewEmptyState");
+const interviewReportContent = document.querySelector("#interviewReportContent");
+const interviewReportTitle = document.querySelector("#interviewReportTitle");
+const interviewOverallScore = document.querySelector("#interviewOverallScore");
+const interviewDimensionGrid = document.querySelector("#interviewDimensionGrid");
+const interviewStrengthList = document.querySelector("#interviewStrengthList");
+const interviewWeaknessList = document.querySelector("#interviewWeaknessList");
+const interviewMissingTags = document.querySelector("#interviewMissingTags");
+const interviewRewriteText = document.querySelector("#interviewRewriteText");
 
 const sampleShenlun = {
   questionType: "summary",
@@ -128,6 +146,44 @@ function renderLoading() {
   weaknessList.innerHTML = "<li>正在分析问题。</li>";
   missingTags.innerHTML = "<span>分析中</span>";
   rewriteText.textContent = "正在生成参考优化建议。";
+}
+
+function renderInterviewReport(report) {
+  interviewEmptyState.classList.add("hidden");
+  interviewReportContent.classList.remove("hidden");
+  interviewReportTitle.textContent = `${report.questionLabel || "公务员面试"}测评报告`;
+  interviewOverallScore.textContent = String(report.percentScore || report.scaledScore || 0);
+
+  interviewDimensionGrid.innerHTML = (report.dimensions || []).map((dimension) => `
+    <article class="dimension-card">
+      <h4>${dimension.label}</h4>
+      <strong>${dimension.score}</strong>
+      <p>${dimension.comment}</p>
+    </article>
+  `).join("");
+
+  interviewStrengthList.innerHTML = (report.strengths || []).map((item) => `<li>${item}</li>`).join("");
+  interviewWeaknessList.innerHTML = (report.weaknesses || []).map((item) => `<li>${item}</li>`).join("");
+  interviewMissingTags.innerHTML = (report.missing || []).map((item) => `<span>${item}</span>`).join("");
+  interviewRewriteText.textContent = report.rewrite || "";
+}
+
+function renderInterviewLoading() {
+  interviewEmptyState.classList.add("hidden");
+  interviewReportContent.classList.remove("hidden");
+  interviewReportTitle.textContent = "正在测评";
+  interviewOverallScore.textContent = "...";
+  interviewDimensionGrid.innerHTML = ["内容契合", "表达流畅", "语言自然", "声音状态", "表情仪态", "临场感"].map((label) => `
+    <article class="dimension-card">
+      <h4>${label}</h4>
+      <strong>...</strong>
+      <p>正在分析该维度。</p>
+    </article>
+  `).join("");
+  interviewStrengthList.innerHTML = "<li>正在提炼优势。</li>";
+  interviewWeaknessList.innerHTML = "<li>正在判断主要扣分点。</li>";
+  interviewMissingTags.innerHTML = "<span>分析中</span>";
+  interviewRewriteText.textContent = "正在生成下一次训练建议。";
 }
 
 function updateCount() {
@@ -223,6 +279,45 @@ async function submitShenlun(event) {
   }
 }
 
+async function submitInterview(event) {
+  event?.preventDefault();
+  if (state.isInterviewSubmitting) return;
+
+  if (!interviewQuestion.value.trim() || !interviewAnswer.value.trim()) {
+    window.alert("请先填写面试题目和作答文字。");
+    return;
+  }
+
+  state.isInterviewSubmitting = true;
+  interviewButton.disabled = true;
+  interviewButton.textContent = "正在测评...";
+  renderInterviewLoading();
+  try {
+    const payload = await api("/api/shenlun/interview", {
+      method: "POST",
+      body: JSON.stringify({
+        userId: state.userId,
+        question: interviewQuestion.value.trim(),
+        answer: interviewAnswer.value.trim(),
+        voiceSignal: voiceSignal.value,
+        videoSignal: videoSignal.value,
+        fluencySignal: fluencySignal.value,
+        context: "公务员结构化面试练习"
+      })
+    });
+    state.history = payload.history || [];
+    renderInterviewReport(payload.report);
+  } catch (error) {
+    window.alert(error.message);
+    interviewReportContent.classList.add("hidden");
+    interviewEmptyState.classList.remove("hidden");
+  } finally {
+    state.isInterviewSubmitting = false;
+    interviewButton.disabled = false;
+    interviewButton.textContent = "生成面试测评";
+  }
+}
+
 function readImageAsDataUrl(file) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -275,6 +370,8 @@ submitButton.addEventListener("click", submitShenlun);
 ocrButton.addEventListener("click", extractImageText);
 sampleButton.addEventListener("click", fillSample);
 activateButton.addEventListener("click", redeemCode);
+interviewForm.addEventListener("submit", submitInterview);
+interviewButton.addEventListener("click", submitInterview);
 
 document.querySelectorAll("[data-target]").forEach((node) => {
   node.addEventListener("click", (event) => {
