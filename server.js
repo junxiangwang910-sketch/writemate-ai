@@ -1400,6 +1400,53 @@ async function deepSeekInterviewReport(body) {
   };
 }
 
+function demoInterviewFollowup(body) {
+  const answer = String(body.answer || "");
+  if (/群众|基层|沟通|协商/.test(answer)) {
+    return {
+      followup: "如果群众诉求与现行政策规定存在冲突，你会如何现场沟通并推动问题解决？",
+      focus: "考察规则意识、群众沟通和解决问题能力。"
+    };
+  }
+  if (/原则|制度|规定/.test(answer)) {
+    return {
+      followup: "请结合一个基层工作场景，说明你如何在坚持原则的同时体现服务温度。",
+      focus: "考察情境化表达和岗位匹配度。"
+    };
+  }
+  return {
+    followup: "如果考官继续追问你“这项做法如何落地”，你会补充哪些具体措施？",
+    focus: "考察追问压力下的逻辑延展和措施可操作性。"
+  };
+}
+
+async function deepSeekInterviewFollowup(body) {
+  const parsed = await deepSeekJsonChat({
+    systemPrompt: [
+      "你是一位公务员结构化面试考官。",
+      "请根据题目和考生第一轮回答，生成 1 个自然、具体、有区分度的追问。",
+      "追问要像真实考官问的，不要太长，不要重复原题。",
+      "只返回 JSON，不要输出 Markdown。",
+      "JSON 字段必须包含：followup, focus。"
+    ].join("\n"),
+    userPrompt: [
+      `原始题目：${body.question || ""}`,
+      `考生第一轮回答：${body.answer || ""}`
+    ].join("\n\n"),
+    fallbackError: "DeepSeek interview followup request failed"
+  });
+  return {
+    followup: parsed.followup || demoInterviewFollowup(body).followup,
+    focus: parsed.focus || demoInterviewFollowup(body).focus
+  };
+}
+
+async function createInterviewFollowup(body) {
+  const provider = textProvider();
+  const result = provider === "deepseek" ? await deepSeekInterviewFollowup(body) : demoInterviewFollowup(body);
+  return { provider, ...result };
+}
+
 async function gradeInterview(body, user) {
   const history = getShenlunHistory(user.id);
   const plan = plans[user.plan] || plans.free;
@@ -1716,6 +1763,16 @@ const server = http.createServer(async (req, res) => {
         fluencySignal: body.fluencySignal || "",
         context: body.context || ""
       }, user);
+      json(res, 200, result);
+      return;
+    }
+
+    if (req.method === "POST" && url.pathname === "/api/shenlun/interview/followup") {
+      const body = await parseBody(req);
+      const result = await createInterviewFollowup({
+        question: body.question || "",
+        answer: body.answer || ""
+      });
       json(res, 200, result);
       return;
     }

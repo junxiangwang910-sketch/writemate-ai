@@ -457,6 +457,83 @@ button:disabled {
   font-weight: 800;
 }
 
+.mode-switch {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.mode-card {
+  display: grid;
+  gap: 8px;
+  padding: 16px;
+  border: 1px solid rgba(32, 22, 15, 0.14);
+  border-radius: 8px;
+  color: var(--ink);
+  background: rgba(255, 255, 255, 0.48);
+  text-align: left;
+}
+
+.mode-card.active {
+  border-color: rgba(158, 47, 36, 0.5);
+  background: rgba(158, 47, 36, 0.1);
+  box-shadow: inset 0 0 0 1px rgba(158, 47, 36, 0.18);
+}
+
+.mode-card strong,
+.mode-card span {
+  display: block;
+}
+
+.mode-card span,
+.qa-card p,
+.followup-card p,
+.video-upload-card em,
+.followup-card small {
+  color: var(--muted);
+  line-height: 1.65;
+}
+
+.mode-panel,
+.qa-card,
+.followup-card,
+.video-upload-card {
+  display: grid;
+  gap: 12px;
+}
+
+.qa-card,
+.followup-card,
+.video-upload-card {
+  padding: 16px;
+  border: 1px dashed rgba(158, 47, 36, 0.28);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.46);
+}
+
+.qa-card p,
+.followup-card p,
+.followup-card small,
+.video-upload-card em {
+  margin: 0;
+}
+
+.video-upload-card {
+  cursor: pointer;
+}
+
+.video-upload-card input {
+  width: 100%;
+}
+
+.video-preview {
+  width: 100%;
+  max-height: 360px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #16100c;
+}
+
 .score-range {
   margin: 14px 0 4px;
   padding: 12px 14px;
@@ -745,7 +822,8 @@ textarea {
   .field-row,
   .mini-grid,
   .dimension-grid,
-  .module-strip {
+  .module-strip,
+  .mode-switch {
     grid-template-columns: 1fr;
   }
 }

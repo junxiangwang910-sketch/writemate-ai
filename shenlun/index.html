@@ -122,6 +122,40 @@
               <span>语音模块</span>
               <span>内容模块</span>
             </div>
+            <div class="mode-switch" aria-label="选择面试测评模式">
+              <button class="mode-card active" data-mode="video" type="button">
+                <strong>上传视频测评</strong>
+                <span>适合已经录好答题视频的人，先看视频，再补充文字和表现项。</span>
+              </button>
+              <button class="mode-card" data-mode="qa" type="button">
+                <strong>智能一问一答</strong>
+                <span>适合模拟真实考场，先答题，再接受追问，最后汇总评分。</span>
+              </button>
+            </div>
+            <div class="mode-panel" id="videoModePanel">
+              <label class="video-upload-card">
+                <span>上传面试视频</span>
+                <input id="interviewVideoInput" type="file" accept="video/*">
+                <em id="interviewVideoStatus">支持手机录屏或自拍视频。上传后可在本页预览，再生成测评报告。</em>
+              </label>
+              <video class="video-preview hidden" id="interviewVideoPreview" controls playsinline></video>
+            </div>
+            <div class="mode-panel hidden" id="qaModePanel">
+              <div class="qa-card">
+                <strong>一问一答流程</strong>
+                <p>先回答下方题目，再点击“生成追问”。系统会根据你的第一轮回答给出一个追问，最后把两轮回答合并评分。</p>
+                <button class="secondary-button" id="followupButton" type="button">生成追问</button>
+              </div>
+              <div class="followup-card hidden" id="followupCard">
+                <strong>考官追问</strong>
+                <p id="followupQuestion"></p>
+                <small id="followupFocus"></small>
+                <label>
+                  <span>追问作答</span>
+                  <textarea id="followupAnswer" rows="5" placeholder="请回答追问。"></textarea>
+                </label>
+              </div>
+            </div>
             <label>
               <span>面试题目</span>
               <textarea id="interviewQuestion" rows="3">有人说基层工作要讲原则，也有人说基层工作要讲人情。对此你怎么看？</textarea>

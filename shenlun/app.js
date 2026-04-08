@@ -64,6 +64,17 @@ const interviewStrengthList = document.querySelector("#interviewStrengthList");
 const interviewWeaknessList = document.querySelector("#interviewWeaknessList");
 const interviewMissingTags = document.querySelector("#interviewMissingTags");
 const interviewRewriteText = document.querySelector("#interviewRewriteText");
+const modeCards = Array.from(document.querySelectorAll(".mode-card"));
+const videoModePanel = document.querySelector("#videoModePanel");
+const qaModePanel = document.querySelector("#qaModePanel");
+const interviewVideoInput = document.querySelector("#interviewVideoInput");
+const interviewVideoPreview = document.querySelector("#interviewVideoPreview");
+const interviewVideoStatus = document.querySelector("#interviewVideoStatus");
+const followupButton = document.querySelector("#followupButton");
+const followupCard = document.querySelector("#followupCard");
+const followupQuestion = document.querySelector("#followupQuestion");
+const followupFocus = document.querySelector("#followupFocus");
+const followupAnswer = document.querySelector("#followupAnswer");
 
 const sampleShenlun = {
   questionType: "summary",
@@ -72,6 +83,10 @@ const sampleShenlun = {
   material: "材料 3：M 市部分社区曾面临治理信息分散、群众诉求响应慢、基层重复填报、部门协同不足等问题。为提升治理效能，M 市建立统一数据共享平台，将民政、社保、城管、社区网格等数据接入同一系统，减少基层重复录入。各社区设置线上群众反馈入口，居民可以通过小程序提交诉求，由平台自动分派至相关部门。针对跨部门事项，街道建立联席会商机制，明确牵头单位和办理时限，并将办理结果纳入绩效考核。部分社区还组织网格员定期回访群众，收集服务评价，推动治理流程持续优化。",
   answer: "M 市主要做法包括：一是搭建统一数据共享平台，整合民政、社保、城管和网格等信息，减少重复填报；二是开通线上群众反馈入口，对居民诉求进行平台分派；三是建立跨部门联席会商机制，明确牵头单位、办理时限和考核要求；四是组织网格员回访群众，收集评价并优化治理流程。"
 };
+
+let interviewMode = "video";
+let interviewVideoNote = "";
+let currentFollowup = null;
 
 function countChars(text) {
   return text.replace(/\s/g, "").length;
@@ -190,6 +205,41 @@ function updateCount() {
   charCount.textContent = String(countChars(answerText.value));
 }
 
+function setInterviewMode(mode) {
+  interviewMode = mode;
+  modeCards.forEach((card) => card.classList.toggle("active", card.dataset.mode === mode));
+  videoModePanel.classList.toggle("hidden", mode !== "video");
+  qaModePanel.classList.toggle("hidden", mode !== "qa");
+  if (mode === "video") {
+    interviewButton.textContent = "生成视频测评";
+  } else {
+    interviewButton.textContent = "生成一问一答总评";
+  }
+}
+
+function getCombinedInterviewAnswer() {
+  if (interviewMode !== "qa" || !currentFollowup || !followupAnswer.value.trim()) {
+    return interviewAnswer.value.trim();
+  }
+  return [
+    "第一轮回答：",
+    interviewAnswer.value.trim(),
+    "",
+    `追问：${currentFollowup.followup}`,
+    "追问回答：",
+    followupAnswer.value.trim()
+  ].join("\n");
+}
+
+function getInterviewContext() {
+  const modeLabel = interviewMode === "qa" ? "智能一问一答模拟面试" : "上传视频测评";
+  return [
+    modeLabel,
+    interviewVideoNote,
+    currentFollowup ? `追问重点：${currentFollowup.focus}` : ""
+  ].filter(Boolean).join("\n");
+}
+
 function fillSample() {
   questionType.value = sampleShenlun.questionType;
   maxScore.value = sampleShenlun.maxScore;
@@ -283,7 +333,8 @@ async function submitInterview(event) {
   event?.preventDefault();
   if (state.isInterviewSubmitting) return;
 
-  if (!interviewQuestion.value.trim() || !interviewAnswer.value.trim()) {
+  const combinedAnswer = getCombinedInterviewAnswer();
+  if (!interviewQuestion.value.trim() || !combinedAnswer) {
     window.alert("请先填写面试题目和作答文字。");
     return;
   }
@@ -298,11 +349,11 @@ async function submitInterview(event) {
       body: JSON.stringify({
         userId: state.userId,
         question: interviewQuestion.value.trim(),
-        answer: interviewAnswer.value.trim(),
+        answer: combinedAnswer,
         voiceSignal: voiceSignal.value,
         videoSignal: videoSignal.value,
         fluencySignal: fluencySignal.value,
-        context: "公务员结构化面试练习"
+        context: getInterviewContext()
       })
     });
     state.history = payload.history || [];
@@ -316,6 +367,53 @@ async function submitInterview(event) {
     interviewButton.disabled = false;
     interviewButton.textContent = "生成面试测评";
   }
+}
+
+async function generateFollowup() {
+  if (!interviewQuestion.value.trim() || !interviewAnswer.value.trim()) {
+    window.alert("请先填写面试题目和第一轮作答。");
+    return;
+  }
+
+  followupButton.disabled = true;
+  followupButton.textContent = "正在生成追问...";
+  try {
+    const payload = await api("/api/shenlun/interview/followup", {
+      method: "POST",
+      body: JSON.stringify({
+        question: interviewQuestion.value.trim(),
+        answer: interviewAnswer.value.trim()
+      })
+    });
+    currentFollowup = {
+      followup: payload.followup,
+      focus: payload.focus
+    };
+    followupQuestion.textContent = payload.followup;
+    followupFocus.textContent = payload.focus ? `考察重点：${payload.focus}` : "";
+    followupCard.classList.remove("hidden");
+    followupAnswer.focus();
+  } catch (error) {
+    window.alert(error.message);
+  } finally {
+    followupButton.disabled = false;
+    followupButton.textContent = "重新生成追问";
+  }
+}
+
+function handleInterviewVideoUpload() {
+  const file = interviewVideoInput.files?.[0];
+  if (!file) return;
+  if (file.size > 150 * 1024 * 1024) {
+    window.alert("视频文件太大了，建议先压缩到 150MB 以内。");
+    interviewVideoInput.value = "";
+    return;
+  }
+  const url = URL.createObjectURL(file);
+  interviewVideoPreview.src = url;
+  interviewVideoPreview.classList.remove("hidden");
+  interviewVideoNote = `已上传视频：${file.name}，大小约 ${Math.round(file.size / 1024 / 1024)}MB。`;
+  interviewVideoStatus.textContent = "视频已载入。请检查作答文字和表现项，再生成视频测评。";
 }
 
 function readImageAsDataUrl(file) {
@@ -372,6 +470,11 @@ sampleButton.addEventListener("click", fillSample);
 activateButton.addEventListener("click", redeemCode);
 interviewForm.addEventListener("submit", submitInterview);
 interviewButton.addEventListener("click", submitInterview);
+followupButton.addEventListener("click", generateFollowup);
+interviewVideoInput.addEventListener("change", handleInterviewVideoUpload);
+modeCards.forEach((card) => {
+  card.addEventListener("click", () => setInterviewMode(card.dataset.mode));
+});
 
 document.querySelectorAll("[data-target]").forEach((node) => {
   node.addEventListener("click", (event) => {
