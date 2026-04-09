@@ -25,9 +25,12 @@ const state = {
 
 const promptText = document.querySelector("#promptText");
 const materialText = document.querySelector("#materialText");
+const referenceOutline = document.querySelector("#referenceOutline");
 const answerText = document.querySelector("#answerText");
 const questionType = document.querySelector("#questionType");
 const maxScore = document.querySelector("#maxScore");
+const referenceOutlineField = document.querySelector("#referenceOutlineField");
+const essayReferenceCard = document.querySelector("#essayReferenceCard");
 const charCount = document.querySelector("#charCount");
 const form = document.querySelector("#shenlunForm");
 const emptyState = document.querySelector("#emptyState");
@@ -87,6 +90,12 @@ const sampleShenlun = {
   prompt: "根据给定资料，概括 M 市在推进数字化基层治理过程中的主要做法。要求：全面、准确、有条理，不超过 250 字。",
   material: "材料 3：M 市部分社区曾面临治理信息分散、群众诉求响应慢、基层重复填报、部门协同不足等问题。为提升治理效能，M 市建立统一数据共享平台，将民政、社保、城管、社区网格等数据接入同一系统，减少基层重复录入。各社区设置线上群众反馈入口，居民可以通过小程序提交诉求，由平台自动分派至相关部门。针对跨部门事项，街道建立联席会商机制，明确牵头单位和办理时限，并将办理结果纳入绩效考核。部分社区还组织网格员定期回访群众，收集服务评价，推动治理流程持续优化。",
   answer: "M 市主要做法包括：一是搭建统一数据共享平台，整合民政、社保、城管和网格等信息，减少重复填报；二是开通线上群众反馈入口，对居民诉求进行平台分派；三是建立跨部门联席会商机制，明确牵头单位、办理时限和考核要求；四是组织网格员回访群众，收集评价并优化治理流程。"
+};
+
+const sampleEssayReference = {
+  prompt: "“给定材料1~4”反映了当前基层治理中普遍存在的几类矛盾与张力。请你深入思考，联系实际，自选角度，自拟题目，写一篇文章。（40分）要求：观点明确，见解深刻，内容充实；参考给定材料，但不拘泥于材料；逻辑清晰，语言流畅；字数1000~1200字。",
+  referenceOutline: "标题方向：在治理张力中寻找动态平衡。\n总论点：现代基层治理不是消灭矛盾，而是在效率与温度、统一与差异、技术理性与人文关怀之间找到可运转的平衡。\n分论点一：以协商沟通和利益平衡回应基层具体冲突。\n分论点二：以因地制宜和制度弹性克服“一刀切”执行偏差。\n分论点三：以技术赋能基层治理，但不能让技术替代人的尊严、情感与面对面协商。\n结尾方向：治理没有完美公式，关键在于基层干部持续调整、耐心沟通和把制度落到人的真实需求上。",
+  answer: "在推进基层治理现代化的过程中，最难的从来不是提出口号，而是把政策、技术和群众感受真正放到同一张桌子上统筹考虑。现实中的基层治理常常同时面对利益分化、资源约束、情绪碰撞和治理目标多元等复杂情况，如果只追求整齐划一的制度输出，往往会出现“上面很好、下面很怨”的落差。因此，现代基层治理的关键，不在于简单消除矛盾，而在于在张力中寻找平衡，在差异中实现有效治理。\n\n基层治理首先要在利益冲突与情感需求之间建立协商机制。无论是老旧小区加装电梯，还是邻里纠纷、社区公共事务，表面上看往往是成本分担、权责划分的问题，实质上却常常包含情绪、尊严和长期积累的关系摩擦。如果只强调制度条款、只讲谁得益谁受损，往往很难真正达成共识。基层治理要真正落地，必须给协商留出空间，通过逐户沟通、利益平衡、情感安抚和补偿设计，让群众在“被看见、被理解”的基础上形成接受度。治理要有效，不是靠压服分歧，而是靠把分歧导入可协商、可调整的轨道。\n\n基层治理还要在统一规范与因地制宜之间保持制度弹性。政策统一有助于标准明确、责任压实、考核推进，但基层情况千差万别，资源条件、人口结构、文化习惯和现实需求并不相同。如果简单照搬统一模板，就容易导致形式上完成任务、实际中难以落地。缺水地区建水冲公厕、老人村强推复杂垃圾分类，都是典型例子。真正高质量的治理，不是拒绝制度，而是在坚持目标一致的前提下，给基层留出一定的因地调整空间，让政策设计更贴近群众理解方式和真实生活逻辑。只有目标统一、路径灵活，治理才既能执行，也能见效。\n\n基层治理更要在技术效率与人文关怀之间守住人的位置。数字平台、智能监测和数据预警确实可以提升治理效率，帮助基层发现问题、统筹资源、压缩流程，但治理对象不是冷冰冰的数据，而是有尊严、有情感、有隐私边界的真实个体。如果技术系统只强调采集、分析和预警，却忽视群众被“看见”时的不适感，就可能把治理从服务变成打扰，甚至催生“为数据而活”的荒诞行为。因此，技术赋能必须坚持工具属性，把提升服务、保障安全和方便群众作为出发点，同时保留必要的解释、选择和协商空间，避免技术理性压倒人文关怀。\n\n基层治理没有一套放之四海而皆准的万能公式。越是复杂的治理场景，越需要在规则、效率、差异和情感之间反复校准。对基层干部而言，这种平衡不是一句口号，而是一次次耐心走访、一场场协调沟通、一项项细节调整的累积。只有把制度设计与群众实际、技术能力与人的感受真正结合起来，基层治理现代化才能既有力度，也有温度；既能执行，也能被群众接受。"
 };
 
 let interviewMode = "video";
@@ -219,6 +228,17 @@ function renderLearningProfile(profile) {
   profileNextActions.innerHTML = (profile.nextActions || []).map((item) => `<li>${item}</li>`).join("");
 }
 
+function toggleEssayReferenceMode() {
+  const isEssay = questionType.value === "essay";
+  referenceOutlineField.classList.toggle("hidden", !isEssay);
+  essayReferenceCard.classList.toggle("hidden", !isEssay);
+  if (isEssay) {
+    materialText.placeholder = "如果你没有完整材料，只做大作文对照批改，这里可以留空。若希望系统同时参考材料摘要，也可以补充几句。";
+  } else {
+    materialText.placeholder = "";
+  }
+}
+
 function setInterviewMode(mode) {
   interviewMode = mode;
   modeCards.forEach((card) => card.classList.toggle("active", card.dataset.mode === mode));
@@ -255,11 +275,21 @@ function getInterviewContext() {
 }
 
 function fillSample() {
-  questionType.value = sampleShenlun.questionType;
-  maxScore.value = sampleShenlun.maxScore;
-  promptText.value = sampleShenlun.prompt;
-  materialText.value = sampleShenlun.material;
-  answerText.value = sampleShenlun.answer;
+  if (questionType.value === "essay") {
+    maxScore.value = "40";
+    promptText.value = sampleEssayReference.prompt;
+    materialText.value = "";
+    referenceOutline.value = sampleEssayReference.referenceOutline;
+    answerText.value = sampleEssayReference.answer;
+  } else {
+    questionType.value = sampleShenlun.questionType;
+    maxScore.value = sampleShenlun.maxScore;
+    promptText.value = sampleShenlun.prompt;
+    materialText.value = sampleShenlun.material;
+    answerText.value = sampleShenlun.answer;
+    referenceOutline.value = "";
+  }
+  toggleEssayReferenceMode();
   updateCount();
 }
 
@@ -309,8 +339,22 @@ async function submitShenlun(event) {
   event?.preventDefault();
   if (state.isSubmitting) return;
 
-  if (!promptText.value.trim() || !materialText.value.trim() || !answerText.value.trim()) {
-    window.alert("请先填写题目、材料和考生作答。");
+  const isEssay = questionType.value === "essay";
+  const hasReferenceOutline = referenceOutline.value.trim().length > 0;
+  const hasMaterial = materialText.value.trim().length > 0;
+
+  if (!promptText.value.trim() || !answerText.value.trim()) {
+    window.alert("请先填写题目要求和考生作答。");
+    return;
+  }
+
+  if (!isEssay && !hasMaterial) {
+    window.alert("请先填写材料或给定资料。");
+    return;
+  }
+
+  if (isEssay && !hasMaterial && !hasReferenceOutline) {
+    window.alert("大作文至少需要填写材料摘要或参考分论点，二选一即可。");
     return;
   }
 
@@ -327,6 +371,7 @@ async function submitShenlun(event) {
         maxScore: Number(maxScore.value),
         prompt: promptText.value.trim(),
         material: materialText.value.trim(),
+        referenceOutline: referenceOutline.value.trim(),
         answer: answerText.value.trim()
       })
     });
@@ -484,6 +529,7 @@ submitButton.addEventListener("click", submitShenlun);
 ocrButton.addEventListener("click", extractImageText);
 sampleButton.addEventListener("click", fillSample);
 activateButton.addEventListener("click", redeemCode);
+questionType.addEventListener("change", toggleEssayReferenceMode);
 interviewForm.addEventListener("submit", submitInterview);
 interviewButton.addEventListener("click", submitInterview);
 followupButton.addEventListener("click", generateFollowup);
@@ -503,6 +549,7 @@ document.querySelectorAll("[data-target]").forEach((node) => {
 });
 
 updateCount();
+toggleEssayReferenceMode();
 bootstrapUser().then((payload) => {
   updateActivationStatus(payload.user);
   renderLearningProfile(payload.shenlunProfile);

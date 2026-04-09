@@ -1169,6 +1169,25 @@ function essayStyleProfile(answerText) {
   };
 }
 
+function parseReferenceOutline(referenceOutline) {
+  return String(referenceOutline || "")
+    .split(/\n+/)
+    .map((line) => line.replace(/^[（(]?[一二三四五六七八九十0-9]+[)）、.\s-]*/, "").trim())
+    .filter(Boolean);
+}
+
+function referenceOutlineCoverage(referenceOutline, answerText) {
+  const lines = parseReferenceOutline(referenceOutline);
+  if (!lines.length) return { score: 0, matched: [], missing: [] };
+  const compactAnswer = String(answerText || "").replace(/\s/g, "");
+  const matched = lines.filter((line) => chineseCoverage(line, compactAnswer) >= 0.42);
+  return {
+    score: matched.length / lines.length,
+    matched,
+    missing: lines.filter((line) => !matched.includes(line))
+  };
+}
+
 function strictScore(score, penalties = 0, bonus = 0) {
   return Math.round(Math.min(88, Math.max(32, score + bonus - penalties)));
 }
@@ -1184,12 +1203,13 @@ function shenlunScoringGuide(rubric, targetMax) {
   ].join("\n");
 }
 
-function demoShenlunReport({ questionType, maxScore, prompt, material, answer }) {
+function demoShenlunReport({ questionType, maxScore, prompt, material, answer, referenceOutline }) {
   const rubric = getShenlunRubric(questionType);
   const answerText = String(answer || "");
   const charTotal = answerText.replace(/\s/g, "").length;
   const materialCoverage = chineseCoverage(material, answerText);
   const promptCoverageValue = chineseCoverage(prompt, answerText);
+  const referenceCoverage = referenceOutlineCoverage(referenceOutline, answerText);
   const paragraphCount = answerText.split(/\n+/).filter((part) => part.trim()).length;
   const policyWords = countChinesePolicyWords(answerText);
   const hasNumbering = /一是|二是|三是|首先|其次|再次|第一|第二|第三/.test(answerText);
@@ -1204,10 +1224,10 @@ function demoShenlunReport({ questionType, maxScore, prompt, material, answer })
     : 0;
 
   const rawDimensions = isEssay ? [
-    { label: rubric.dimensions[0], score: 54 + promptCoverageValue * 18 + (style.hasCentralThesis ? 8 : -5) + (style.hasTension ? 8 : -6), comment: style.hasTension ? "中心论点能够触及材料背后的治理张力，但还要进一步压实政策表达。" : "立意仍偏表层，建议从材料中提炼更明确的核心矛盾。" },
-    { label: rubric.dimensions[1], score: 52 + (paragraphCount >= 5 ? 12 : 4) + (style.hasTension ? 8 : 0) + Math.min(policyWords, 8), comment: paragraphCount >= 5 ? "分论点结构基本清楚，但分论点之间的递进关系仍可增强。" : "分论点层次不够稳定，建议用更清晰的并列或递进结构展开。" },
+    { label: rubric.dimensions[0], score: 54 + promptCoverageValue * 18 + (style.hasCentralThesis ? 8 : -5) + (style.hasTension ? 8 : -6) + referenceCoverage.score * 10, comment: referenceOutline ? (referenceCoverage.score >= 0.6 ? "中心论点和参考结构基本同向，但还要继续压实政策表达。" : "中心论点与参考分论点的主线还不够贴合，建议先把总论点压准。") : (style.hasTension ? "中心论点能够触及材料背后的治理张力，但还要进一步压实政策表达。" : "立意仍偏表层，建议从材料中提炼更明确的核心矛盾。") },
+    { label: rubric.dimensions[1], score: 52 + (paragraphCount >= 5 ? 12 : 4) + (style.hasTension ? 8 : 0) + Math.min(policyWords, 8) + referenceCoverage.score * 14, comment: referenceOutline ? (referenceCoverage.score >= 0.6 ? "分论点与参考结构有一定对应，但分论点之间的层次和递进还可更清楚。" : "参考分论点覆盖不足，建议按参考结构先列出 3 个分论点再展开。") : (paragraphCount >= 5 ? "分论点结构基本清楚，但分论点之间的递进关系仍可增强。" : "分论点层次不够稳定，建议用更清晰的并列或递进结构展开。") },
     { label: rubric.dimensions[2], score: 50 + Math.min(style.materialMarkers * 6, 24) + (style.hasPolicyLanding ? 8 : -4), comment: style.materialMarkers >= 3 ? "能够调用材料细节支撑观点，但部分材料还可进一步抽象为治理原则。" : "材料使用偏弱，容易显得空泛或脱离给定资料。" },
-    { label: rubric.dimensions[3], score: 52 + materialCoverage * 18 + Math.min(policyWords, 10), comment: "材料联系需要服务于论证，不宜只罗列故事或只提口号。" },
+    { label: rubric.dimensions[3], score: 52 + Math.max(materialCoverage, referenceCoverage.score) * 18 + Math.min(policyWords, 10), comment: referenceOutline ? "如果没有完整材料，也要把参考分论点转化成自己的论证结构，而不是简单复述标题。" : "材料联系需要服务于论证，不宜只罗列故事或只提口号。" },
     { label: rubric.dimensions[4], score: 50 + (style.hasPolicyLanding ? 14 : 4) + (style.hasTension ? 6 : 0), comment: style.hasPolicyLanding ? "能落到治理机制与群众参与，但政策高度还可更稳。" : "建议把个人感受进一步转化为制度弹性、协商治理等公共治理表达。" },
     { label: rubric.dimensions[5], score: 60 + Math.min(charTotal / 90, 10) - style.colloquialHits * 4 - Math.min(style.emptySloganHits, 6), comment: style.colloquialHits ? "部分表达偏口语化，正式考场文章需更稳健。" : "语言整体较通顺，但仍要避免万能套话。" }
   ] : [
@@ -1229,7 +1249,10 @@ function demoShenlunReport({ questionType, maxScore, prompt, material, answer })
   const percentScore = Math.round(spreadAdjusted.reduce((sum, item) => sum + item.score, 0) / spreadAdjusted.length);
   const targetMax = Number(maxScore || 30);
   const scaledScore = Math.round((percentScore / 100) * targetMax);
-  const missing = rubric.focusPoints.filter((point) => !answerText.includes(point.slice(0, 2))).slice(0, 4);
+  const missing = (referenceOutline
+    ? referenceCoverage.missing
+    : rubric.focusPoints.filter((point) => !answerText.includes(point.slice(0, 2)))
+  ).slice(0, 4);
 
   return {
     type: rubric.questionType,
@@ -1253,11 +1276,13 @@ function demoShenlunReport({ questionType, maxScore, prompt, material, answer })
       isEssay && style.colloquialHits ? "个别表达偏口语化，建议改成更稳健的议论文表达。" : "评分会继续按立意、材料转化和表达规范拉开维度差距。"
     ],
     missing: missing.length ? missing : ["材料关键词", "分层表达"],
-    rewrite: `建议围绕“${rubric.focusPoints.slice(0, 3).join("、")}”重新组织答案。作答时要尽量使用材料关键词，把问题、原因、影响和对策分层呈现，避免只写泛泛口号。`
+    rewrite: referenceOutline
+      ? `建议先按参考结构把总论点和 3 个分论点列成提纲，再检查你的文章是否真正覆盖了“${parseReferenceOutline(referenceOutline).slice(0, 3).join("、")}”。写作时不要照抄参考答案，而要把分论点转成自己的论证语言。`
+      : `建议围绕“${rubric.focusPoints.slice(0, 3).join("、")}”重新组织答案。作答时要尽量使用材料关键词，把问题、原因、影响和对策分层呈现，避免只写泛泛口号。`
   };
 }
 
-async function openAiShenlunReport({ questionType, maxScore, prompt, material, answer }) {
+async function openAiShenlunReport({ questionType, maxScore, prompt, material, answer, referenceOutline }) {
   const rubric = getShenlunRubric(questionType);
   const schema = {
     type: "object",
@@ -1309,7 +1334,8 @@ async function openAiShenlunReport({ questionType, maxScore, prompt, material, a
                 `评分维度：${rubric.dimensions.join("、")}`,
                 `核心关注点：${rubric.focusPoints.join("、")}`,
                 "输出必须是简体中文，反馈要具体、可操作、适合考生提分。",
-                "如果答案只是套话完整但材料转化弱，分数必须控制在中等区间；如果口语化明显，要在语言表达或论证深度中扣分。"
+                "如果答案只是套话完整但材料转化弱，分数必须控制在中等区间；如果口语化明显，要在语言表达或论证深度中扣分。",
+                referenceOutline ? "本次大作文提供了参考分论点，请重点对照中心论点是否贴合、分论点是否覆盖、结构是否对应。" : ""
               ].join("\n")
             }
           ]
@@ -1322,6 +1348,7 @@ async function openAiShenlunReport({ questionType, maxScore, prompt, material, a
               text: [
                 `题目要求：${prompt}`,
                 `给定资料：${material}`,
+                referenceOutline ? `参考分论点：${referenceOutline}` : "",
                 `考生作答：${answer}`
               ].join("\n\n")
             }
@@ -1360,10 +1387,10 @@ async function openAiShenlunReport({ questionType, maxScore, prompt, material, a
   };
 }
 
-async function deepSeekShenlunReport({ questionType, maxScore, prompt, material, answer, userProfile }) {
+async function deepSeekShenlunReport({ questionType, maxScore, prompt, material, answer, referenceOutline, userProfile }) {
   const rubric = getShenlunRubric(questionType);
   const targetMax = Number(maxScore || 30);
-  const snippets = getKnowledgeSnippets("shenlun", rubric.questionType, `${prompt}\n${material}\n${answer}`);
+  const snippets = getKnowledgeSnippets("shenlun", rubric.questionType, `${prompt}\n${material}\n${referenceOutline}\n${answer}`);
   const parsed = await deepSeekJsonChat({
     systemPrompt: [
       "你是一位中国公务员考试申论阅卷与教研专家。",
@@ -1373,6 +1400,7 @@ async function deepSeekShenlunReport({ questionType, maxScore, prompt, material,
       `目标分值：${targetMax}`,
       `评分维度：${rubric.dimensions.join("、")}`,
       `核心关注点：${rubric.focusPoints.join("、")}`,
+      referenceOutline ? "本次大作文带有参考分论点或参考结构，请把它视为对照标准。重点判断中心论点是否同向、分论点覆盖是否充分、结构是否贴合；不要要求考生逐字复述参考答案，但如果明显漏掉核心分论点，要在要点覆盖和逻辑结构里扣分。" : "本次未提供参考分论点，请按常规申论阅卷逻辑评分。",
       userProfile ? `该考生已有训练档案：${JSON.stringify(userProfile)}` : "该考生暂无历史训练档案。",
       snippets.length ? `内部教研提示：${snippets.map((item) => `${item.title}：${item.content}`).join("\n")}` : "内部教研提示：无。",
       "只返回 JSON，不要输出 Markdown。",
@@ -1384,6 +1412,7 @@ async function deepSeekShenlunReport({ questionType, maxScore, prompt, material,
     userPrompt: [
       `题目要求：${prompt}`,
       `给定资料：${material}`,
+      referenceOutline ? `参考分论点：${referenceOutline}` : "",
       `考生作答：${answer}`
     ].join("\n\n"),
     fallbackError: "DeepSeek Shenlun request failed"
@@ -1945,6 +1974,7 @@ const server = http.createServer(async (req, res) => {
         maxScore: body.maxScore || 30,
         prompt: body.prompt || "",
         material: body.material || "",
+        referenceOutline: body.referenceOutline || "",
         answer: body.answer || ""
       }, user);
       json(res, 200, result);
