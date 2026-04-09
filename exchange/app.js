@@ -14,6 +14,7 @@ const state = {
   payload: null,
   marketFilter: "all",
   selectedSymbol: "BTCUSDT",
+  chartTimeframe: "1m",
   tradeSide: "buy",
   powerAction: "mint",
   liveQuotes: {},
@@ -44,6 +45,7 @@ const elements = {
   tradeLastPrice: document.querySelector("#tradeLastPrice"),
   chartMetrics: document.querySelector("#chartMetrics"),
   candleStrip: document.querySelector("#candleStrip"),
+  volumeStrip: document.querySelector("#volumeStrip"),
   orderBook: document.querySelector("#orderBook"),
   tradeForm: document.querySelector("#tradeForm"),
   marketTypeInput: document.querySelector("#marketTypeInput"),
@@ -130,6 +132,16 @@ function quotes() {
 
 function quoteBySymbol(symbol) {
   return quotes().find((item) => item.symbol === symbol) || quotes()[0];
+}
+
+function chartWindowSize() {
+  const sizes = {
+    "1m": 18,
+    "15m": 12,
+    "1h": 10,
+    "4h": 8
+  };
+  return sizes[state.chartTimeframe] || 18;
 }
 
 function syntheticBook(quote) {
@@ -281,8 +293,9 @@ function renderTradePanel() {
   if (!quote) return;
   const buyLabel = state.tradeSide === "buy" ? "Buy" : "Sell";
   const candles = state.payload?.trading?.candles || [];
-  const highs = candles.map((item) => Number(item.high || 0));
-  const lows = candles.map((item) => Number(item.low || 0));
+  const visibleCandles = candles.slice(-chartWindowSize());
+  const highs = visibleCandles.map((item) => Number(item.high || 0));
+  const lows = visibleCandles.map((item) => Number(item.low || 0));
   const overallHigh = Math.max(...highs, quote.price);
   const overallLow = Math.min(...lows, quote.price);
   elements.tradeSymbol.textContent = quote.symbol;
@@ -298,7 +311,11 @@ function renderTradePanel() {
       <strong class="${label === "24h Change" ? signedClass(quote.changePct) : ""}">${value}</strong>
     </div>
   `).join("");
-  elements.candleStrip.innerHTML = candles.slice(-18).map((item) => {
+  const volumeSeries = visibleCandles.map((item) => Math.max(Math.abs(Number(item.close || 0) - Number(item.open || 0)), (Number(item.high || 0) - Number(item.low || 0)) * 0.65));
+  const maxVolume = Math.max(...volumeSeries, 0.0001);
+  elements.candleStrip.style.gridTemplateColumns = `repeat(${visibleCandles.length}, minmax(0, 1fr))`;
+  elements.volumeStrip.style.gridTemplateColumns = `repeat(${visibleCandles.length}, minmax(0, 1fr))`;
+  elements.candleStrip.innerHTML = visibleCandles.map((item) => {
     const open = Number(item.open || 0);
     const close = Number(item.close || 0);
     const high = Number(item.high || 0);
@@ -314,6 +331,13 @@ function renderTradePanel() {
         <span class="body" style="bottom:${bodyBottom}%;height:${Math.max(bodyHeight, 4)}%"></span>
       </div>
     `;
+  }).join("");
+  elements.volumeStrip.innerHTML = visibleCandles.map((item, index) => {
+    const open = Number(item.open || 0);
+    const close = Number(item.close || 0);
+    const height = (volumeSeries[index] / maxVolume) * 100;
+    const direction = close >= open ? "up" : "down";
+    return `<span class="volume-bar ${direction}" title="${item.label}" style="height:${Math.max(height, 10)}%"></span>`;
   }).join("");
   elements.marketTypeInput.value = quote.marketType === "spot" ? "spot" : "perpetual";
   const book = syntheticBook(quote);
@@ -473,6 +497,14 @@ function bindDynamic() {
   document.querySelectorAll("[data-review-id]").forEach((button) => {
     button.onclick = () => {
       reviewDeposit(button.dataset.reviewId, button.dataset.reviewDecision).catch((error) => window.alert(error.message));
+    };
+  });
+
+  document.querySelectorAll("[data-timeframe]").forEach((button) => {
+    button.onclick = () => {
+      state.chartTimeframe = button.dataset.timeframe;
+      document.querySelectorAll("[data-timeframe]").forEach((node) => node.classList.toggle("active", node === button));
+      renderTradePanel();
     };
   });
 

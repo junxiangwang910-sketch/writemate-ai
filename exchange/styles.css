@@ -374,6 +374,7 @@ a {
   color: var(--muted);
   border: 1px solid var(--line);
   background: rgba(255, 255, 255, 0.02);
+  cursor: pointer;
 }
 
 .time-chip.active {
@@ -385,7 +386,6 @@ a {
 .candle-strip {
   height: 180px;
   display: grid;
-  grid-template-columns: repeat(18, minmax(0, 1fr));
   align-items: end;
   gap: 6px;
   padding: 10px 2px 2px;
@@ -399,6 +399,29 @@ a {
       rgba(255, 255, 255, 0.04) 28px,
       rgba(255, 255, 255, 0.04) 29px
     );
+}
+
+.volume-strip {
+  height: 56px;
+  display: grid;
+  align-items: end;
+  gap: 6px;
+  padding: 10px 2px 0;
+}
+
+.volume-bar {
+  display: block;
+  width: 100%;
+  border-radius: 999px 999px 6px 6px;
+  opacity: 0.9;
+}
+
+.volume-bar.up {
+  background: rgba(14, 203, 129, 0.55);
+}
+
+.volume-bar.down {
+  background: rgba(246, 70, 93, 0.5);
 }
 
 .candle {
