@@ -1,7 +1,7 @@
 {
-  "name": "VoltX Exchange",
-  "short_name": "VoltX",
-  "description": "Telegram-ready exchange demo with PWR power token, TRON deposit flow, and mobile install support.",
+  "name": "Australia Coin",
+  "short_name": "AUC",
+  "description": "Mobile trading terminal for Australia Coin, crypto markets, and TRON deposit flow.",
   "start_url": "/exchange/",
   "scope": "/exchange/",
   "display": "standalone",

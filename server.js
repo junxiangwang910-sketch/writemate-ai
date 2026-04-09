@@ -959,10 +959,10 @@ function buildPowerMarket() {
   const tokenPremium = round((futuresPrice - spotPrice) * 0.35, 4);
   const tokenPrice = round(spotPrice + tokenPremium, 4);
   return {
-    tokenSymbol: "PWR",
-    tokenName: "电力币",
-    peg: "1 PWR = 1 kWh",
-    region: "华东电网模拟区",
+    tokenSymbol: "AUC",
+    tokenName: "Australia Coin",
+    peg: "1 AUC = 1 kWh reference",
+    region: "Australian electricity reference market",
     spotCnyPerKwh: spotPrice,
     futuresCnyPerKwh: futuresPrice,
     tokenCny: tokenPrice,
@@ -1085,16 +1085,16 @@ function submitPowerAction(body, user) {
 
   if (action === "mint") {
     nextBalance += tokenAmount;
-    note = `按实时电价铸造 ${tokenAmount} PWR`;
+    note = `Minted ${tokenAmount} AUC at reference price`;
   } else if (action === "redeem") {
     if (nextBalance < tokenAmount) throw new Error("INSUFFICIENT_POWER_BALANCE");
     nextBalance -= tokenAmount;
     nextRedeemed += tokenAmount;
-    note = `赎回 ${tokenAmount} kWh 电量额度`;
+    note = `Redeemed ${tokenAmount} kWh settlement reference`;
   } else if (action === "transfer") {
     if (nextBalance < tokenAmount) throw new Error("INSUFFICIENT_POWER_BALANCE");
     nextBalance -= tokenAmount;
-    note = `向 ${String(body.toAddress || "外部地址").slice(0, 12)}... 转账 ${tokenAmount} PWR`;
+    note = `Transferred ${tokenAmount} AUC to ${String(body.toAddress || "external").slice(0, 12)}...`;
   } else {
     throw new Error("INVALID_POWER_ACTION");
   }
@@ -1162,7 +1162,7 @@ function getExchangeBootstrap(userId, symbol) {
     deposit: {
       asset: "USDT",
       networks: getDepositNetworks(),
-      note: "请仅向对应链地址充值 USDT。MVP 版先展示收款地址和网络信息，自动到账监听需在正式上线前补齐。"
+      note: "Send USDT only to the matching chain address. Automatic on-chain reconciliation is not enabled in this build."
     },
     power: getPowerSnapshot(userId),
     trading: getTradeBootstrap(userId, symbol)

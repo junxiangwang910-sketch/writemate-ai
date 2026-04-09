@@ -1,16 +1,34 @@
+const STORAGE_KEY = "australia-coin-user-id";
+const BINANCE_WS_SYMBOLS = [
+  "btcusdt",
+  "ethusdt",
+  "solusdt",
+  "dogeusdt",
+  "adausdt",
+  "xrpusdt",
+  "trxusdt"
+];
+
 const state = {
-  userId: window.localStorage.getItem("voltx-user-id") || "",
+  userId: window.localStorage.getItem(STORAGE_KEY) || "",
   payload: null,
   marketFilter: "all",
   selectedSymbol: "BTCUSDT",
   tradeSide: "buy",
-  powerAction: "mint"
+  powerAction: "mint",
+  liveQuotes: {},
+  socket: null,
+  refreshTimer: null,
+  lastUpdatedAt: null
 };
 
 const elements = {
   heroPowerPrice: document.querySelector("#heroPowerPrice"),
   heroEquity: document.querySelector("#heroEquity"),
   heroPowerBalance: document.querySelector("#heroPowerBalance"),
+  lastUpdated: document.querySelector("#lastUpdated"),
+  syncBadge: document.querySelector("#syncBadge"),
+  trustGrid: document.querySelector("#trustGrid"),
   registerForm: document.querySelector("#registerForm"),
   registerUsername: document.querySelector("#registerUsername"),
   registerTelegram: document.querySelector("#registerTelegram"),
@@ -61,12 +79,18 @@ function fmt(value, digits = 2) {
 
 function priceFmt(value) {
   const n = Number(value || 0);
-  const digits = n < 1 ? 6 : n < 100 ? 4 : 2;
+  const digits = n < 0.01 ? 8 : n < 1 ? 6 : n < 100 ? 4 : 2;
   return fmt(n, digits);
 }
 
 function signedClass(value) {
   return Number(value || 0) >= 0 ? "positive" : "negative";
+}
+
+function shortAddress(address) {
+  if (!address) return "--";
+  if (address.length < 15) return address;
+  return `${address.slice(0, 8)}...${address.slice(-6)}`;
 }
 
 async function api(path, options = {}) {
@@ -75,12 +99,29 @@ async function api(path, options = {}) {
     ...options
   });
   const payload = await response.json();
-  if (!response.ok) throw new Error(payload.error || "请求失败");
+  if (!response.ok) throw new Error(payload.error || "Request failed");
   return payload;
 }
 
-function quotes() {
+function baseQuotes() {
   return state.payload?.trading?.quotes || [];
+}
+
+function mergedQuote(item) {
+  const live = state.liveQuotes[item.symbol];
+  if (!live) return item;
+  return {
+    ...item,
+    price: live.price ?? item.price,
+    changePct: live.changePct ?? item.changePct,
+    high24h: live.high24h ?? item.high24h,
+    low24h: live.low24h ?? item.low24h,
+    turnover: live.turnover ?? item.turnover
+  };
+}
+
+function quotes() {
+  return baseQuotes().map(mergedQuote);
 }
 
 function quoteBySymbol(symbol) {
@@ -108,57 +149,103 @@ async function bootstrap(symbol = state.selectedSymbol) {
   const payload = await api(`/api/exchange/bootstrap?${query.toString()}`);
   state.payload = payload;
   state.userId = payload.user.id;
-  window.localStorage.setItem("voltx-user-id", state.userId);
+  state.lastUpdatedAt = new Date();
+  window.localStorage.setItem(STORAGE_KEY, state.userId);
   render();
 }
 
 function renderHero() {
   const power = state.payload.power;
   const trading = state.payload.trading;
-  elements.heroPowerPrice.textContent = `${fmt(power.market.tokenCny, 4)} CNY`;
+  elements.heroPowerPrice.textContent = `${fmt(power.market.tokenUsdt, 4)} USDT`;
   elements.heroEquity.textContent = `${fmt(trading.overview.totalEquity, 4)} USDT`;
-  elements.heroPowerBalance.textContent = `${fmt(power.wallet.balance, 2)} PWR`;
+  elements.heroPowerBalance.textContent = `${fmt(power.wallet.balance, 2)} ${power.market.tokenSymbol}`;
+  elements.lastUpdated.textContent = state.lastUpdatedAt
+    ? state.lastUpdatedAt.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", second: "2-digit" })
+    : "--";
+  elements.syncBadge.textContent = Object.keys(state.liveQuotes).length ? "Binance live stream" : "Refreshing market feed";
+  elements.assetOverview.textContent = `Available ${fmt(trading.overview.available, 4)} USDT · Margin ${fmt(trading.overview.marginUsed, 4)} USDT`;
+}
+
+function renderTrust() {
+  const power = state.payload.power;
+  const deposit = state.payload.deposit;
+  const trc20 = deposit.networks.find((item) => item.network === "TRC20");
+  const trustCards = [
+    {
+      label: "Price source",
+      value: "Binance live + internal reference",
+      meta: "Crypto spot quotes update from Binance official market streams. Australia Coin remains a platform reference asset."
+    },
+    {
+      label: "Settlement rail",
+      value: trc20?.enabled ? "USDT on TRON" : "Address pending",
+      meta: trc20?.enabled ? `Primary deposit route: ${shortAddress(trc20.address)}` : "No active deposit address configured."
+    },
+    {
+      label: "Reference peg",
+      value: power.market.peg,
+      meta: `${fmt(power.market.spotCnyPerKwh, 4)} CNY/kWh spot reference · ${fmt(power.market.futuresCnyPerKwh, 4)} CNY/kWh forward reference`
+    },
+    {
+      label: "Operations status",
+      value: "Manual treasury review",
+      meta: "Submitted transfers are reviewed before platform balance is credited. This is visible to users and operations."
+    }
+  ];
+
+  elements.trustGrid.innerHTML = trustCards.map((item) => `
+    <article class="trust-card">
+      <span class="trust-label">${item.label}</span>
+      <strong class="trust-value">${item.value}</strong>
+      <span class="trust-meta">${item.meta}</span>
+    </article>
+  `).join("");
 }
 
 function renderAccount() {
   const profile = state.payload.profile;
   const promo = state.payload.promo;
-  elements.accountMode.textContent = `模式: ${profile.mode === "demo" ? "体验版" : profile.mode}`;
+  elements.accountMode.textContent = "Invitation and settlement profile";
   elements.accountGrid.innerHTML = [
-    ["用户名", profile.username || "未填写"],
-    ["Telegram", profile.telegramHandle || "未绑定"],
-    ["我的邀请码", profile.inviteCode],
-    ["上级邀请码", profile.inviterCode || "无"]
+    ["Display name", profile.username || "Not set"],
+    ["Telegram", profile.telegramHandle || "Not linked"],
+    ["Invite code", profile.inviteCode],
+    ["Inviter", profile.inviterCode || "None"]
   ].map(([label, value]) => `
     <article class="power-stat">
       <span>${label}</span>
       <strong>${value}</strong>
     </article>
   `).join("");
+
   elements.promoGrid.innerHTML = [
-    ["展示手续费率", `${fmt(promo.feeRate * 100, 2)}%`],
-    ["展示返还率", `${fmt(promo.rebateRate * 100, 2)}%`],
-    ["当日展示手续费", `${fmt(promo.estimatedFee, 4)} USDT`],
-    ["中午预计返还", `${fmt(promo.estimatedNoonRebate, 4)} USDT`]
+    ["Trading fee", `${fmt(promo.feeRate * 100, 2)}%`],
+    ["Noon rebate", `${fmt(promo.rebateRate * 100, 2)}%`],
+    ["Fee estimate", `${fmt(promo.estimatedFee, 4)} USDT`],
+    ["Rebate estimate", `${fmt(promo.estimatedNoonRebate, 4)} USDT`]
   ].map(([label, value]) => `
     <article class="power-stat">
       <span>${label}</span>
       <strong>${value}</strong>
     </article>
   `).join("");
-  elements.leaderboardList.innerHTML = (state.payload.leaderboard || []).length ? state.payload.leaderboard.map((item, index) => `
-    <article class="order-row">
-      <div>
-        <strong>#${index + 1} ${item.inviteCode}</strong>
-        <div class="market-meta">体验版邀请排行</div>
-      </div>
-      <div><strong>${item.referrals} 人</strong></div>
-    </article>
-  `).join("") : `<article class="order-row"><div><strong>暂无邀请数据</strong><div class="market-meta">等用户用邀请码注册后会显示。</div></div></article>`;
+
+  elements.leaderboardList.innerHTML = (state.payload.leaderboard || []).length
+    ? state.payload.leaderboard.map((item, index) => `
+      <article class="order-row">
+        <div>
+          <strong>#${index + 1} ${item.inviteCode}</strong>
+          <div class="market-meta">Top referral flow</div>
+        </div>
+        <div><strong>${item.referrals} users</strong></div>
+      </article>
+    `).join("")
+    : `<article class="order-row"><div><strong>No referrals yet</strong><div class="market-meta">Referral activity will appear here.</div></div></article>`;
 }
 
 function renderTickers() {
-  const items = ["BTCUSDT", "ETHUSDT", "BTC-PERP", "GC1!"].map((symbol) => quoteBySymbol(symbol)).filter(Boolean);
+  const items = ["BTCUSDT", "ETHUSDT", "SOLUSDT", "DOGEUSDT"].map((symbol) => quoteBySymbol(symbol)).filter(Boolean);
   elements.tickerStrip.innerHTML = items.map((item) => `
     <button class="ticker-chip" type="button" data-symbol="${item.symbol}">
       <strong>${item.symbol}</strong>
@@ -170,7 +257,7 @@ function renderTickers() {
 function renderMarkets() {
   const list = quotes().filter((item) => state.marketFilter === "all" || item.marketType === state.marketFilter);
   elements.marketList.innerHTML = list.map((item) => `
-    <button class="market-row" type="button" data-symbol="${item.symbol}" data-market-type="${item.marketType}">
+    <button class="market-row" type="button" data-symbol="${item.symbol}">
       <div>
         <strong>${item.symbol}</strong>
         <div class="market-meta">${item.name} · ${item.marketType}</div>
@@ -185,6 +272,8 @@ function renderMarkets() {
 
 function renderTradePanel() {
   const quote = quoteBySymbol(state.selectedSymbol);
+  if (!quote) return;
+  const buyLabel = state.tradeSide === "buy" ? "Buy" : "Sell";
   elements.tradeSymbol.textContent = quote.symbol;
   elements.tradeSymbolMeta.textContent = `${quote.name} · ${quote.marketType}`;
   elements.tradeLastPrice.textContent = priceFmt(quote.price);
@@ -192,11 +281,11 @@ function renderTradePanel() {
   const book = syntheticBook(quote);
   elements.orderBook.innerHTML = `
     <div class="book-column">
-      <h3>卖盘</h3>
+      <h3>Asks</h3>
       ${book.asks.map((item) => `<div class="book-line"><span class="negative">${priceFmt(item.price)}</span><span>${fmt(item.quantity, 2)}</span></div>`).join("")}
     </div>
     <div class="book-column">
-      <h3>买盘</h3>
+      <h3>Bids</h3>
       ${book.bids.map((item) => `<div class="book-line"><span class="positive">${priceFmt(item.price)}</span><span>${fmt(item.quantity, 2)}</span></div>`).join("")}
     </div>
   `;
@@ -204,19 +293,21 @@ function renderTradePanel() {
   if (elements.marketTypeInput.value !== "spot" && Number(elements.leverageInput.value || 0) > 500) {
     elements.leverageInput.value = "500";
   }
+  elements.tradeSubmit.textContent = buyLabel;
+  elements.tradeSubmit.className = `submit-button ${state.tradeSide}`;
 }
 
 function renderPowerPanel() {
   const power = state.payload.power;
   elements.powerRegion.textContent = power.market.region;
-  elements.powerPrice.textContent = `${fmt(power.market.tokenCny, 4)} CNY`;
+  elements.powerPrice.textContent = `${fmt(power.market.tokenUsdt, 4)} USDT`;
   elements.powerGrid.innerHTML = [
-    ["钱包地址", power.wallet.address],
-    ["PWR 余额", `${fmt(power.wallet.balance, 2)} PWR`],
-    ["锚定规则", power.market.peg],
-    ["澳洲电价参考", `${fmt(power.market.spotCnyPerKwh, 4)} CNY/kWh`],
-    ["期货结算参考", `${fmt(power.market.futuresCnyPerKwh, 4)} CNY/kWh`],
-    ["累计赎回电量", `${fmt(power.wallet.redeemedKwh, 2)} kWh`]
+    ["Wallet address", power.wallet.address],
+    ["Coin balance", `${fmt(power.wallet.balance, 2)} ${power.market.tokenSymbol}`],
+    ["Peg", power.market.peg],
+    ["AU spot ref", `${fmt(power.market.spotCnyPerKwh, 4)} CNY/kWh`],
+    ["Forward ref", `${fmt(power.market.futuresCnyPerKwh, 4)} CNY/kWh`],
+    ["Redeemed power", `${fmt(power.wallet.redeemedKwh, 2)} kWh`]
   ].map(([label, value]) => `
     <article class="power-stat">
       <span>${label}</span>
@@ -224,21 +315,20 @@ function renderPowerPanel() {
     </article>
   `).join("");
   elements.powerAddressField.style.display = state.powerAction === "transfer" ? "grid" : "none";
-  elements.powerSubmit.textContent = state.powerAction === "mint" ? "铸造" : state.powerAction === "redeem" ? "赎回" : "转账";
+  elements.powerSubmit.textContent = state.powerAction === "mint" ? "Mint" : state.powerAction === "redeem" ? "Redeem" : "Transfer";
   elements.powerSubmit.className = `submit-button ${state.powerAction === "redeem" ? "sell" : "buy"}`;
 }
 
 function renderAssets() {
   const trading = state.payload.trading;
   const power = state.payload.power;
-  elements.assetOverview.textContent = `USDT ${fmt(trading.overview.totalEquity, 4)} · PWR ${fmt(power.wallet.balance, 2)}`;
   const assetRows = [
-    { label: "USDT 可用余额", value: `${fmt(trading.overview.available, 4)} USDT`, meta: "站内交易余额" },
-    { label: "PWR 钱包余额", value: `${fmt(power.wallet.balance, 2)} PWR`, meta: `${fmt(power.wallet.valuationCny, 2)} CNY` },
+    { label: "Available USDT", value: `${fmt(trading.overview.available, 4)} USDT`, meta: "Trading wallet" },
+    { label: "Australia Coin", value: `${fmt(power.wallet.balance, 2)} ${power.market.tokenSymbol}`, meta: `${fmt(power.wallet.valuationUsdt, 4)} USDT` },
     ...(trading.spotHoldings || []).slice(0, 4).map((item) => ({
       label: item.asset,
       value: `${fmt(item.value, 4)} USDT`,
-      meta: `持仓 ${fmt(item.quantity, item.quantity < 1 ? 6 : 3)}`
+      meta: `Position ${fmt(item.quantity, item.quantity < 1 ? 6 : 3)}`
     }))
   ];
   elements.assetList.innerHTML = assetRows.map((item) => `
@@ -266,39 +356,49 @@ function renderDeposit() {
   elements.depositList.innerHTML = deposit.networks.map((item) => `
     <article class="deposit-card">
       <strong>${item.symbol}-${item.network}</strong>
-      <div class="deposit-note">${item.chain} · ${item.feeHint}手续费 · ${item.confirmations} 次确认</div>
-      <span class="address-line">${item.enabled ? item.address : "未配置收款地址，请在服务端环境变量中填写。"}</span>
-      ${item.enabled && item.network === "TRC20" ? '<div class="deposit-note">把 USDT-TRC20 转到这条地址，然后把链上 Tx Hash 填到下面提交。</div>' : ""}
+      <div class="deposit-note">${item.chain} · ${item.feeHint} fee tier · ${item.confirmations} confirmations</div>
+      <span class="address-line">${item.enabled ? item.address : "Deposit address not configured."}</span>
+      ${item.enabled && item.network === "TRC20" ? '<div class="deposit-note">Send USDT on TRC20 only, then submit the on-chain transaction hash below.</div>' : ""}
     </article>
   `).join("");
-  elements.depositRecordList.innerHTML = (state.payload.deposits || []).length ? state.payload.deposits.map((item) => `
-    <article class="order-row">
-      <div>
-        <strong>${item.asset}-${item.network} · ${fmt(item.amount, 2)}</strong>
-        <div class="market-meta">${item.submittedAt} · ${item.txHash}</div>
-      </div>
-      <div>
-        <strong>${item.status}</strong>
-        <div class="market-meta">${item.reviewerNote || ""}</div>
-      </div>
-    </article>
-  `).join("") : `<article class="order-row"><div><strong>暂无充值记录</strong><div class="market-meta">提交一笔演示充值后这里会显示。</div></div></article>`;
-  elements.adminQueueList.innerHTML = (state.payload.adminQueue || []).length ? state.payload.adminQueue.map((item) => `
-    <article class="order-row">
-      <div>
-        <strong>${item.displayName} · ${fmt(item.amount, 2)} ${item.asset}</strong>
-        <div class="market-meta">${item.network} · ${item.txHash}</div>
-      </div>
-      <div>
-        <strong>${item.status}</strong>
-        ${item.status === "pending" ? `<div class="market-meta"><button class="seg buy" data-review-id="${item.id}" data-review-decision="approve" type="button">通过</button> <button class="seg sell" data-review-id="${item.id}" data-review-decision="reject" type="button">拒绝</button></div>` : `<div class="market-meta">${item.reviewerNote || ""}</div>`}
-      </div>
-    </article>
-  `).join("") : `<article class="order-row"><div><strong>暂无审核队列</strong><div class="market-meta">新提交的充值会出现在这里。</div></div></article>`;
+
+  elements.depositRecordList.innerHTML = (state.payload.deposits || []).length
+    ? state.payload.deposits.map((item) => `
+      <article class="order-row">
+        <div>
+          <strong>${item.asset}-${item.network} · ${fmt(item.amount, 2)}</strong>
+          <div class="market-meta">${item.submittedAt} · ${item.txHash}</div>
+        </div>
+        <div>
+          <strong>${item.status}</strong>
+          <div class="market-meta">${item.reviewerNote || ""}</div>
+        </div>
+      </article>
+    `).join("")
+    : `<article class="order-row"><div><strong>No deposits yet</strong><div class="market-meta">Submitted transfers will appear here.</div></div></article>`;
+
+  elements.adminQueueList.innerHTML = (state.payload.adminQueue || []).length
+    ? state.payload.adminQueue.map((item) => `
+      <article class="order-row">
+        <div>
+          <strong>${item.displayName} · ${fmt(item.amount, 2)} ${item.asset}</strong>
+          <div class="market-meta">${item.network} · ${item.txHash}</div>
+        </div>
+        <div>
+          <strong>${item.status}</strong>
+          ${item.status === "pending"
+            ? `<div class="market-meta"><button class="seg buy" data-review-id="${item.id}" data-review-decision="approve" type="button">Approve</button> <button class="seg sell" data-review-id="${item.id}" data-review-decision="reject" type="button">Reject</button></div>`
+            : `<div class="market-meta">${item.reviewerNote || ""}</div>`}
+        </div>
+      </article>
+    `).join("")
+    : `<article class="order-row"><div><strong>No pending reviews</strong><div class="market-meta">New deposits will queue here.</div></div></article>`;
 }
 
 function render() {
+  if (!state.payload) return;
   renderHero();
+  renderTrust();
   renderAccount();
   renderTickers();
   renderMarkets();
@@ -316,11 +416,63 @@ function bindDynamic() {
       renderTradePanel();
     };
   });
+
   document.querySelectorAll("[data-review-id]").forEach((button) => {
     button.onclick = () => {
       reviewDeposit(button.dataset.reviewId, button.dataset.reviewDecision).catch((error) => window.alert(error.message));
     };
   });
+
+  document.querySelectorAll("[data-scroll-target]").forEach((button) => {
+    button.onclick = () => {
+      const target = document.getElementById(button.dataset.scrollTarget);
+      if (target) target.scrollIntoView({ behavior: "smooth", block: "start" });
+      document.querySelectorAll("[data-scroll-target]").forEach((node) => node.classList.toggle("active", node === button));
+    };
+  });
+}
+
+function updateLiveQuote(symbol, data) {
+  const key = symbol.toUpperCase();
+  const base = quoteBySymbol(key);
+  if (!base) return;
+  const price = Number(data.c || data.lastPrice || base.price);
+  const changePct = Number(data.P || data.priceChangePercent || base.changePct);
+  state.liveQuotes[key] = {
+    price,
+    changePct,
+    high24h: Number(data.h || data.highPrice || base.high24h),
+    low24h: Number(data.l || data.lowPrice || base.low24h),
+    turnover: data.q || data.quoteVolume || base.turnover
+  };
+  state.lastUpdatedAt = new Date();
+  render();
+}
+
+function connectBinanceStream() {
+  if (state.socket) state.socket.close();
+  const stream = BINANCE_WS_SYMBOLS.map((item) => `${item}@ticker`).join("/");
+  try {
+    const socket = new WebSocket(`wss://stream.binance.com:9443/stream?streams=${stream}`);
+    state.socket = socket;
+    socket.onmessage = (event) => {
+      const message = JSON.parse(event.data);
+      if (!message?.data?.s) return;
+      updateLiveQuote(message.data.s, message.data);
+    };
+    socket.onopen = () => {
+      elements.syncBadge.textContent = "Binance live stream";
+    };
+    socket.onclose = () => {
+      elements.syncBadge.textContent = "Reconnecting stream";
+      window.setTimeout(connectBinanceStream, 2000);
+    };
+    socket.onerror = () => {
+      elements.syncBadge.textContent = "Stream fallback";
+    };
+  } catch (_) {
+    elements.syncBadge.textContent = "Stream unavailable";
+  }
 }
 
 async function submitTrade(event) {
@@ -404,10 +556,17 @@ async function reviewDeposit(depositId, decision) {
     body: JSON.stringify({
       depositId,
       decision,
-      reviewerNote: decision === "approve" ? "演示入账通过" : "演示审核拒绝"
+      reviewerNote: decision === "approve" ? "Treasury approval completed" : "Treasury review rejected"
     })
   });
   await bootstrap(state.selectedSymbol);
+}
+
+function startAutoRefresh() {
+  if (state.refreshTimer) window.clearInterval(state.refreshTimer);
+  state.refreshTimer = window.setInterval(() => {
+    bootstrap(state.selectedSymbol).catch(() => {});
+  }, 15000);
 }
 
 document.querySelectorAll("[data-market-filter]").forEach((button) => {
@@ -423,8 +582,7 @@ document.querySelectorAll("[data-side]").forEach((button) => {
   button.addEventListener("click", () => {
     state.tradeSide = button.dataset.side;
     document.querySelectorAll("[data-side]").forEach((node) => node.classList.toggle("active", node === button));
-    elements.tradeSubmit.textContent = state.tradeSide === "buy" ? "买入" : "卖出";
-    elements.tradeSubmit.className = `submit-button ${state.tradeSide}`;
+    renderTradePanel();
   });
 });
 
@@ -448,4 +606,9 @@ if ("serviceWorker" in navigator) {
   });
 }
 
-bootstrap().catch((error) => window.alert(error.message));
+bootstrap()
+  .then(() => {
+    connectBinanceStream();
+    startAutoRefresh();
+  })
+  .catch((error) => window.alert(error.message));
