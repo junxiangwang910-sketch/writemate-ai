@@ -196,11 +196,22 @@
             <button class="primary-button" id="interviewButton" type="button">生成面试测评</button>
           </form>
 
-          <aside class="interview-panel">
-            <div class="empty-state" id="interviewEmptyState">
-              <p>面试测评报告会显示在这里</p>
-              <span>重点检测说话是否自然、表情是否合适、表达是否流畅、声音是否有底气。</span>
+        <aside class="interview-panel">
+          <div class="profile-snapshot">
+            <p class="eyebrow">Learning Profile</p>
+            <h3>个人训练档案</h3>
+            <div class="snapshot-grid">
+              <div><span>累计训练</span><strong id="profileTotalReports">0</strong></div>
+              <div><span>平均水平</span><strong id="profileAverageScore">0</strong></div>
             </div>
+            <p class="snapshot-note" id="profileTrend">完成第一次训练后，这里会开始记录你的长期变化。</p>
+            <div class="missing-tags" id="profileFocusTags"></div>
+            <ul class="snapshot-list" id="profileNextActions"></ul>
+          </div>
+          <div class="empty-state" id="interviewEmptyState">
+            <p>面试测评报告会显示在这里</p>
+            <span>重点检测说话是否自然、表情是否合适、表达是否流畅、声音是否有底气。</span>
+          </div>
             <div class="report-content hidden" id="interviewReportContent">
               <div class="report-head">
                 <div>

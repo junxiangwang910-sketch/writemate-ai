@@ -141,6 +141,22 @@ function openDatabase() {
       redeemed_at TEXT DEFAULT NULL,
       created_at TEXT NOT NULL
     );
+    CREATE TABLE IF NOT EXISTS knowledge_snippets (
+      id TEXT PRIMARY KEY,
+      product TEXT NOT NULL,
+      scenario TEXT NOT NULL,
+      title TEXT NOT NULL,
+      content TEXT NOT NULL,
+      tags_json TEXT NOT NULL DEFAULT '[]'
+    );
+    CREATE TABLE IF NOT EXISTS user_learning_profiles (
+      user_id TEXT NOT NULL,
+      product TEXT NOT NULL,
+      summary_json TEXT NOT NULL,
+      updated_at TEXT NOT NULL,
+      PRIMARY KEY(user_id, product),
+      FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
+    );
     CREATE TABLE IF NOT EXISTS app_meta (
       key TEXT PRIMARY KEY,
       value TEXT NOT NULL
@@ -151,6 +167,7 @@ function openDatabase() {
   ensureMeta(db);
   seedShenlunRubrics(db);
   seedActivationCodes(db);
+  seedKnowledgeSnippets(db);
   return db;
 }
 
@@ -216,6 +233,55 @@ function seedActivationCodes(db) {
   const stmt = db.prepare("INSERT OR IGNORE INTO activation_codes (code, plan, note, created_at) VALUES (?, ?, ?, ?)");
   codes.forEach(([code, plan, note]) => {
     stmt.run(code, plan, note, new Date().toISOString());
+  });
+}
+
+function seedKnowledgeSnippets(db) {
+  const snippets = [
+    {
+      id: "shenlun-essay-balance",
+      product: "shenlun",
+      scenario: "essay",
+      title: "大作文常见高分写法",
+      content: "大作文更看重中心论点是否抓住材料深层张力，分论点之间是否有递进或并列关系，材料细节能否被提炼成治理原则，而不是简单罗列案例。",
+      tags: ["大作文", "张力", "立意", "材料转化"]
+    },
+    {
+      id: "shenlun-essay-penalty",
+      product: "shenlun",
+      scenario: "essay",
+      title: "大作文常见扣分点",
+      content: "常见扣分点包括：只写套话口号、材料使用弱、分论点重复、口语化明显、只讲提升治理能力却不分析矛盾关系。",
+      tags: ["大作文", "扣分点", "套话", "口语化"]
+    },
+    {
+      id: "shenlun-summary-compact",
+      product: "shenlun",
+      scenario: "summary",
+      title: "归纳概括优先级",
+      content: "归纳概括题要优先抓对象、问题、原因、措施和结果，尽量贴近材料原词，分层表达，避免加入过多主观发挥。",
+      tags: ["归纳概括", "对象", "原因", "措施"]
+    },
+    {
+      id: "shenlun-interview-natural",
+      product: "shenlun",
+      scenario: "interview",
+      title: "面试高分关键",
+      content: "公务员面试看内容，也看自然表达、交流感、声音底气和岗位匹配。高分回答通常结构清楚、回应具体、语速稳定，不像背稿。",
+      tags: ["面试", "自然表达", "声音", "岗位匹配"]
+    },
+    {
+      id: "shenlun-interview-followup",
+      product: "shenlun",
+      scenario: "interview",
+      title: "追问应对",
+      content: "遇到追问时，不要重复第一轮答案，应该补场景、补步骤、补边界，体现规则意识、沟通能力和解决问题能力。",
+      tags: ["面试", "追问", "规则意识", "沟通"]
+    }
+  ];
+  const stmt = db.prepare("INSERT OR IGNORE INTO knowledge_snippets (id, product, scenario, title, content, tags_json) VALUES (?, ?, ?, ?, ?, ?)");
+  snippets.forEach((item) => {
+    stmt.run(item.id, item.product, item.scenario, item.title, item.content, JSON.stringify(item.tags));
   });
 }
 
@@ -586,6 +652,114 @@ function mapShenlunReport(row) {
 
 function getShenlunHistory(userId) {
   return db.prepare("SELECT * FROM shenlun_reports WHERE user_id = ? ORDER BY timestamp ASC").all(userId).map(mapShenlunReport);
+}
+
+function getLearningProfile(userId, product) {
+  const row = db.prepare("SELECT * FROM user_learning_profiles WHERE user_id = ? AND product = ?").get(userId, product);
+  if (!row) return null;
+  return {
+    userId,
+    product,
+    updatedAt: row.updated_at,
+    ...JSON.parse(row.summary_json)
+  };
+}
+
+function saveLearningProfile(userId, product, summary) {
+  db.prepare(`
+    INSERT OR REPLACE INTO user_learning_profiles (user_id, product, summary_json, updated_at)
+    VALUES (?, ?, ?, ?)
+  `).run(userId, product, JSON.stringify(summary), new Date().toISOString());
+}
+
+function rankTags(items = [], limit = 6) {
+  const counts = new Map();
+  items.flat().filter(Boolean).forEach((item) => {
+    const key = String(item).trim();
+    if (!key) return;
+    counts.set(key, (counts.get(key) || 0) + 1);
+  });
+  return Array.from(counts.entries())
+    .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], "zh-CN"))
+    .slice(0, limit)
+    .map(([label, count]) => ({ label, count }));
+}
+
+function buildShenlunLearningProfile(userId) {
+  const history = getShenlunHistory(userId);
+  if (!history.length) {
+    return {
+      totalReports: 0,
+      averagePercent: 0,
+      recentTrend: "暂无训练记录",
+      strongestAreas: [],
+      weakestAreas: [],
+      recurringIssues: [],
+      focusTags: [],
+      nextActions: ["先完成 1 次批改，再开始建立个人训练档案。"]
+    };
+  }
+
+  const recent = history.slice(-8);
+  const typeCounts = rankTags(recent.map((item) => [item.questionLabel]), 4);
+  const dimensionBuckets = new Map();
+  recent.forEach((report) => {
+    (report.dimensions || []).forEach((dimension) => {
+      if (!dimensionBuckets.has(dimension.label)) dimensionBuckets.set(dimension.label, []);
+      dimensionBuckets.get(dimension.label).push(Number(dimension.score || 0));
+    });
+  });
+  const dimensionAverages = Array.from(dimensionBuckets.entries()).map(([label, scores]) => ({
+    label,
+    score: Math.round(scores.reduce((sum, value) => sum + value, 0) / Math.max(scores.length, 1))
+  }));
+  const strongestAreas = dimensionAverages.slice().sort((a, b) => b.score - a.score).slice(0, 3);
+  const weakestAreas = dimensionAverages.slice().sort((a, b) => a.score - b.score).slice(0, 3);
+  const recurringIssues = rankTags(recent.map((item) => item.weaknesses || []), 5);
+  const focusTags = rankTags([
+    ...recent.map((item) => item.missing || []),
+    ...weakestAreas.map((item) => item.label),
+    ...typeCounts.map((item) => item.label)
+  ], 6).map((item) => item.label);
+  const recentScores = recent.map((item) => Number(item.percentScore || 0));
+  const firstAvg = recentScores.slice(0, Math.max(1, Math.floor(recentScores.length / 2))).reduce((sum, value) => sum + value, 0) / Math.max(1, Math.floor(recentScores.length / 2));
+  const secondChunk = recentScores.slice(Math.max(1, Math.floor(recentScores.length / 2)));
+  const secondAvg = secondChunk.reduce((sum, value) => sum + value, 0) / Math.max(secondChunk.length, 1);
+  const diff = Math.round(secondAvg - firstAvg);
+  const recentTrend = diff >= 4 ? "近期有明显提升" : diff <= -4 ? "近期波动偏大，需要重新稳住" : "整体稳定，建议继续针对弱项补齐";
+
+  return {
+    totalReports: history.length,
+    averagePercent: Math.round(history.reduce((sum, item) => sum + Number(item.percentScore || 0), 0) / history.length),
+    recentTrend,
+    strongestAreas,
+    weakestAreas,
+    recurringIssues: recurringIssues.map((item) => item.label),
+    focusTags,
+    nextActions: [
+      weakestAreas[0] ? `下一次优先补 ${weakestAreas[0].label}。` : "继续保持当前训练节奏。",
+      typeCounts[0] ? `最近高频练习的是${typeCounts[0].label}，建议搭配另一类题型交叉训练。` : "建议补足不同题型的训练样本。",
+      recurringIssues[0] ? `你最常被指出的问题是“${recurringIssues[0].label}”，下一次作答前先针对它列提纲。` : "建议训练前先列结构和材料要点。"
+    ]
+  };
+}
+
+function getKnowledgeSnippets(product, scenario, queryText = "") {
+  const rows = db.prepare("SELECT * FROM knowledge_snippets WHERE product = ? AND scenario = ?").all(product, scenario);
+  const query = String(queryText || "");
+  return rows
+    .map((row) => {
+      const tags = JSON.parse(row.tags_json || "[]");
+      const score = tags.reduce((sum, tag) => sum + (query.includes(tag) ? 2 : 0), 0) + (query.includes(row.title) ? 1 : 0);
+      return {
+        title: row.title,
+        content: row.content,
+        tags,
+        score
+      };
+    })
+    .sort((a, b) => b.score - a.score || a.title.localeCompare(b.title, "zh-CN"))
+    .slice(0, 3);
 }
 
 function insertShenlunReport(record) {
@@ -1186,9 +1360,10 @@ async function openAiShenlunReport({ questionType, maxScore, prompt, material, a
   };
 }
 
-async function deepSeekShenlunReport({ questionType, maxScore, prompt, material, answer }) {
+async function deepSeekShenlunReport({ questionType, maxScore, prompt, material, answer, userProfile }) {
   const rubric = getShenlunRubric(questionType);
   const targetMax = Number(maxScore || 30);
+  const snippets = getKnowledgeSnippets("shenlun", rubric.questionType, `${prompt}\n${material}\n${answer}`);
   const parsed = await deepSeekJsonChat({
     systemPrompt: [
       "你是一位中国公务员考试申论阅卷与教研专家。",
@@ -1198,10 +1373,13 @@ async function deepSeekShenlunReport({ questionType, maxScore, prompt, material,
       `目标分值：${targetMax}`,
       `评分维度：${rubric.dimensions.join("、")}`,
       `核心关注点：${rubric.focusPoints.join("、")}`,
+      userProfile ? `该考生已有训练档案：${JSON.stringify(userProfile)}` : "该考生暂无历史训练档案。",
+      snippets.length ? `内部教研提示：${snippets.map((item) => `${item.title}：${item.content}`).join("\n")}` : "内部教研提示：无。",
       "只返回 JSON，不要输出 Markdown。",
       "JSON 字段必须包含：scaledScore, percentScore, dimensions, strengths, weaknesses, missing, rewrite。",
       "scaledScore 为 0 到目标分值的整数；percentScore 为 0 到 100 的整数；dimensions 是数组，每项包含 label, score, comment；strengths/weaknesses/missing 是字符串数组；rewrite 是参考优化建议。",
-      "必须先指出最主要扣分原因，再给优点；评分要有区分度，不要所有维度都给相同或相近分。"
+      "必须先指出最主要扣分原因，再给优点；评分要有区分度，不要所有维度都给相同或相近分。",
+      "如果有历史训练档案，请把本次建议尽量和长期弱项衔接。"
     ].join("\n"),
     userPrompt: [
       `题目要求：${prompt}`,
@@ -1235,9 +1413,10 @@ async function gradeShenlun(body, user) {
     throw new Error("QUOTA_EXCEEDED");
   }
 
+  const previousProfile = getLearningProfile(user.id, "shenlun");
   const provider = textProvider();
   const report = provider === "deepseek"
-    ? await deepSeekShenlunReport(body)
+    ? await deepSeekShenlunReport({ ...body, userProfile: previousProfile })
     : provider === "openai"
       ? await openAiShenlunReport(body)
       : demoShenlunReport(body);
@@ -1249,10 +1428,13 @@ async function gradeShenlun(body, user) {
     ...report
   };
   insertShenlunReport(record);
+  const profile = buildShenlunLearningProfile(user.id);
+  saveLearningProfile(user.id, "shenlun", profile);
   return {
     provider,
     report: record,
-    history: getShenlunHistory(user.id)
+    history: getShenlunHistory(user.id),
+    profile
   };
 }
 
@@ -1367,12 +1549,17 @@ function interviewScoringGuide() {
 
 async function deepSeekInterviewReport(body) {
   const normalized = normalizeInterviewInput(body);
+  const profile = body.userProfile || null;
+  const snippets = getKnowledgeSnippets("shenlun", "interview", `${normalized.prompt}\n${normalized.answer}\n${normalized.material}`);
   const parsed = await deepSeekJsonChat({
     systemPrompt: [
       interviewScoringGuide(),
+      profile ? `该考生已有面试/申论训练档案：${JSON.stringify(profile)}` : "该考生暂无历史训练档案。",
+      snippets.length ? `内部教研提示：${snippets.map((item) => `${item.title}：${item.content}`).join("\n")}` : "内部教研提示：无。",
       "只返回 JSON，不要输出 Markdown。",
       "JSON 字段必须包含：scaledScore, percentScore, dimensions, strengths, weaknesses, missing, rewrite。",
-      "scaledScore 和 percentScore 都是 0-100 的整数；dimensions 是数组，每项包含 label, score, comment；strengths/weaknesses/missing 是字符串数组；rewrite 是下一次面试训练建议。"
+      "scaledScore 和 percentScore 都是 0-100 的整数；dimensions 是数组，每项包含 label, score, comment；strengths/weaknesses/missing 是字符串数组；rewrite 是下一次面试训练建议。",
+      "如果有历史训练档案，请延续长期问题，不要每次都像第一次测评。"
     ].join("\n"),
     userPrompt: [
       `面试题目：${normalized.prompt}`,
@@ -1453,8 +1640,9 @@ async function gradeInterview(body, user) {
   if (history.length >= plan.quota) {
     throw new Error("QUOTA_EXCEEDED");
   }
+  const previousProfile = getLearningProfile(user.id, "shenlun");
   const provider = textProvider();
-  const report = provider === "deepseek" ? await deepSeekInterviewReport(body) : demoInterviewReport(body);
+  const report = provider === "deepseek" ? await deepSeekInterviewReport({ ...body, userProfile: previousProfile }) : demoInterviewReport(body);
   const record = {
     id: randomUUID(),
     userId: user.id,
@@ -1463,10 +1651,13 @@ async function gradeInterview(body, user) {
     ...report
   };
   insertShenlunReport(record);
+  const profile = buildShenlunLearningProfile(user.id);
+  saveLearningProfile(user.id, "shenlun", profile);
   return {
     provider,
     report: record,
-    history: getShenlunHistory(user.id)
+    history: getShenlunHistory(user.id),
+    profile
   };
 }
 
@@ -1652,6 +1843,7 @@ const server = http.createServer(async (req, res) => {
         user,
         plans,
         history: getUserHistory(user.id),
+        shenlunProfile: getLearningProfile(user.id, "shenlun") || buildShenlunLearningProfile(user.id),
         draft: getDraft(user.id) || {
           task: "task2",
           name: user.name === "Guest" ? "" : user.name,
@@ -1714,6 +1906,7 @@ const server = http.createServer(async (req, res) => {
     if (req.method === "DELETE" && url.pathname === "/api/history") {
       const user = getOrCreateUser(url.searchParams.get("userId"));
       clearUserHistory(user.id);
+      db.prepare("DELETE FROM user_learning_profiles WHERE user_id = ? AND product = ?").run(user.id, "english");
       json(res, 200, { history: [], admin: adminStats() });
       return;
     }
@@ -1735,6 +1928,12 @@ const server = http.createServer(async (req, res) => {
     if (req.method === "GET" && url.pathname === "/api/shenlun/history") {
       const user = getOrCreateUser(url.searchParams.get("userId"));
       json(res, 200, { history: getShenlunHistory(user.id) });
+      return;
+    }
+
+    if (req.method === "GET" && url.pathname === "/api/shenlun/profile") {
+      const user = getOrCreateUser(url.searchParams.get("userId"));
+      json(res, 200, { profile: getLearningProfile(user.id, "shenlun") || buildShenlunLearningProfile(user.id) });
       return;
     }
 

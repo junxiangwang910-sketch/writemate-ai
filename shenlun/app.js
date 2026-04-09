@@ -64,6 +64,11 @@ const interviewStrengthList = document.querySelector("#interviewStrengthList");
 const interviewWeaknessList = document.querySelector("#interviewWeaknessList");
 const interviewMissingTags = document.querySelector("#interviewMissingTags");
 const interviewRewriteText = document.querySelector("#interviewRewriteText");
+const profileTotalReports = document.querySelector("#profileTotalReports");
+const profileAverageScore = document.querySelector("#profileAverageScore");
+const profileTrend = document.querySelector("#profileTrend");
+const profileFocusTags = document.querySelector("#profileFocusTags");
+const profileNextActions = document.querySelector("#profileNextActions");
 const modeCards = Array.from(document.querySelectorAll(".mode-card"));
 const videoModePanel = document.querySelector("#videoModePanel");
 const qaModePanel = document.querySelector("#qaModePanel");
@@ -205,6 +210,15 @@ function updateCount() {
   charCount.textContent = String(countChars(answerText.value));
 }
 
+function renderLearningProfile(profile) {
+  if (!profile) return;
+  profileTotalReports.textContent = String(profile.totalReports || 0);
+  profileAverageScore.textContent = String(profile.averagePercent || 0);
+  profileTrend.textContent = profile.recentTrend || "完成第一次训练后，这里会开始记录你的长期变化。";
+  profileFocusTags.innerHTML = (profile.focusTags || []).map((item) => `<span>${item}</span>`).join("");
+  profileNextActions.innerHTML = (profile.nextActions || []).map((item) => `<li>${item}</li>`).join("");
+}
+
 function setInterviewMode(mode) {
   interviewMode = mode;
   modeCards.forEach((card) => card.classList.toggle("active", card.dataset.mode === mode));
@@ -317,6 +331,7 @@ async function submitShenlun(event) {
       })
     });
     state.history = payload.history || [];
+    renderLearningProfile(payload.profile);
     renderReport(payload.report);
   } catch (error) {
     window.alert(error.message);
@@ -357,6 +372,7 @@ async function submitInterview(event) {
       })
     });
     state.history = payload.history || [];
+    renderLearningProfile(payload.profile);
     renderInterviewReport(payload.report);
   } catch (error) {
     window.alert(error.message);
@@ -489,6 +505,7 @@ document.querySelectorAll("[data-target]").forEach((node) => {
 updateCount();
 bootstrapUser().then((payload) => {
   updateActivationStatus(payload.user);
+  renderLearningProfile(payload.shenlunProfile);
 }).catch((error) => {
   console.error(error);
 });
