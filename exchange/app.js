@@ -174,8 +174,10 @@ function renderTrust() {
   const trustCards = [
     {
       label: "Price source",
-      value: "Binance live + internal reference",
-      meta: "Crypto spot quotes update from Binance official market streams. Australia Coin remains a platform reference asset."
+      value: `${power.market.dataSource || "Internal reference"} + Binance`,
+      meta: power.market.reportFile
+        ? `AEMO report ${power.market.reportFile} · settlement ${power.market.settlementDate}`
+        : "Crypto spot quotes update from Binance official market streams. Australia Coin remains a platform reference asset."
     },
     {
       label: "Settlement rail",
@@ -260,7 +262,7 @@ function renderMarkets() {
     <button class="market-row" type="button" data-symbol="${item.symbol}">
       <div>
         <strong>${item.symbol}</strong>
-        <div class="market-meta">${item.name} · ${item.marketType}</div>
+        <div class="market-meta">${item.name} · ${item.marketType} · ${item.source === "binance_live" ? "Binance live" : "Reference"}</div>
       </div>
       <div class="${signedClass(item.changePct)}">
         <strong>${priceFmt(item.price)}</strong>
@@ -307,6 +309,7 @@ function renderPowerPanel() {
     ["Peg", power.market.peg],
     ["AU spot ref", `${fmt(power.market.spotCnyPerKwh, 4)} CNY/kWh`],
     ["Forward ref", `${fmt(power.market.futuresCnyPerKwh, 4)} CNY/kWh`],
+    ["Data source", power.market.dataSource || "Internal reference"],
     ["Redeemed power", `${fmt(power.wallet.redeemedKwh, 2)} kWh`]
   ].map(([label, value]) => `
     <article class="power-stat">

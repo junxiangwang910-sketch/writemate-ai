@@ -2,6 +2,7 @@ const http = require("http");
 const fs = require("fs");
 const path = require("path");
 const { randomUUID } = require("crypto");
+const { execFileSync } = require("child_process");
 const { DatabaseSync } = require("node:sqlite");
 
 const ROOT = __dirname;
@@ -43,6 +44,8 @@ const ACTIVATION_CODES = process.env.ACTIVATION_CODES || "";
 const USDT_TRC20_ADDRESS = process.env.USDT_TRC20_ADDRESS || "TTnPHLdS2x5tPBMTdi4Gktr1ExAfET7HDB";
 const USDT_ERC20_ADDRESS = process.env.USDT_ERC20_ADDRESS || "";
 const USDT_BEP20_ADDRESS = process.env.USDT_BEP20_ADDRESS || "";
+const AUD_CNY_FX = Number(process.env.AUD_CNY_FX || 4.72);
+const AEMO_PRICE_CACHE_MS = Number(process.env.AEMO_PRICE_CACHE_MS || 5 * 60 * 1000);
 
 const mimeTypes = {
   ".html": "text/html; charset=utf-8",
@@ -60,24 +63,29 @@ const plans = {
 };
 
 const tradeInstruments = [
-  { symbol: "BTCUSDT", asset: "BTC", name: "Bitcoin", marketType: "spot", basePrice: 71026.17, amplitude: 0.012, volume: "3581.25" },
-  { symbol: "ETHUSDT", asset: "ETH", name: "Ethereum", marketType: "spot", basePrice: 2183.16, amplitude: 0.015, volume: "1970.69" },
-  { symbol: "SOLUSDT", asset: "SOL", name: "Solana", marketType: "spot", basePrice: 82.43, amplitude: 0.022, volume: "720.00" },
-  { symbol: "DOGEUSDT", asset: "DOGE", name: "Dogecoin", marketType: "spot", basePrice: 0.09149, amplitude: 0.03, volume: "152.59" },
-  { symbol: "SHIBUSDT", asset: "SHIB", name: "Shiba Inu", marketType: "spot", basePrice: 0.0000402, amplitude: 0.036, volume: "18.67" },
-  { symbol: "PEPEUSDT", asset: "PEPE", name: "Pepe", marketType: "spot", basePrice: 0.00001668, amplitude: 0.04, volume: "11.42" },
-  { symbol: "ADAUSDT", asset: "ADA", name: "Cardano", marketType: "spot", basePrice: 0.2516, amplitude: 0.026, volume: "81.17" },
-  { symbol: "XRPUSDT", asset: "XRP", name: "Ripple", marketType: "spot", basePrice: 1.3327, amplitude: 0.023, volume: "603.98" },
-  { symbol: "TRXUSDT", asset: "TRX", name: "TRON", marketType: "spot", basePrice: 0.317, amplitude: 0.018, volume: "186.48" },
-  { symbol: "AVAXUSDT", asset: "AVAX", name: "Avalanche", marketType: "spot", basePrice: 9.10, amplitude: 0.028, volume: "78.19" },
-  { symbol: "LINKUSDT", asset: "LINK", name: "Chainlink", marketType: "spot", basePrice: 8.76, amplitude: 0.021, volume: "86.58" },
-  { symbol: "BTC-PERP", asset: "BTC", name: "BTC 永续", marketType: "perpetual", basePrice: 70991.7, amplitude: 0.014, volume: "185.05K" },
-  { symbol: "ETH-PERP", asset: "ETH", name: "ETH 永续", marketType: "perpetual", basePrice: 2181.86, amplitude: 0.018, volume: "91.24K" },
-  { symbol: "SOL-PERP", asset: "SOL", name: "SOL 永续", marketType: "perpetual", basePrice: 82.37, amplitude: 0.023, volume: "73.62K" },
-  { symbol: "GC1!", asset: "GC", name: "黄金主连", marketType: "futures", basePrice: 2362.4, amplitude: 0.009, volume: "18.22K" },
-  { symbol: "CL1!", asset: "CL", name: "原油主连", marketType: "futures", basePrice: 82.74, amplitude: 0.013, volume: "26.48K" },
-  { symbol: "NQ1!", asset: "NQ", name: "纳指期货", marketType: "futures", basePrice: 18274.0, amplitude: 0.011, volume: "13.76K" }
+  { symbol: "BTCUSDT", asset: "BTC", name: "Bitcoin", marketType: "spot", source: "binance_live", basePrice: 71026.17, amplitude: 0.012, volume: "3581.25" },
+  { symbol: "ETHUSDT", asset: "ETH", name: "Ethereum", marketType: "spot", source: "binance_live", basePrice: 2183.16, amplitude: 0.015, volume: "1970.69" },
+  { symbol: "SOLUSDT", asset: "SOL", name: "Solana", marketType: "spot", source: "binance_live", basePrice: 82.43, amplitude: 0.022, volume: "720.00" },
+  { symbol: "DOGEUSDT", asset: "DOGE", name: "Dogecoin", marketType: "spot", source: "binance_live", basePrice: 0.09149, amplitude: 0.03, volume: "152.59" },
+  { symbol: "SHIBUSDT", asset: "SHIB", name: "Shiba Inu", marketType: "spot", source: "binance_live", basePrice: 0.0000402, amplitude: 0.036, volume: "18.67" },
+  { symbol: "PEPEUSDT", asset: "PEPE", name: "Pepe", marketType: "spot", source: "binance_live", basePrice: 0.00001668, amplitude: 0.04, volume: "11.42" },
+  { symbol: "ADAUSDT", asset: "ADA", name: "Cardano", marketType: "spot", source: "binance_live", basePrice: 0.2516, amplitude: 0.026, volume: "81.17" },
+  { symbol: "XRPUSDT", asset: "XRP", name: "Ripple", marketType: "spot", source: "binance_live", basePrice: 1.3327, amplitude: 0.023, volume: "603.98" },
+  { symbol: "TRXUSDT", asset: "TRX", name: "TRON", marketType: "spot", source: "binance_live", basePrice: 0.317, amplitude: 0.018, volume: "186.48" },
+  { symbol: "AVAXUSDT", asset: "AVAX", name: "Avalanche", marketType: "spot", source: "binance_live", basePrice: 9.10, amplitude: 0.028, volume: "78.19" },
+  { symbol: "LINKUSDT", asset: "LINK", name: "Chainlink", marketType: "spot", source: "binance_live", basePrice: 8.76, amplitude: 0.021, volume: "86.58" },
+  { symbol: "BTC-PERP", asset: "BTC", name: "BTC Perpetual", marketType: "perpetual", source: "internal_reference", basePrice: 70991.7, amplitude: 0.014, volume: "185.05K" },
+  { symbol: "ETH-PERP", asset: "ETH", name: "ETH Perpetual", marketType: "perpetual", source: "internal_reference", basePrice: 2181.86, amplitude: 0.018, volume: "91.24K" },
+  { symbol: "SOL-PERP", asset: "SOL", name: "SOL Perpetual", marketType: "perpetual", source: "internal_reference", basePrice: 82.37, amplitude: 0.023, volume: "73.62K" },
+  { symbol: "GC1!", asset: "GC", name: "Gold Futures Ref", marketType: "futures", source: "internal_reference", basePrice: 2362.4, amplitude: 0.009, volume: "18.22K" },
+  { symbol: "CL1!", asset: "CL", name: "Crude Futures Ref", marketType: "futures", source: "internal_reference", basePrice: 82.74, amplitude: 0.013, volume: "26.48K" },
+  { symbol: "NQ1!", asset: "NQ", name: "Nasdaq Futures Ref", marketType: "futures", source: "internal_reference", basePrice: 18274.0, amplitude: 0.011, volume: "13.76K" }
 ];
+
+let aemoPriceCache = {
+  fetchedAt: 0,
+  value: null
+};
 
 function ensureDataDir() {
   if (!fs.existsSync(DATA_DIR)) {
@@ -950,7 +958,105 @@ function shortHash(prefix = "0x") {
   return `${prefix}${randomUUID().replace(/-/g, "").slice(0, 24)}`;
 }
 
-function buildPowerMarket() {
+async function fetchAemoPublicPriceReference() {
+  if (aemoPriceCache.value && Date.now() - aemoPriceCache.fetchedAt < AEMO_PRICE_CACHE_MS) {
+    return aemoPriceCache.value;
+  }
+
+  const listingResponse = await fetch("https://www.nemweb.com.au/Reports/Current/Public_Prices/");
+  if (!listingResponse.ok) {
+    throw new Error(`AEMO_LISTING_FAILED_${listingResponse.status}`);
+  }
+
+  const listingHtml = await listingResponse.text();
+  const matches = [...listingHtml.matchAll(/PUBLIC_PRICES_[0-9_]+\.zip/gi)].map((match) => match[0]);
+  const latestZipName = matches.at(-1);
+  if (!latestZipName) {
+    throw new Error("AEMO_ZIP_NOT_FOUND");
+  }
+
+  const zipResponse = await fetch(`https://www.nemweb.com.au/Reports/Current/Public_Prices/${latestZipName}`);
+  if (!zipResponse.ok) {
+    throw new Error(`AEMO_ZIP_FETCH_FAILED_${zipResponse.status}`);
+  }
+
+  const zipPath = path.join(DATA_DIR, "aemo-public-prices-latest.zip");
+  fs.writeFileSync(zipPath, Buffer.from(await zipResponse.arrayBuffer()));
+  const csvText = execFileSync("unzip", ["-p", zipPath], { encoding: "utf8", maxBuffer: 16 * 1024 * 1024 });
+  const lines = csvText.split(/\r?\n/).filter(Boolean);
+  const regionPrices = new Map();
+
+  for (const line of lines) {
+    if (!line.startsWith("D,DREGION")) continue;
+    const cells = parseCsvLine(line);
+    const settlementDate = String(cells[4] || "");
+    const regionId = String(cells[6] || "");
+    const rrp = Number(cells[8] || 0);
+    if (!regionId || Number.isNaN(rrp)) continue;
+    const current = regionPrices.get(regionId);
+    if (!current || settlementDate > current.settlementDate) {
+      regionPrices.set(regionId, { regionId, settlementDate, rrp });
+    }
+  }
+
+  const orderedRegions = ["NSW1", "QLD1", "SA1", "TAS1", "VIC1"]
+    .map((regionId) => regionPrices.get(regionId))
+    .filter(Boolean);
+  if (!orderedRegions.length) {
+    throw new Error("AEMO_REGION_PRICES_NOT_FOUND");
+  }
+
+  const averageAudPerMWh = orderedRegions.reduce((sum, item) => sum + item.rrp, 0) / orderedRegions.length;
+  const audPerKwh = averageAudPerMWh / 1000;
+  const cnyPerKwh = round(audPerKwh * AUD_CNY_FX, 4);
+  const forwardCnyPerKwh = round(cnyPerKwh * 1.043, 4);
+  const result = {
+    source: "AEMO public prices",
+    reportFile: latestZipName,
+    settlementDate: orderedRegions[0].settlementDate,
+    audPerMWh: round(averageAudPerMWh, 4),
+    cnyPerKwh,
+    forwardCnyPerKwh,
+    regions: orderedRegions.map((item) => ({
+      regionId: item.regionId,
+      settlementDate: item.settlementDate,
+      audPerMWh: round(item.rrp, 4)
+    }))
+  };
+
+  aemoPriceCache = {
+    fetchedAt: Date.now(),
+    value: result
+  };
+
+  return result;
+}
+
+function parseCsvLine(line) {
+  const result = [];
+  let current = "";
+  let inQuotes = false;
+  for (let index = 0; index < line.length; index += 1) {
+    const char = line[index];
+    if (char === "\"") {
+      if (inQuotes && line[index + 1] === "\"") {
+        current += "\"";
+        index += 1;
+      } else {
+        inQuotes = !inQuotes;
+      }
+    } else if (char === "," && !inQuotes) {
+      result.push(current);
+      current = "";
+    } else {
+      current += char;
+    }
+  }
+  result.push(current);
+  return result;
+}
+
+function buildFallbackPowerMarket() {
   const hourSeed = Math.floor(Date.now() / 3_600_000);
   const wave = Math.sin(hourSeed / 5) * 0.11;
   const secondary = Math.cos(hourSeed / 3) * 0.04;
@@ -969,7 +1075,11 @@ function buildPowerMarket() {
     tokenUsdt: round(tokenPrice / 7.08, 4),
     greenRatio: round(42 + Math.sin(hourSeed / 6) * 8, 2),
     carbonSavedKg: round(1280 + Math.cos(hourSeed / 4) * 110, 2),
-    changePct24h: round(((tokenPrice - 0.574) / 0.574) * 100, 2)
+    changePct24h: round(((tokenPrice - 0.574) / 0.574) * 100, 2),
+    dataSource: "Internal fallback reference",
+    reportFile: "",
+    settlementDate: new Date().toISOString(),
+    regionBreakdown: []
   };
 }
 
@@ -1031,9 +1141,36 @@ function updatePowerWallet(userId, fields) {
   `).run(nextBalance, nextRedeemed, new Date().toISOString(), userId);
 }
 
-function getPowerSnapshot(userId) {
+async function buildPowerMarket() {
+  const fallback = buildFallbackPowerMarket();
+  try {
+    const reference = await fetchAemoPublicPriceReference();
+    const tokenPremium = round((reference.forwardCnyPerKwh - reference.cnyPerKwh) * 0.35, 4);
+    const tokenPrice = round(reference.cnyPerKwh + tokenPremium, 4);
+    return {
+      ...fallback,
+      spotCnyPerKwh: reference.cnyPerKwh,
+      futuresCnyPerKwh: reference.forwardCnyPerKwh,
+      tokenCny: tokenPrice,
+      tokenUsdt: round(tokenPrice / 7.08, 4),
+      changePct24h: round(((tokenPrice - 0.574) / 0.574) * 100, 2),
+      dataSource: reference.source,
+      reportFile: reference.reportFile,
+      settlementDate: reference.settlementDate,
+      regionBreakdown: reference.regions,
+      referenceAudPerMWh: reference.audPerMWh
+    };
+  } catch (error) {
+    return {
+      ...fallback,
+      sourceError: error.message
+    };
+  }
+}
+
+async function getPowerSnapshot(userId) {
   const wallet = getPowerWallet(userId);
-  const market = buildPowerMarket();
+  const market = await buildPowerMarket();
   const ledger = getPowerLedger(userId).map((row) => ({
     id: row.id,
     txHash: row.tx_hash,
@@ -1070,8 +1207,8 @@ function getPowerSnapshot(userId) {
   };
 }
 
-function submitPowerAction(body, user) {
-  const market = buildPowerMarket();
+async function submitPowerAction(body, user) {
+  const market = await buildPowerMarket();
   const wallet = getPowerWallet(user.id);
   const action = String(body.action || "").toLowerCase();
   const tokenAmount = round(Number(body.tokenAmount || 0), 4);
@@ -1116,7 +1253,7 @@ function submitPowerAction(body, user) {
 
   return {
     message: note,
-    ...getPowerSnapshot(user.id)
+    ...await getPowerSnapshot(user.id)
   };
 }
 
@@ -1152,7 +1289,7 @@ function getDepositNetworks() {
   ];
 }
 
-function getExchangeBootstrap(userId, symbol) {
+async function getExchangeBootstrap(userId, symbol) {
   return {
     profile: getOrCreateExchangeProfile(userId),
     promo: estimateTodayRebate(userId),
@@ -1164,7 +1301,7 @@ function getExchangeBootstrap(userId, symbol) {
       networks: getDepositNetworks(),
       note: "Send USDT only to the matching chain address. Automatic on-chain reconciliation is not enabled in this build."
     },
-    power: getPowerSnapshot(userId),
+    power: await getPowerSnapshot(userId),
     trading: getTradeBootstrap(userId, symbol)
   };
 }
@@ -2807,7 +2944,7 @@ const server = http.createServer(async (req, res) => {
       const user = getOrCreateUser(url.searchParams.get("userId"));
       json(res, 200, {
         user,
-        ...getPowerSnapshot(user.id)
+        ...await getPowerSnapshot(user.id)
       });
       return;
     }
@@ -2815,7 +2952,7 @@ const server = http.createServer(async (req, res) => {
     if (req.method === "POST" && url.pathname === "/api/power/action") {
       const body = await parseBody(req);
       const user = getOrCreateUser(body.userId);
-      json(res, 200, submitPowerAction(body, user));
+      json(res, 200, await submitPowerAction(body, user));
       return;
     }
 
@@ -2823,7 +2960,7 @@ const server = http.createServer(async (req, res) => {
       const user = getOrCreateUser(url.searchParams.get("userId"));
       json(res, 200, {
         user,
-        ...getExchangeBootstrap(user.id, url.searchParams.get("symbol"))
+        ...await getExchangeBootstrap(user.id, url.searchParams.get("symbol"))
       });
       return;
     }
