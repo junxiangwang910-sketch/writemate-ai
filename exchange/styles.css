@@ -20,6 +20,11 @@
   box-sizing: border-box;
 }
 
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
 html {
   scroll-behavior: smooth;
   background:
@@ -92,6 +97,19 @@ a {
   display: flex;
 }
 
+.brand > *,
+.topbar-actions > *,
+.hero-head > *,
+.panel-head > *,
+.market-row > *,
+.asset-row > *,
+.order-row > *,
+.region-row > *,
+.trust-card > *,
+.deposit-card > * {
+  min-width: 0;
+}
+
 .brand,
 .topbar-actions {
   align-items: center;
@@ -101,6 +119,7 @@ a {
 .brand-copy strong,
 .brand-copy span {
   display: block;
+  overflow-wrap: anywhere;
 }
 
 .brand-copy span,
@@ -310,12 +329,14 @@ a {
 .trust-value {
   font-size: 1rem;
   font-weight: 700;
+  overflow-wrap: anywhere;
 }
 
 .trust-meta {
   font-size: 0.82rem;
   color: var(--muted);
   line-height: 1.45;
+  overflow-wrap: anywhere;
 }
 
 .panel {
@@ -362,6 +383,7 @@ a {
   display: block;
   margin-top: 6px;
   font-size: 0.95rem;
+  overflow-wrap: anywhere;
 }
 
 .chart-timeframes {
@@ -482,6 +504,7 @@ a {
 .ticker-chip,
 .market-row {
   text-align: left;
+  min-width: 0;
 }
 
 .ticker-chip {
@@ -494,6 +517,17 @@ a {
 .market-row strong,
 .deposit-card strong {
   display: block;
+  overflow-wrap: anywhere;
+}
+
+.market-meta,
+.deposit-note,
+.address-line,
+.balance-sub,
+.panel-head .muted,
+.power-stat strong,
+.hero-stat strong {
+  overflow-wrap: anywhere;
 }
 
 .market-list,
@@ -659,7 +693,7 @@ a {
 
 .address-line {
   font-size: 0.84rem;
-  word-break: break-all;
+  word-break: break-word;
 }
 
 .compact-head {

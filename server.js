@@ -1478,10 +1478,10 @@ function instrumentBySymbol(symbol) {
 }
 
 function buildTradeQuotes() {
-  const minuteSeed = Math.floor(Date.now() / 60_000);
+  const secondSeed = Date.now() / 1000;
   return tradeInstruments.map((instrument, index) => {
-    const wave = Math.sin((minuteSeed + index * 11) / 7) * instrument.amplitude;
-    const secondary = Math.cos((minuteSeed + index * 5) / 3) * instrument.amplitude * 0.32;
+    const wave = Math.sin((secondSeed + index * 11) / 11) * instrument.amplitude;
+    const secondary = Math.cos((secondSeed + index * 5) / 5) * instrument.amplitude * 0.32;
     const drift = wave + secondary;
     const price = instrument.basePrice * (1 + drift);
     const changePct = drift * 100;

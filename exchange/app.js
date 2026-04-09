@@ -651,7 +651,7 @@ function startAutoRefresh() {
   if (state.refreshTimer) window.clearInterval(state.refreshTimer);
   state.refreshTimer = window.setInterval(() => {
     bootstrap(state.selectedSymbol).catch(() => {});
-  }, 15000);
+  }, 4000);
 }
 
 document.querySelectorAll("[data-market-filter]").forEach((button) => {
