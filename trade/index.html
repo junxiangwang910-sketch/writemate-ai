@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TradeFlow Demo | Crypto & Futures</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=Noto+Sans+SC:wght@400;500;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/trade/styles.css">
+</head>
+<body>
+  <div class="app-shell">
+    <div class="phone-frame">
+      <header class="status-bar">
+        <span>TradeFlow Demo</span>
+        <span class="pill" id="statusPill">模拟盘</span>
+      </header>
+
+      <section class="hero-card">
+        <div class="hero-top">
+          <div>
+            <p class="eyebrow">总资产估值</p>
+            <h1 id="totalEquity">--</h1>
+            <p class="subline"><span id="pnlValue">--</span> <span id="riskLevel">--</span></p>
+          </div>
+          <button class="action-dark" data-screen="assets" type="button">资产</button>
+        </div>
+        <div class="quick-actions">
+          <button class="quick-button" data-screen="spot" type="button">现货买卖</button>
+          <button class="quick-button" data-screen="perp" type="button">永续合约</button>
+          <button class="quick-button" data-screen="markets" type="button">看行情</button>
+          <button class="quick-button" data-screen="assets" type="button">订单记录</button>
+        </div>
+      </section>
+
+      <nav class="segment-tabs">
+        <button class="segment active" data-screen="overview" type="button">总览</button>
+        <button class="segment" data-screen="markets" type="button">行情</button>
+        <button class="segment" data-screen="spot" type="button">现货</button>
+        <button class="segment" data-screen="perp" type="button">合约</button>
+        <button class="segment" data-screen="assets" type="button">资产</button>
+      </nav>
+
+      <main class="screen-stack">
+        <section class="screen active" id="screen-overview">
+          <div class="card compact-grid" id="summaryGrid"></div>
+          <div class="card">
+            <div class="card-head">
+              <h2>自选行情</h2>
+              <span class="muted">模拟实时</span>
+            </div>
+            <div id="favoritesList" class="market-tiles"></div>
+          </div>
+          <div class="promo-card">
+            <div>
+              <p class="eyebrow">策略系统</p>
+              <h3>一套壳子，后面可接真实交易所</h3>
+              <p>这版先完成移动端交易交互、资产流转和模拟撮合，下一步可接 Binance、OKX 或国内期货数据。</p>
+            </div>
+          </div>
+        </section>
+
+        <section class="screen" id="screen-markets">
+          <div class="card">
+            <div class="card-head">
+              <h2>市场</h2>
+              <div class="filter-row">
+                <button class="chip active" data-market-filter="all" type="button">全部</button>
+                <button class="chip" data-market-filter="spot" type="button">现货</button>
+                <button class="chip" data-market-filter="perpetual" type="button">合约</button>
+                <button class="chip" data-market-filter="futures" type="button">期货</button>
+              </div>
+            </div>
+            <div id="marketList" class="market-list"></div>
+          </div>
+        </section>
+
+        <section class="screen" id="screen-spot">
+          <div class="card">
+            <div class="card-head">
+              <h2 id="spotSymbolTitle">BTCUSDT</h2>
+              <span id="spotTicker" class="ticker-tag">--</span>
+            </div>
+            <div id="spotBook" class="book-grid"></div>
+            <div id="spotChart" class="mini-chart"></div>
+          </div>
+          <form class="card order-form" id="spotOrderForm">
+            <div class="switch-row">
+              <button class="trade-side active buy" data-side-toggle="buy" type="button">买入</button>
+              <button class="trade-side sell" data-side-toggle="sell" type="button">卖出</button>
+            </div>
+            <label>
+              <span>订单类型</span>
+              <select id="spotOrderKind">
+                <option value="market">市价</option>
+                <option value="limit">限价</option>
+              </select>
+            </label>
+            <label>
+              <span>价格 (USDT)</span>
+              <input id="spotPriceInput" type="number" step="0.000001" placeholder="默认跟随市价">
+            </label>
+            <label>
+              <span>数量</span>
+              <input id="spotQtyInput" type="number" step="0.000001" value="0.01">
+            </label>
+            <button class="submit-button buy" type="submit" id="spotSubmitButton">买入</button>
+          </form>
+        </section>
+
+        <section class="screen" id="screen-perp">
+          <div class="card">
+            <div class="card-head">
+              <h2 id="perpSymbolTitle">BTC-PERP</h2>
+              <span id="perpTicker" class="ticker-tag">--</span>
+            </div>
+            <div id="perpBook" class="book-grid"></div>
+            <div id="positionList" class="position-list"></div>
+          </div>
+          <form class="card order-form" id="perpOrderForm">
+            <div class="switch-row">
+              <button class="trade-side active buy" data-position-side="long" type="button">开多</button>
+              <button class="trade-side sell" data-position-side="short" type="button">开空</button>
+            </div>
+            <label>
+              <span>动作</span>
+              <select id="perpActionInput">
+                <option value="open">开仓</option>
+                <option value="close">平仓</option>
+              </select>
+            </label>
+            <label>
+              <span>杠杆</span>
+              <input id="perpLeverageInput" type="number" min="1" max="500" value="50">
+            </label>
+            <label>
+              <span>数量</span>
+              <input id="perpQtyInput" type="number" step="0.0001" value="0.01">
+            </label>
+            <button class="submit-button buy" type="submit" id="perpSubmitButton">开多</button>
+          </form>
+        </section>
+
+        <section class="screen" id="screen-assets">
+          <div class="card">
+            <div class="card-head">
+              <h2>资产分布</h2>
+              <span class="muted" id="availableCash">--</span>
+            </div>
+            <div id="assetList" class="asset-list"></div>
+          </div>
+          <div class="card">
+            <div class="card-head">
+              <h2>最近订单</h2>
+              <span class="muted">最新 12 条</span>
+            </div>
+            <div id="orderList" class="order-list"></div>
+          </div>
+        </section>
+      </main>
+
+      <nav class="bottom-nav">
+        <button class="bottom-item active" data-screen="overview" type="button">首页</button>
+        <button class="bottom-item" data-screen="markets" type="button">行情</button>
+        <button class="bottom-item" data-screen="spot" type="button">现货</button>
+        <button class="bottom-item" data-screen="perp" type="button">合约</button>
+        <button class="bottom-item" data-screen="assets" type="button">资产</button>
+      </nav>
+    </div>
+  </div>
+
+  <script src="/trade/app.js"></script>
+</body>
+</html>

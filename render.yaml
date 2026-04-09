@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: voltx-exchange-demo
+    runtime: docker
+    plan: free
+    healthCheckPath: /health
+    envVars:
+      - key: HOST
+        value: 0.0.0.0
+      - key: PORT
+        value: 3000
+      - key: USDT_TRC20_ADDRESS
+        value: TTnPHLdS2x5tPBMTdi4Gktr1ExAfET7HDB

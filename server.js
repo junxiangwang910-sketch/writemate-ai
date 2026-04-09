@@ -29,7 +29,7 @@ function loadEnvFile() {
 loadEnvFile();
 
 const PORT = Number(process.env.PORT || 3000);
-const HOST = process.env.HOST || "127.0.0.1";
+const HOST = process.env.HOST || "0.0.0.0";
 const AI_PROVIDER = (process.env.AI_PROVIDER || "auto").toLowerCase();
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY || "";
 const OPENAI_MODEL = process.env.OPENAI_MODEL || "gpt-5-mini";
@@ -40,12 +40,17 @@ const BAIDU_OCR_API_KEY = process.env.BAIDU_OCR_API_KEY || "";
 const BAIDU_OCR_SECRET_KEY = process.env.BAIDU_OCR_SECRET_KEY || "";
 const BAIDU_OCR_ENDPOINT = process.env.BAIDU_OCR_ENDPOINT || "general_basic";
 const ACTIVATION_CODES = process.env.ACTIVATION_CODES || "";
+const USDT_TRC20_ADDRESS = process.env.USDT_TRC20_ADDRESS || "TTnPHLdS2x5tPBMTdi4Gktr1ExAfET7HDB";
+const USDT_ERC20_ADDRESS = process.env.USDT_ERC20_ADDRESS || "";
+const USDT_BEP20_ADDRESS = process.env.USDT_BEP20_ADDRESS || "";
 
 const mimeTypes = {
   ".html": "text/html; charset=utf-8",
   ".js": "application/javascript; charset=utf-8",
   ".css": "text/css; charset=utf-8",
-  ".json": "application/json; charset=utf-8"
+  ".json": "application/json; charset=utf-8",
+  ".svg": "image/svg+xml",
+  ".webmanifest": "application/manifest+json; charset=utf-8"
 };
 
 const plans = {
@@ -53,6 +58,26 @@ const plans = {
   pro: { key: "pro", price: 19, quota: 50, badge: "Best Seller", featured: true },
   team: { key: "team", price: 79, quota: 300, badge: "For Schools", featured: false }
 };
+
+const tradeInstruments = [
+  { symbol: "BTCUSDT", asset: "BTC", name: "Bitcoin", marketType: "spot", basePrice: 71026.17, amplitude: 0.012, volume: "3581.25" },
+  { symbol: "ETHUSDT", asset: "ETH", name: "Ethereum", marketType: "spot", basePrice: 2183.16, amplitude: 0.015, volume: "1970.69" },
+  { symbol: "SOLUSDT", asset: "SOL", name: "Solana", marketType: "spot", basePrice: 82.43, amplitude: 0.022, volume: "720.00" },
+  { symbol: "DOGEUSDT", asset: "DOGE", name: "Dogecoin", marketType: "spot", basePrice: 0.09149, amplitude: 0.03, volume: "152.59" },
+  { symbol: "SHIBUSDT", asset: "SHIB", name: "Shiba Inu", marketType: "spot", basePrice: 0.0000402, amplitude: 0.036, volume: "18.67" },
+  { symbol: "PEPEUSDT", asset: "PEPE", name: "Pepe", marketType: "spot", basePrice: 0.00001668, amplitude: 0.04, volume: "11.42" },
+  { symbol: "ADAUSDT", asset: "ADA", name: "Cardano", marketType: "spot", basePrice: 0.2516, amplitude: 0.026, volume: "81.17" },
+  { symbol: "XRPUSDT", asset: "XRP", name: "Ripple", marketType: "spot", basePrice: 1.3327, amplitude: 0.023, volume: "603.98" },
+  { symbol: "TRXUSDT", asset: "TRX", name: "TRON", marketType: "spot", basePrice: 0.317, amplitude: 0.018, volume: "186.48" },
+  { symbol: "AVAXUSDT", asset: "AVAX", name: "Avalanche", marketType: "spot", basePrice: 9.10, amplitude: 0.028, volume: "78.19" },
+  { symbol: "LINKUSDT", asset: "LINK", name: "Chainlink", marketType: "spot", basePrice: 8.76, amplitude: 0.021, volume: "86.58" },
+  { symbol: "BTC-PERP", asset: "BTC", name: "BTC 永续", marketType: "perpetual", basePrice: 70991.7, amplitude: 0.014, volume: "185.05K" },
+  { symbol: "ETH-PERP", asset: "ETH", name: "ETH 永续", marketType: "perpetual", basePrice: 2181.86, amplitude: 0.018, volume: "91.24K" },
+  { symbol: "SOL-PERP", asset: "SOL", name: "SOL 永续", marketType: "perpetual", basePrice: 82.37, amplitude: 0.023, volume: "73.62K" },
+  { symbol: "GC1!", asset: "GC", name: "黄金主连", marketType: "futures", basePrice: 2362.4, amplitude: 0.009, volume: "18.22K" },
+  { symbol: "CL1!", asset: "CL", name: "原油主连", marketType: "futures", basePrice: 82.74, amplitude: 0.013, volume: "26.48K" },
+  { symbol: "NQ1!", asset: "NQ", name: "纳指期货", marketType: "futures", basePrice: 18274.0, amplitude: 0.011, volume: "13.76K" }
+];
 
 function ensureDataDir() {
   if (!fs.existsSync(DATA_DIR)) {
@@ -160,6 +185,107 @@ function openDatabase() {
     CREATE TABLE IF NOT EXISTS app_meta (
       key TEXT PRIMARY KEY,
       value TEXT NOT NULL
+    );
+    CREATE TABLE IF NOT EXISTS trade_accounts (
+      user_id TEXT PRIMARY KEY,
+      cash_usdt REAL NOT NULL DEFAULT 0,
+      updated_at TEXT NOT NULL,
+      FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
+    );
+    CREATE TABLE IF NOT EXISTS trade_spot_holdings (
+      user_id TEXT NOT NULL,
+      asset TEXT NOT NULL,
+      quantity REAL NOT NULL,
+      avg_cost REAL NOT NULL,
+      PRIMARY KEY(user_id, asset),
+      FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
+    );
+    CREATE TABLE IF NOT EXISTS trade_positions (
+      user_id TEXT NOT NULL,
+      symbol TEXT NOT NULL,
+      market_type TEXT NOT NULL,
+      side TEXT NOT NULL,
+      quantity REAL NOT NULL,
+      entry_price REAL NOT NULL,
+      leverage INTEGER NOT NULL,
+      margin_used REAL NOT NULL,
+      updated_at TEXT NOT NULL,
+      PRIMARY KEY(user_id, symbol, market_type, side),
+      FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
+    );
+    CREATE TABLE IF NOT EXISTS trade_orders (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL,
+      symbol TEXT NOT NULL,
+      market_type TEXT NOT NULL,
+      action TEXT NOT NULL,
+      side TEXT NOT NULL,
+      order_kind TEXT NOT NULL,
+      quantity REAL NOT NULL,
+      price REAL NOT NULL,
+      leverage INTEGER NOT NULL DEFAULT 1,
+      status TEXT NOT NULL,
+      note TEXT NOT NULL DEFAULT '',
+      created_at TEXT NOT NULL,
+      FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
+    );
+    CREATE TABLE IF NOT EXISTS power_wallets (
+      user_id TEXT PRIMARY KEY,
+      wallet_address TEXT NOT NULL UNIQUE,
+      power_balance REAL NOT NULL DEFAULT 0,
+      redeemed_kwh REAL NOT NULL DEFAULT 0,
+      created_at TEXT NOT NULL,
+      updated_at TEXT NOT NULL,
+      FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
+    );
+    CREATE TABLE IF NOT EXISTS power_ledger (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL,
+      tx_hash TEXT NOT NULL UNIQUE,
+      action TEXT NOT NULL,
+      token_amount REAL NOT NULL,
+      kwh_amount REAL NOT NULL,
+      unit_price REAL NOT NULL,
+      grid_region TEXT NOT NULL,
+      status TEXT NOT NULL,
+      note TEXT NOT NULL DEFAULT '',
+      created_at TEXT NOT NULL,
+      FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
+    );
+    CREATE TABLE IF NOT EXISTS exchange_profiles (
+      user_id TEXT PRIMARY KEY,
+      username TEXT NOT NULL DEFAULT '',
+      telegram_handle TEXT NOT NULL DEFAULT '',
+      invite_code TEXT NOT NULL UNIQUE,
+      inviter_code TEXT NOT NULL DEFAULT '',
+      mode TEXT NOT NULL DEFAULT 'demo',
+      fee_rate REAL NOT NULL DEFAULT 0.2,
+      rebate_rate REAL NOT NULL DEFAULT 0.18,
+      created_at TEXT NOT NULL,
+      updated_at TEXT NOT NULL,
+      FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
+    );
+    CREATE TABLE IF NOT EXISTS exchange_rebate_ledger (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL,
+      rebate_amount REAL NOT NULL,
+      settlement_time TEXT NOT NULL,
+      note TEXT NOT NULL DEFAULT '',
+      created_at TEXT NOT NULL,
+      FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
+    );
+    CREATE TABLE IF NOT EXISTS exchange_deposits (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL,
+      network TEXT NOT NULL,
+      asset TEXT NOT NULL,
+      amount REAL NOT NULL,
+      tx_hash TEXT NOT NULL,
+      status TEXT NOT NULL DEFAULT 'pending',
+      reviewer_note TEXT NOT NULL DEFAULT '',
+      submitted_at TEXT NOT NULL,
+      reviewed_at TEXT DEFAULT '',
+      FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
     );
   `);
 
@@ -817,6 +943,782 @@ function adminStats() {
     avgBand,
     paidConversion: Math.max(12, Math.round((paidUsers / Math.max(totalUsers, 1)) * 100)),
     topPlan
+  };
+}
+
+function shortHash(prefix = "0x") {
+  return `${prefix}${randomUUID().replace(/-/g, "").slice(0, 24)}`;
+}
+
+function buildPowerMarket() {
+  const hourSeed = Math.floor(Date.now() / 3_600_000);
+  const wave = Math.sin(hourSeed / 5) * 0.11;
+  const secondary = Math.cos(hourSeed / 3) * 0.04;
+  const spotPrice = round(0.582 + wave + secondary, 4);
+  const futuresPrice = round(spotPrice * 1.043, 4);
+  const tokenPremium = round((futuresPrice - spotPrice) * 0.35, 4);
+  const tokenPrice = round(spotPrice + tokenPremium, 4);
+  return {
+    tokenSymbol: "PWR",
+    tokenName: "电力币",
+    peg: "1 PWR = 1 kWh",
+    region: "华东电网模拟区",
+    spotCnyPerKwh: spotPrice,
+    futuresCnyPerKwh: futuresPrice,
+    tokenCny: tokenPrice,
+    tokenUsdt: round(tokenPrice / 7.08, 4),
+    greenRatio: round(42 + Math.sin(hourSeed / 6) * 8, 2),
+    carbonSavedKg: round(1280 + Math.cos(hourSeed / 4) * 110, 2),
+    changePct24h: round(((tokenPrice - 0.574) / 0.574) * 100, 2)
+  };
+}
+
+function ensurePowerWallet(userId) {
+  const existing = db.prepare("SELECT * FROM power_wallets WHERE user_id = ?").get(userId);
+  if (existing) return existing;
+  const now = new Date().toISOString();
+  const wallet = {
+    userId,
+    walletAddress: shortHash("0xPWR"),
+    powerBalance: 120,
+    redeemedKwh: 0,
+    createdAt: now,
+    updatedAt: now
+  };
+  db.prepare(`
+    INSERT INTO power_wallets (user_id, wallet_address, power_balance, redeemed_kwh, created_at, updated_at)
+    VALUES (?, ?, ?, ?, ?, ?)
+  `).run(wallet.userId, wallet.walletAddress, wallet.powerBalance, wallet.redeemedKwh, wallet.createdAt, wallet.updatedAt);
+  return db.prepare("SELECT * FROM power_wallets WHERE user_id = ?").get(userId);
+}
+
+function getPowerWallet(userId) {
+  return ensurePowerWallet(userId);
+}
+
+function getPowerLedger(userId) {
+  ensurePowerWallet(userId);
+  return db.prepare("SELECT * FROM power_ledger WHERE user_id = ? ORDER BY created_at DESC LIMIT 20").all(userId);
+}
+
+function appendPowerLedger(entry) {
+  db.prepare(`
+    INSERT INTO power_ledger (id, user_id, tx_hash, action, token_amount, kwh_amount, unit_price, grid_region, status, note, created_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `).run(
+    entry.id,
+    entry.userId,
+    entry.txHash,
+    entry.action,
+    entry.tokenAmount,
+    entry.kwhAmount,
+    entry.unitPrice,
+    entry.gridRegion,
+    entry.status,
+    entry.note,
+    entry.createdAt
+  );
+}
+
+function updatePowerWallet(userId, fields) {
+  const current = getPowerWallet(userId);
+  const nextBalance = fields.powerBalance ?? current.power_balance;
+  const nextRedeemed = fields.redeemedKwh ?? current.redeemed_kwh;
+  db.prepare(`
+    UPDATE power_wallets
+    SET power_balance = ?, redeemed_kwh = ?, updated_at = ?
+    WHERE user_id = ?
+  `).run(nextBalance, nextRedeemed, new Date().toISOString(), userId);
+}
+
+function getPowerSnapshot(userId) {
+  const wallet = getPowerWallet(userId);
+  const market = buildPowerMarket();
+  const ledger = getPowerLedger(userId).map((row) => ({
+    id: row.id,
+    txHash: row.tx_hash,
+    action: row.action,
+    tokenAmount: row.token_amount,
+    kwhAmount: row.kwh_amount,
+    unitPrice: row.unit_price,
+    gridRegion: row.grid_region,
+    status: row.status,
+    note: row.note,
+    createdAt: row.created_at
+  }));
+  const balance = Number(wallet.power_balance || 0);
+  const redeemedKwh = Number(wallet.redeemed_kwh || 0);
+  const valuationCny = round(balance * market.tokenCny, 2);
+  const valuationUsdt = round(balance * market.tokenUsdt, 4);
+  return {
+    market,
+    wallet: {
+      address: wallet.wallet_address,
+      balance,
+      redeemedKwh,
+      valuationCny,
+      valuationUsdt
+    },
+    metrics: {
+      settlementCapacityKwh: balance,
+      settlementValueCny: valuationCny,
+      avgSettlementPrice: market.tokenCny,
+      greenRatio: market.greenRatio,
+      carbonSavedKg: market.carbonSavedKg
+    },
+    ledger
+  };
+}
+
+function submitPowerAction(body, user) {
+  const market = buildPowerMarket();
+  const wallet = getPowerWallet(user.id);
+  const action = String(body.action || "").toLowerCase();
+  const tokenAmount = round(Number(body.tokenAmount || 0), 4);
+  if (!tokenAmount || tokenAmount <= 0) {
+    throw new Error("INVALID_TOKEN_AMOUNT");
+  }
+
+  let nextBalance = Number(wallet.power_balance || 0);
+  let nextRedeemed = Number(wallet.redeemed_kwh || 0);
+  let note = "";
+
+  if (action === "mint") {
+    nextBalance += tokenAmount;
+    note = `按实时电价铸造 ${tokenAmount} PWR`;
+  } else if (action === "redeem") {
+    if (nextBalance < tokenAmount) throw new Error("INSUFFICIENT_POWER_BALANCE");
+    nextBalance -= tokenAmount;
+    nextRedeemed += tokenAmount;
+    note = `赎回 ${tokenAmount} kWh 电量额度`;
+  } else if (action === "transfer") {
+    if (nextBalance < tokenAmount) throw new Error("INSUFFICIENT_POWER_BALANCE");
+    nextBalance -= tokenAmount;
+    note = `向 ${String(body.toAddress || "外部地址").slice(0, 12)}... 转账 ${tokenAmount} PWR`;
+  } else {
+    throw new Error("INVALID_POWER_ACTION");
+  }
+
+  updatePowerWallet(user.id, { powerBalance: round(nextBalance, 4), redeemedKwh: round(nextRedeemed, 4) });
+  appendPowerLedger({
+    id: randomUUID(),
+    userId: user.id,
+    txHash: shortHash("0xTX"),
+    action,
+    tokenAmount,
+    kwhAmount: tokenAmount,
+    unitPrice: market.tokenCny,
+    gridRegion: market.region,
+    status: "confirmed",
+    note,
+    createdAt: new Date().toLocaleString()
+  });
+
+  return {
+    message: note,
+    ...getPowerSnapshot(user.id)
+  };
+}
+
+function getDepositNetworks() {
+  return [
+    {
+      network: "TRC20",
+      symbol: "USDT",
+      chain: "Tron",
+      address: USDT_TRC20_ADDRESS,
+      enabled: Boolean(USDT_TRC20_ADDRESS),
+      confirmations: 20,
+      feeHint: "低"
+    },
+    {
+      network: "ERC20",
+      symbol: "USDT",
+      chain: "Ethereum",
+      address: USDT_ERC20_ADDRESS,
+      enabled: Boolean(USDT_ERC20_ADDRESS),
+      confirmations: 12,
+      feeHint: "高"
+    },
+    {
+      network: "BEP20",
+      symbol: "USDT",
+      chain: "BNB Smart Chain",
+      address: USDT_BEP20_ADDRESS,
+      enabled: Boolean(USDT_BEP20_ADDRESS),
+      confirmations: 15,
+      feeHint: "中"
+    }
+  ];
+}
+
+function getExchangeBootstrap(userId, symbol) {
+  return {
+    profile: getOrCreateExchangeProfile(userId),
+    promo: estimateTodayRebate(userId),
+    leaderboard: getInviteLeaderboard(),
+    deposits: getUserDeposits(userId),
+    adminQueue: getPendingDeposits(),
+    deposit: {
+      asset: "USDT",
+      networks: getDepositNetworks(),
+      note: "请仅向对应链地址充值 USDT。MVP 版先展示收款地址和网络信息，自动到账监听需在正式上线前补齐。"
+    },
+    power: getPowerSnapshot(userId),
+    trading: getTradeBootstrap(userId, symbol)
+  };
+}
+
+function generateInviteCode() {
+  return `VTX${Math.random().toString(36).slice(2, 8).toUpperCase()}`;
+}
+
+function getExchangeProfile(userId) {
+  return db.prepare("SELECT * FROM exchange_profiles WHERE user_id = ?").get(userId);
+}
+
+function getOrCreateExchangeProfile(userId) {
+  const existing = getExchangeProfile(userId);
+  if (existing) {
+    return {
+      username: existing.username,
+      telegramHandle: existing.telegram_handle,
+      inviteCode: existing.invite_code,
+      inviterCode: existing.inviter_code,
+      mode: existing.mode,
+      feeRate: existing.fee_rate,
+      rebateRate: existing.rebate_rate
+    };
+  }
+  const now = new Date().toISOString();
+  let inviteCode = generateInviteCode();
+  while (db.prepare("SELECT 1 FROM exchange_profiles WHERE invite_code = ?").get(inviteCode)) {
+    inviteCode = generateInviteCode();
+  }
+  db.prepare(`
+    INSERT INTO exchange_profiles (user_id, username, telegram_handle, invite_code, inviter_code, mode, fee_rate, rebate_rate, created_at, updated_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `).run(userId, "", "", inviteCode, "", "demo", 0.2, 0.18, now, now);
+  return getOrCreateExchangeProfile(userId);
+}
+
+function saveExchangeProfile(userId, fields) {
+  const current = getOrCreateExchangeProfile(userId);
+  db.prepare(`
+    UPDATE exchange_profiles
+    SET username = ?, telegram_handle = ?, inviter_code = ?, updated_at = ?
+    WHERE user_id = ?
+  `).run(
+    fields.username ?? current.username,
+    fields.telegramHandle ?? current.telegramHandle,
+    fields.inviterCode ?? current.inviterCode,
+    new Date().toISOString(),
+    userId
+  );
+  return getOrCreateExchangeProfile(userId);
+}
+
+function getExchangeRebates(userId) {
+  return db.prepare("SELECT * FROM exchange_rebate_ledger WHERE user_id = ? ORDER BY settlement_time DESC LIMIT 10").all(userId).map((row) => ({
+    id: row.id,
+    rebateAmount: row.rebate_amount,
+    settlementTime: row.settlement_time,
+    note: row.note,
+    createdAt: row.created_at
+  }));
+}
+
+function estimateTodayRebate(userId) {
+  const orders = getTradeOrders(userId);
+  const profile = getOrCreateExchangeProfile(userId);
+  const grossFees = orders.reduce((sum, item) => sum + (Number(item.quantity || 0) * Number(item.price || 0) * Number(profile.feeRate || 0.2)), 0);
+  return {
+    feeRate: Number(profile.feeRate || 0.2),
+    rebateRate: Number(profile.rebateRate || 0.18),
+    estimatedFee: round(grossFees, 4),
+    estimatedNoonRebate: round(grossFees * Number(profile.rebateRate || 0.18), 4),
+    recentRebates: getExchangeRebates(userId)
+  };
+}
+
+function getUserDeposits(userId) {
+  return db.prepare("SELECT * FROM exchange_deposits WHERE user_id = ? ORDER BY submitted_at DESC LIMIT 10").all(userId).map((row) => ({
+    id: row.id,
+    network: row.network,
+    asset: row.asset,
+    amount: row.amount,
+    txHash: row.tx_hash,
+    status: row.status,
+    reviewerNote: row.reviewer_note,
+    submittedAt: row.submitted_at,
+    reviewedAt: row.reviewed_at
+  }));
+}
+
+function getPendingDeposits() {
+  return db.prepare(`
+    SELECT d.*, u.name, p.username
+    FROM exchange_deposits d
+    LEFT JOIN users u ON u.id = d.user_id
+    LEFT JOIN exchange_profiles p ON p.user_id = d.user_id
+    ORDER BY d.submitted_at DESC
+    LIMIT 20
+  `).all().map((row) => ({
+    id: row.id,
+    userId: row.user_id,
+    displayName: row.username || row.name || "Guest",
+    network: row.network,
+    asset: row.asset,
+    amount: row.amount,
+    txHash: row.tx_hash,
+    status: row.status,
+    reviewerNote: row.reviewer_note,
+    submittedAt: row.submitted_at,
+    reviewedAt: row.reviewed_at
+  }));
+}
+
+function getInviteLeaderboard() {
+  return db.prepare(`
+    SELECT inviter_code, COUNT(*) AS referrals
+    FROM exchange_profiles
+    WHERE inviter_code != ''
+    GROUP BY inviter_code
+    ORDER BY referrals DESC, inviter_code ASC
+    LIMIT 10
+  `).all().map((row) => ({
+    inviteCode: row.inviter_code,
+    referrals: Number(row.referrals || 0)
+  }));
+}
+
+function submitDemoDeposit(body, user) {
+  const network = String(body.network || "").trim().toUpperCase();
+  const amount = Number(body.amount || 0);
+  const txHash = String(body.txHash || "").trim();
+  if (!network || !amount || amount <= 0 || !txHash) {
+    throw new Error("INVALID_DEPOSIT_REQUEST");
+  }
+  db.prepare(`
+    INSERT INTO exchange_deposits (id, user_id, network, asset, amount, tx_hash, status, reviewer_note, submitted_at, reviewed_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `).run(randomUUID(), user.id, network, "USDT", amount, txHash, "pending", "等待审核", new Date().toLocaleString(), "");
+  return {
+    deposits: getUserDeposits(user.id),
+    adminQueue: getPendingDeposits()
+  };
+}
+
+function reviewDemoDeposit(body) {
+  const depositId = String(body.depositId || "").trim();
+  const decision = String(body.decision || "").trim().toLowerCase();
+  const reviewerNote = String(body.reviewerNote || "").trim();
+  const existing = db.prepare("SELECT * FROM exchange_deposits WHERE id = ?").get(depositId);
+  if (!existing) throw new Error("DEPOSIT_NOT_FOUND");
+  if (existing.status !== "pending") throw new Error("DEPOSIT_ALREADY_REVIEWED");
+  const status = decision === "approve" ? "approved" : "rejected";
+  db.prepare("UPDATE exchange_deposits SET status = ?, reviewer_note = ?, reviewed_at = ? WHERE id = ?")
+    .run(status, reviewerNote || (status === "approved" ? "已审核通过" : "已拒绝"), new Date().toLocaleString(), depositId);
+  if (status === "approved") {
+    const account = getTradeAccount(existing.user_id);
+    updateTradeCash(existing.user_id, round(Number(account.cash_usdt || 0) + Number(existing.amount || 0), 8));
+  }
+  return {
+    reviewed: true,
+    status,
+    adminQueue: getPendingDeposits(),
+    userDeposits: getUserDeposits(existing.user_id)
+  };
+}
+
+function round(value, decimals = 2) {
+  const factor = 10 ** decimals;
+  return Math.round(value * factor) / factor;
+}
+
+function instrumentBySymbol(symbol) {
+  return tradeInstruments.find((item) => item.symbol === symbol);
+}
+
+function buildTradeQuotes() {
+  const minuteSeed = Math.floor(Date.now() / 60_000);
+  return tradeInstruments.map((instrument, index) => {
+    const wave = Math.sin((minuteSeed + index * 11) / 7) * instrument.amplitude;
+    const secondary = Math.cos((minuteSeed + index * 5) / 3) * instrument.amplitude * 0.32;
+    const drift = wave + secondary;
+    const price = instrument.basePrice * (1 + drift);
+    const changePct = drift * 100;
+    return {
+      ...instrument,
+      price: round(price, price < 1 ? 6 : price < 100 ? 4 : 2),
+      changePct: round(changePct, 2),
+      cnyPrice: round(price * 7.08, price < 1 ? 4 : 2),
+      high24h: round(price * 1.018, price < 1 ? 6 : 2),
+      low24h: round(price * 0.982, price < 1 ? 6 : 2),
+      turnover: `${instrument.volume}${instrument.marketType === "spot" ? "万" : ""}`
+    };
+  });
+}
+
+function quoteMap(quotes) {
+  return Object.fromEntries(quotes.map((quote) => [quote.symbol, quote]));
+}
+
+function buildCandles(symbol, quotes) {
+  const quote = quoteMap(quotes)[symbol] || quoteMap(quotes)["BTCUSDT"];
+  const candles = [];
+  const seed = Math.floor(Date.now() / 300_000);
+  for (let index = 0; index < 24; index += 1) {
+    const base = quote.price * (1 + Math.sin((seed - index) / 4) * 0.012);
+    const open = base * (1 - Math.cos((seed - index) / 3) * 0.004);
+    const close = base * (1 + Math.sin((seed - index) / 5) * 0.004);
+    const high = Math.max(open, close) * 1.006;
+    const low = Math.min(open, close) * 0.994;
+    candles.unshift({
+      label: `${String((index + 1) % 24).padStart(2, "0")}:00`,
+      open: round(open, quote.price < 1 ? 6 : 2),
+      close: round(close, quote.price < 1 ? 6 : 2),
+      high: round(high, quote.price < 1 ? 6 : 2),
+      low: round(low, quote.price < 1 ? 6 : 2)
+    });
+  }
+  return candles;
+}
+
+function buildOrderBook(symbol, quotes) {
+  const quote = quoteMap(quotes)[symbol] || quoteMap(quotes)["BTCUSDT"];
+  const step = quote.price < 1 ? 0.00001 : quote.price < 100 ? 0.01 : 1.2;
+  const asks = Array.from({ length: 6 }).map((_, index) => ({
+    price: round(quote.price + step * (index + 1), quote.price < 1 ? 6 : 2),
+    quantity: round((index + 2) * (quote.price < 1 ? 160.4 : quote.price < 100 ? 72.8 : 18.4), quote.price < 1 ? 1 : 2)
+  }));
+  const bids = Array.from({ length: 6 }).map((_, index) => ({
+    price: round(quote.price - step * (index + 1), quote.price < 1 ? 6 : 2),
+    quantity: round((index + 2) * (quote.price < 1 ? 148.2 : quote.price < 100 ? 68.1 : 16.7), quote.price < 1 ? 1 : 2)
+  }));
+  return { asks, bids };
+}
+
+function ensureTradeAccount(userId) {
+  const existing = db.prepare("SELECT * FROM trade_accounts WHERE user_id = ?").get(userId);
+  if (existing) return;
+  const now = new Date().toISOString();
+  db.prepare("INSERT INTO trade_accounts (user_id, cash_usdt, updated_at) VALUES (?, ?, ?)").run(userId, 25.8477563, now);
+  const insertHolding = db.prepare("INSERT INTO trade_spot_holdings (user_id, asset, quantity, avg_cost) VALUES (?, ?, ?, ?)");
+  [
+    ["PEPE", 69903, 0.0000159],
+    ["SHIB", 32857, 0.0000348],
+    ["DOGE", 2.066, 0.6231],
+    ["SOL", 0.012, 79.6]
+  ].forEach(([asset, quantity, avgCost]) => {
+    insertHolding.run(userId, asset, quantity, avgCost);
+  });
+}
+
+function getTradeAccount(userId) {
+  ensureTradeAccount(userId);
+  return db.prepare("SELECT * FROM trade_accounts WHERE user_id = ?").get(userId);
+}
+
+function getSpotHoldings(userId) {
+  ensureTradeAccount(userId);
+  return db.prepare("SELECT * FROM trade_spot_holdings WHERE user_id = ? ORDER BY asset ASC").all(userId);
+}
+
+function getTradePositions(userId) {
+  ensureTradeAccount(userId);
+  return db.prepare("SELECT * FROM trade_positions WHERE user_id = ? ORDER BY updated_at DESC").all(userId);
+}
+
+function getTradeOrders(userId) {
+  ensureTradeAccount(userId);
+  return db.prepare("SELECT * FROM trade_orders WHERE user_id = ? ORDER BY created_at DESC LIMIT 12").all(userId);
+}
+
+function upsertSpotHolding(userId, asset, quantity, avgCost) {
+  if (quantity <= 0) {
+    db.prepare("DELETE FROM trade_spot_holdings WHERE user_id = ? AND asset = ?").run(userId, asset);
+    return;
+  }
+  db.prepare(`
+    INSERT INTO trade_spot_holdings (user_id, asset, quantity, avg_cost)
+    VALUES (?, ?, ?, ?)
+    ON CONFLICT(user_id, asset) DO UPDATE SET quantity = excluded.quantity, avg_cost = excluded.avg_cost
+  `).run(userId, asset, quantity, avgCost);
+}
+
+function updateTradeCash(userId, nextCash) {
+  db.prepare("UPDATE trade_accounts SET cash_usdt = ?, updated_at = ? WHERE user_id = ?").run(nextCash, new Date().toISOString(), userId);
+}
+
+function upsertTradePosition(userId, position) {
+  db.prepare(`
+    INSERT INTO trade_positions (user_id, symbol, market_type, side, quantity, entry_price, leverage, margin_used, updated_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    ON CONFLICT(user_id, symbol, market_type, side) DO UPDATE SET
+      quantity = excluded.quantity,
+      entry_price = excluded.entry_price,
+      leverage = excluded.leverage,
+      margin_used = excluded.margin_used,
+      updated_at = excluded.updated_at
+  `).run(
+    userId,
+    position.symbol,
+    position.marketType,
+    position.side,
+    position.quantity,
+    position.entryPrice,
+    position.leverage,
+    position.marginUsed,
+    new Date().toISOString()
+  );
+}
+
+function removeTradePosition(userId, symbol, marketType, side) {
+  db.prepare("DELETE FROM trade_positions WHERE user_id = ? AND symbol = ? AND market_type = ? AND side = ?").run(userId, symbol, marketType, side);
+}
+
+function insertTradeOrder(order) {
+  db.prepare(`
+    INSERT INTO trade_orders (id, user_id, symbol, market_type, action, side, order_kind, quantity, price, leverage, status, note, created_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `).run(
+    order.id,
+    order.userId,
+    order.symbol,
+    order.marketType,
+    order.action,
+    order.side,
+    order.orderKind,
+    order.quantity,
+    order.price,
+    order.leverage,
+    order.status,
+    order.note,
+    order.createdAt
+  );
+}
+
+function getPortfolioSnapshot(userId, quotes) {
+  const quoteLookup = quoteMap(quotes);
+  const account = getTradeAccount(userId);
+  const rawHoldings = getSpotHoldings(userId);
+  const rawPositions = getTradePositions(userId);
+  const orders = getTradeOrders(userId).map((item) => ({
+    id: item.id,
+    symbol: item.symbol,
+    marketType: item.market_type,
+    action: item.action,
+    side: item.side,
+    orderKind: item.order_kind,
+    quantity: item.quantity,
+    price: item.price,
+    leverage: item.leverage,
+    status: item.status,
+    note: item.note,
+    createdAt: item.created_at
+  }));
+
+  const spotHoldings = rawHoldings.map((holding) => {
+    const quote = quoteLookup[`${holding.asset}USDT`];
+    const price = quote?.price || holding.avg_cost;
+    const value = holding.quantity * price;
+    const pnl = value - (holding.quantity * holding.avg_cost);
+    return {
+      asset: holding.asset,
+      quantity: holding.quantity,
+      avgCost: holding.avg_cost,
+      price,
+      value: round(value, 4),
+      pnl: round(pnl, 4),
+      changePct: quote?.changePct || 0
+    };
+  }).sort((a, b) => b.value - a.value);
+
+  const positions = rawPositions.map((position) => {
+    const quote = quoteLookup[position.symbol];
+    const markPrice = quote?.price || position.entry_price;
+    const direction = position.side === "long" ? 1 : -1;
+    const unrealizedPnl = (markPrice - position.entry_price) * position.quantity * direction;
+    const notional = markPrice * position.quantity;
+    const marginRatio = position.margin_used ? notional / position.margin_used : position.leverage;
+    return {
+      symbol: position.symbol,
+      marketType: position.market_type,
+      side: position.side,
+      quantity: position.quantity,
+      entryPrice: position.entry_price,
+      markPrice,
+      leverage: position.leverage,
+      marginUsed: round(position.margin_used, 4),
+      notional: round(notional, 4),
+      unrealizedPnl: round(unrealizedPnl, 4),
+      marginRatio: round(marginRatio, 2)
+    };
+  });
+
+  const spotValue = spotHoldings.reduce((sum, item) => sum + item.value, 0);
+  const marginUsed = positions.reduce((sum, item) => sum + item.marginUsed, 0);
+  const unrealizedPnl = positions.reduce((sum, item) => sum + item.unrealizedPnl, 0);
+  const cash = Number(account.cash_usdt || 0);
+  const totalEquity = cash + spotValue + marginUsed + unrealizedPnl;
+  const available = cash;
+  const pnlPct = totalEquity ? (unrealizedPnl / totalEquity) * 100 : 0;
+
+  return {
+    overview: {
+      totalEquity: round(totalEquity, 4),
+      cash: round(cash, 4),
+      available: round(available, 4),
+      spotValue: round(spotValue, 4),
+      marginUsed: round(marginUsed, 4),
+      unrealizedPnl: round(unrealizedPnl, 4),
+      pnlPct: round(pnlPct, 2),
+      riskLevel: marginUsed > totalEquity * 0.6 ? "高" : marginUsed > totalEquity * 0.35 ? "中" : "低"
+    },
+    spotHoldings,
+    positions,
+    orders
+  };
+}
+
+function getTradeBootstrap(userId, selectedSymbol) {
+  const quotes = buildTradeQuotes();
+  const snapshot = getPortfolioSnapshot(userId, quotes);
+  const currentSymbol = instrumentBySymbol(selectedSymbol) ? selectedSymbol : "BTCUSDT";
+  const favorites = ["BTCUSDT", "ETHUSDT", "DOGEUSDT", "BTC-PERP", "GC1!"]
+    .map((symbol) => quoteMap(quotes)[symbol])
+    .filter(Boolean);
+  return {
+    quotes,
+    favorites,
+    selectedSymbol: currentSymbol,
+    orderBook: buildOrderBook(currentSymbol, quotes),
+    candles: buildCandles(currentSymbol, quotes),
+    ...snapshot
+  };
+}
+
+function placeTradeOrder(body, user) {
+  ensureTradeAccount(user.id);
+  const quotes = buildTradeQuotes();
+  const quoteLookup = quoteMap(quotes);
+  const instrument = instrumentBySymbol(body.symbol);
+  if (!instrument) {
+    throw new Error("INVALID_SYMBOL");
+  }
+
+  const marketType = body.marketType || instrument.marketType;
+  const action = String(body.action || "").toLowerCase();
+  const side = String(body.side || "").toLowerCase();
+  const orderKind = String(body.orderKind || "market").toLowerCase();
+  const quantity = Number(body.quantity || 0);
+  const leverage = Math.max(1, Math.min(500, Number(body.leverage || 1)));
+  const marketPrice = quoteLookup[instrument.symbol]?.price || instrument.basePrice;
+  const price = orderKind === "limit" && Number(body.price) > 0 ? Number(body.price) : marketPrice;
+  if (!quantity || quantity <= 0) {
+    throw new Error("INVALID_QUANTITY");
+  }
+
+  const account = getTradeAccount(user.id);
+  let cash = Number(account.cash_usdt || 0);
+  let note = "";
+
+  if (marketType === "spot") {
+    const asset = instrument.asset;
+    const current = db.prepare("SELECT * FROM trade_spot_holdings WHERE user_id = ? AND asset = ?").get(user.id, asset);
+    if (action === "buy") {
+      const cost = quantity * price;
+      if (cash < cost) throw new Error("INSUFFICIENT_BALANCE");
+      const nextQty = Number(current?.quantity || 0) + quantity;
+      const nextAvgCost = nextQty ? (((Number(current?.quantity || 0) * Number(current?.avg_cost || 0)) + cost) / nextQty) : price;
+      upsertSpotHolding(user.id, asset, round(nextQty, 8), round(nextAvgCost, 8));
+      cash -= cost;
+      note = `买入 ${asset}`;
+    } else if (action === "sell") {
+      const currentQty = Number(current?.quantity || 0);
+      if (currentQty < quantity) throw new Error("INSUFFICIENT_POSITION");
+      const nextQty = currentQty - quantity;
+      upsertSpotHolding(user.id, asset, round(nextQty, 8), Number(current?.avg_cost || price));
+      cash += quantity * price;
+      note = `卖出 ${asset}`;
+    } else {
+      throw new Error("INVALID_ACTION");
+    }
+    updateTradeCash(user.id, round(cash, 8));
+  } else {
+    const positionSide = side === "short" ? "short" : "long";
+    const existing = db.prepare("SELECT * FROM trade_positions WHERE user_id = ? AND symbol = ? AND market_type = ? AND side = ?")
+      .get(user.id, instrument.symbol, marketType, positionSide);
+    if (action === "open") {
+      const marginRequired = (quantity * price) / leverage;
+      if (cash < marginRequired) throw new Error("INSUFFICIENT_BALANCE");
+      const currentQty = Number(existing?.quantity || 0);
+      const nextQty = currentQty + quantity;
+      const nextMargin = Number(existing?.margin_used || 0) + marginRequired;
+      const nextEntry = nextQty
+        ? (((currentQty * Number(existing?.entry_price || 0)) + (quantity * price)) / nextQty)
+        : price;
+      upsertTradePosition(user.id, {
+        symbol: instrument.symbol,
+        marketType,
+        side: positionSide,
+        quantity: round(nextQty, 8),
+        entryPrice: round(nextEntry, 8),
+        leverage,
+        marginUsed: round(nextMargin, 8)
+      });
+      cash -= marginRequired;
+      note = `${positionSide === "long" ? "开多" : "开空"} ${instrument.symbol}`;
+    } else if (action === "close") {
+      if (!existing) throw new Error("POSITION_NOT_FOUND");
+      const currentQty = Number(existing.quantity || 0);
+      if (currentQty < quantity) throw new Error("INVALID_CLOSE_QUANTITY");
+      const closeRatio = quantity / currentQty;
+      const releasedMargin = Number(existing.margin_used || 0) * closeRatio;
+      const realizedPnl = (price - Number(existing.entry_price || price)) * quantity * (positionSide === "long" ? 1 : -1);
+      const remainingQty = currentQty - quantity;
+      if (remainingQty <= 0) {
+        removeTradePosition(user.id, instrument.symbol, marketType, positionSide);
+      } else {
+        upsertTradePosition(user.id, {
+          symbol: instrument.symbol,
+          marketType,
+          side: positionSide,
+          quantity: round(remainingQty, 8),
+          entryPrice: Number(existing.entry_price),
+          leverage: Number(existing.leverage),
+          marginUsed: round(Number(existing.margin_used || 0) - releasedMargin, 8)
+        });
+      }
+      cash += releasedMargin + realizedPnl;
+      note = `${positionSide === "long" ? "平多" : "平空"} ${instrument.symbol}`;
+    } else {
+      throw new Error("INVALID_ACTION");
+    }
+    updateTradeCash(user.id, round(cash, 8));
+  }
+
+  insertTradeOrder({
+    id: randomUUID(),
+    userId: user.id,
+    symbol: instrument.symbol,
+    marketType,
+    action,
+    side,
+    orderKind,
+    quantity: round(quantity, 8),
+    price: round(price, instrument.basePrice < 1 ? 6 : 2),
+    leverage,
+    status: "filled",
+    note,
+    createdAt: new Date().toLocaleString()
+  });
+
+  return {
+    provider: "simulated",
+    message: note,
+    ...getTradeBootstrap(user.id, instrument.symbol)
   };
 }
 
@@ -1834,7 +2736,7 @@ async function baiduOcrShenlunImage({ imageDataUrl }) {
 
 function serveStatic(req, res) {
   const pathname = new URL(req.url, `http://${req.headers.host}`).pathname;
-  let filePath = pathname === "/" ? path.join(ROOT, "index.html") : path.join(ROOT, pathname);
+  let filePath = pathname === "/" ? path.join(ROOT, "exchange", "index.html") : path.join(ROOT, pathname);
 
   if (!filePath.startsWith(ROOT)) {
     json(res, 403, { error: "Forbidden" });
@@ -1881,6 +2783,81 @@ const server = http.createServer(async (req, res) => {
         },
         admin: adminStats()
       });
+      return;
+    }
+
+    if (req.method === "GET" && url.pathname === "/api/trade/bootstrap") {
+      const user = getOrCreateUser(url.searchParams.get("userId"));
+      json(res, 200, {
+        user,
+        ...getTradeBootstrap(user.id, url.searchParams.get("symbol"))
+      });
+      return;
+    }
+
+    if (req.method === "POST" && url.pathname === "/api/trade/order") {
+      const body = await parseBody(req);
+      const user = getOrCreateUser(body.userId);
+      const result = placeTradeOrder(body, user);
+      json(res, 200, result);
+      return;
+    }
+
+    if (req.method === "GET" && url.pathname === "/api/power/bootstrap") {
+      const user = getOrCreateUser(url.searchParams.get("userId"));
+      json(res, 200, {
+        user,
+        ...getPowerSnapshot(user.id)
+      });
+      return;
+    }
+
+    if (req.method === "POST" && url.pathname === "/api/power/action") {
+      const body = await parseBody(req);
+      const user = getOrCreateUser(body.userId);
+      json(res, 200, submitPowerAction(body, user));
+      return;
+    }
+
+    if (req.method === "GET" && url.pathname === "/api/exchange/bootstrap") {
+      const user = getOrCreateUser(url.searchParams.get("userId"));
+      json(res, 200, {
+        user,
+        ...getExchangeBootstrap(user.id, url.searchParams.get("symbol"))
+      });
+      return;
+    }
+
+    if (req.method === "POST" && url.pathname === "/api/exchange/register-demo") {
+      const body = await parseBody(req);
+      const user = getOrCreateUser(body.userId);
+      if (String(body.username || "").trim()) {
+        user.name = String(body.username).trim();
+        saveUser(user);
+      }
+      const profile = saveExchangeProfile(user.id, {
+        username: String(body.username || "").trim(),
+        telegramHandle: String(body.telegramHandle || "").trim(),
+        inviterCode: String(body.inviterCode || "").trim().toUpperCase()
+      });
+      json(res, 200, {
+        user,
+        profile,
+        promo: estimateTodayRebate(user.id)
+      });
+      return;
+    }
+
+    if (req.method === "POST" && url.pathname === "/api/exchange/deposit-demo") {
+      const body = await parseBody(req);
+      const user = getOrCreateUser(body.userId);
+      json(res, 200, submitDemoDeposit(body, user));
+      return;
+    }
+
+    if (req.method === "POST" && url.pathname === "/api/exchange/review-deposit-demo") {
+      const body = await parseBody(req);
+      json(res, 200, reviewDemoDeposit(body));
       return;
     }
 

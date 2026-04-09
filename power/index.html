@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PowerToken MVP</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700;800&family=Noto+Sans+SC:wght@400;500;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/power/styles.css">
+</head>
+<body>
+  <div class="page">
+    <header class="hero">
+      <div>
+        <p class="eyebrow">Electricity Futures Tokenization</p>
+        <h1>电力币结算 App MVP</h1>
+        <p class="hero-text">把电力结算额度做成链上代币，定义 `1 PWR = 1 kWh`，价格跟随实时电价和期货溢价波动。</p>
+      </div>
+      <a class="hero-link" href="/trade/">交易壳层</a>
+    </header>
+
+    <main class="layout">
+      <section class="panel spotlight">
+        <div class="panel-head">
+          <div>
+            <p class="eyebrow">钱包总览</p>
+            <h2 id="walletBalance">--</h2>
+          </div>
+          <span class="status-pill" id="priceStatus">--</span>
+        </div>
+        <div class="stats" id="statsGrid"></div>
+        <div class="wallet-card">
+          <div>
+            <span>钱包地址</span>
+            <strong id="walletAddress">--</strong>
+          </div>
+          <div>
+            <span>累计赎回电量</span>
+            <strong id="redeemedKwh">--</strong>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-head">
+          <div>
+            <p class="eyebrow">价格引擎</p>
+            <h2 id="tokenPrice">--</h2>
+          </div>
+          <span class="muted" id="gridRegion">--</span>
+        </div>
+        <div class="price-grid" id="priceGrid"></div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-head">
+          <div>
+            <p class="eyebrow">链上动作</p>
+            <h2>铸造 / 转账 / 赎回</h2>
+          </div>
+        </div>
+        <form id="powerForm" class="action-form">
+          <label>
+            <span>动作</span>
+            <select id="actionInput">
+              <option value="mint">铸造电力币</option>
+              <option value="transfer">转账给外部地址</option>
+              <option value="redeem">赎回电量额度</option>
+            </select>
+          </label>
+          <label>
+            <span>数量 (PWR / kWh)</span>
+            <input id="amountInput" type="number" min="0.1" step="0.1" value="10">
+          </label>
+          <label id="addressField">
+            <span>目标地址</span>
+            <input id="addressInput" type="text" placeholder="0xReceiver...">
+          </label>
+          <button type="submit" class="primary-button" id="submitButton">提交动作</button>
+        </form>
+        <p class="note">这版是本地链账本模拟，不需要真实链 Gas、不需要买数据库，也不需要租节点。</p>
+      </section>
+
+      <section class="panel full">
+        <div class="panel-head">
+          <div>
+            <p class="eyebrow">结算流水</p>
+            <h2>最近链上记录</h2>
+          </div>
+        </div>
+        <div id="ledgerList" class="ledger-list"></div>
+      </section>
+    </main>
+  </div>
+
+  <script src="/power/app.js"></script>
+</body>
+</html>

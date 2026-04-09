@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#111315">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="VoltX">
+  <title>VoltX Exchange</title>
+  <link rel="manifest" href="/exchange/manifest.webmanifest">
+  <link rel="icon" href="/exchange/icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="/exchange/icon.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/exchange/styles.css">
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <div class="brand">
+        <div class="brand-mark">V</div>
+        <div>
+          <strong>VoltX</strong>
+          <span>澳洲电力币交易所</span>
+        </div>
+      </div>
+      <nav class="topnav">
+        <button class="nav-item active" data-view="home" type="button">首页</button>
+        <button class="nav-item" data-view="markets" type="button">行情</button>
+        <button class="nav-item" data-view="trade" type="button">交易</button>
+        <button class="nav-item" data-view="power" type="button">电力币</button>
+        <button class="nav-item" data-view="deposit" type="button">充值</button>
+      </nav>
+      <a class="telegram-link" href="https://t.me/" target="_blank" rel="noreferrer">Telegram</a>
+    </header>
+
+    <main class="grid">
+      <section class="hero-card">
+        <div class="hero-copy">
+          <p class="eyebrow">Australian Electricity Futures Peg</p>
+          <h1>Power Token, priced from Australian electricity benchmarks.</h1>
+          <p class="hero-text">统一站点里包含行情、交易、电力币结算和链上充值入口。电力币 `PWR` 采用 `1 PWR = 1 kWh` 的结算逻辑，价格参考澳洲电力价格与期货溢价。</p>
+        </div>
+        <div class="hero-metrics">
+          <div class="hero-stat">
+            <span>PWR 价格</span>
+            <strong id="heroPowerPrice">--</strong>
+          </div>
+          <div class="hero-stat">
+            <span>总资产</span>
+            <strong id="heroEquity">--</strong>
+          </div>
+          <div class="hero-stat">
+            <span>PWR 持仓</span>
+            <strong id="heroPowerBalance">--</strong>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel market-strip">
+        <div class="panel-head">
+          <h2>热门市场</h2>
+          <span class="muted">简洁版交易面板</span>
+        </div>
+        <div id="tickerStrip" class="ticker-strip"></div>
+      </section>
+
+      <section class="panel onboard-panel">
+        <div class="panel-head">
+          <div>
+            <h2>体验版注册</h2>
+            <span class="muted">发到 Telegram 后，用户可先注册体验，不涉及真实资金托管</span>
+          </div>
+        </div>
+        <form id="registerForm" class="trade-form">
+          <label>
+            <span>用户名</span>
+            <input id="registerUsername" type="text" placeholder="例如 AmyTrader">
+          </label>
+          <label>
+            <span>Telegram 用户名</span>
+            <input id="registerTelegram" type="text" placeholder="@username">
+          </label>
+          <label>
+            <span>邀请码</span>
+            <input id="registerInvite" type="text" placeholder="选填">
+          </label>
+          <button class="submit-button buy" type="submit">注册体验账户</button>
+        </form>
+      </section>
+
+      <section class="panel account-panel">
+        <div class="panel-head">
+          <div>
+            <h2>账户信息</h2>
+            <span class="muted" id="accountMode">--</span>
+          </div>
+        </div>
+        <div id="accountGrid" class="power-grid"></div>
+      </section>
+
+      <section class="panel promo-panel">
+        <div class="panel-head">
+          <div>
+            <h2>手续费与返还展示</h2>
+            <span class="muted">体验版展示逻辑，不用于真实资金结算</span>
+          </div>
+        </div>
+        <div id="promoGrid" class="power-grid"></div>
+      </section>
+
+      <section class="panel leaderboard-panel">
+        <div class="panel-head">
+          <div>
+            <h2>邀请排行榜</h2>
+            <span class="muted">按邀请码统计体验版注册人数</span>
+          </div>
+        </div>
+        <div id="leaderboardList" class="order-list"></div>
+      </section>
+
+      <section class="panel market-panel">
+        <div class="panel-head">
+          <h2>市场列表</h2>
+          <div class="filter-tabs">
+            <button class="chip active" data-market-filter="all" type="button">全部</button>
+            <button class="chip" data-market-filter="spot" type="button">现货</button>
+            <button class="chip" data-market-filter="perpetual" type="button">永续</button>
+            <button class="chip" data-market-filter="futures" type="button">期货</button>
+          </div>
+        </div>
+        <div id="marketList" class="market-list"></div>
+      </section>
+
+      <section class="panel trade-panel">
+        <div class="panel-head">
+          <div>
+            <h2 id="tradeSymbol">BTCUSDT</h2>
+            <span class="muted" id="tradeSymbolMeta">--</span>
+          </div>
+          <span class="price-badge" id="tradeLastPrice">--</span>
+        </div>
+        <div id="orderBook" class="order-book"></div>
+        <form id="tradeForm" class="trade-form">
+          <div class="segmented">
+            <button class="seg active buy" data-side="buy" type="button">买入</button>
+            <button class="seg sell" data-side="sell" type="button">卖出</button>
+          </div>
+          <label>
+            <span>交易类型</span>
+            <select id="marketTypeInput">
+              <option value="spot">现货</option>
+              <option value="perpetual">永续合约</option>
+            </select>
+          </label>
+          <label>
+            <span>动作</span>
+            <select id="actionInput">
+              <option value="buy">买入 / 开仓</option>
+              <option value="sell">卖出 / 平仓</option>
+            </select>
+          </label>
+          <label>
+            <span>数量</span>
+            <input id="quantityInput" type="number" step="0.0001" value="0.01">
+          </label>
+          <label id="leverageField">
+            <span>杠杆</span>
+            <input id="leverageInput" type="number" min="1" max="500" value="50">
+          </label>
+          <button class="submit-button buy" id="tradeSubmit" type="submit">买入</button>
+        </form>
+      </section>
+
+      <section class="panel power-panel">
+        <div class="panel-head">
+          <div>
+            <h2>电力币 PWR</h2>
+            <span class="muted" id="powerRegion">--</span>
+          </div>
+          <span class="price-badge amber" id="powerPrice">--</span>
+        </div>
+        <div class="power-grid" id="powerGrid"></div>
+        <form id="powerForm" class="trade-form">
+          <div class="segmented">
+            <button class="seg active buy" data-power-action="mint" type="button">铸造</button>
+            <button class="seg" data-power-action="transfer" type="button">转账</button>
+            <button class="seg sell" data-power-action="redeem" type="button">赎回</button>
+          </div>
+          <label>
+            <span>PWR 数量</span>
+            <input id="powerAmountInput" type="number" step="0.1" value="10">
+          </label>
+          <label id="powerAddressField">
+            <span>目标地址</span>
+            <input id="powerAddressInput" type="text" placeholder="0xReceiver...">
+          </label>
+          <button class="submit-button" id="powerSubmit" type="submit">铸造</button>
+        </form>
+      </section>
+
+      <section class="panel asset-panel">
+        <div class="panel-head">
+          <h2>资产与订单</h2>
+          <span class="muted" id="assetOverview">--</span>
+        </div>
+        <div id="assetList" class="asset-list"></div>
+        <div id="orderList" class="order-list"></div>
+      </section>
+
+      <section class="panel deposit-panel">
+        <div class="panel-head">
+          <div>
+            <h2>TRON / USDT-TRC20 充值</h2>
+            <span class="muted">朋友可先向你的 TRON 地址转账，再在站内提交交易哈希做体验入账</span>
+          </div>
+        </div>
+        <div id="depositList" class="deposit-list"></div>
+        <form id="depositForm" class="trade-form deposit-form">
+          <label>
+            <span>充值网络</span>
+            <select id="depositNetworkInput">
+              <option value="TRC20">TRC20</option>
+              <option value="ERC20">ERC20</option>
+              <option value="BEP20">BEP20</option>
+            </select>
+          </label>
+          <label>
+            <span>提交金额</span>
+            <input id="depositAmountInput" type="number" step="0.01" value="100">
+          </label>
+          <label>
+            <span>链上交易哈希</span>
+            <input id="depositTxHashInput" type="text" placeholder="0x... 或链上哈希">
+          </label>
+          <button class="submit-button buy" type="submit">提交充值记录</button>
+        </form>
+        <div class="panel-head compact-head">
+          <h2>我的充值记录</h2>
+        </div>
+        <div id="depositRecordList" class="order-list"></div>
+      </section>
+
+      <section class="panel admin-panel">
+        <div class="panel-head">
+          <div>
+            <h2>演示后台审核</h2>
+            <span class="muted">仅用于体验版演示的人工审核队列</span>
+          </div>
+        </div>
+        <div id="adminQueueList" class="order-list"></div>
+      </section>
+    </main>
+  </div>
+
+  <script src="/exchange/app.js"></script>
+</body>
+</html>

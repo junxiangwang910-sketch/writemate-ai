@@ -8,6 +8,9 @@ COPY styles.css ./
 COPY app.js ./
 COPY server.js ./
 COPY shenlun ./shenlun
+COPY trade ./trade
+COPY power ./power
+COPY exchange ./exchange
 COPY data ./data
 
 ENV NODE_ENV=production
