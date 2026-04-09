@@ -42,6 +42,8 @@ const elements = {
   tradeSymbol: document.querySelector("#tradeSymbol"),
   tradeSymbolMeta: document.querySelector("#tradeSymbolMeta"),
   tradeLastPrice: document.querySelector("#tradeLastPrice"),
+  chartMetrics: document.querySelector("#chartMetrics"),
+  candleStrip: document.querySelector("#candleStrip"),
   orderBook: document.querySelector("#orderBook"),
   tradeForm: document.querySelector("#tradeForm"),
   marketTypeInput: document.querySelector("#marketTypeInput"),
@@ -53,6 +55,8 @@ const elements = {
   powerRegion: document.querySelector("#powerRegion"),
   powerPrice: document.querySelector("#powerPrice"),
   powerGrid: document.querySelector("#powerGrid"),
+  powerSettlementMeta: document.querySelector("#powerSettlementMeta"),
+  powerRegionList: document.querySelector("#powerRegionList"),
   powerForm: document.querySelector("#powerForm"),
   powerAmountInput: document.querySelector("#powerAmountInput"),
   powerAddressField: document.querySelector("#powerAddressField"),
@@ -276,9 +280,41 @@ function renderTradePanel() {
   const quote = quoteBySymbol(state.selectedSymbol);
   if (!quote) return;
   const buyLabel = state.tradeSide === "buy" ? "Buy" : "Sell";
+  const candles = state.payload?.trading?.candles || [];
+  const highs = candles.map((item) => Number(item.high || 0));
+  const lows = candles.map((item) => Number(item.low || 0));
+  const overallHigh = Math.max(...highs, quote.price);
+  const overallLow = Math.min(...lows, quote.price);
   elements.tradeSymbol.textContent = quote.symbol;
   elements.tradeSymbolMeta.textContent = `${quote.name} · ${quote.marketType}`;
   elements.tradeLastPrice.textContent = priceFmt(quote.price);
+  elements.chartMetrics.innerHTML = [
+    ["24h High", priceFmt(quote.high24h)],
+    ["24h Low", priceFmt(quote.low24h)],
+    ["24h Change", `${quote.changePct >= 0 ? "+" : ""}${fmt(quote.changePct, 2)}%`]
+  ].map(([label, value]) => `
+    <div class="chart-metric">
+      <span>${label}</span>
+      <strong class="${label === "24h Change" ? signedClass(quote.changePct) : ""}">${value}</strong>
+    </div>
+  `).join("");
+  elements.candleStrip.innerHTML = candles.slice(-18).map((item) => {
+    const open = Number(item.open || 0);
+    const close = Number(item.close || 0);
+    const high = Number(item.high || 0);
+    const low = Number(item.low || 0);
+    const direction = close >= open ? "up" : "down";
+    const bodyBottom = ((Math.min(open, close) - overallLow) / Math.max(overallHigh - overallLow, 0.0001)) * 100;
+    const bodyHeight = (Math.abs(close - open) / Math.max(overallHigh - overallLow, 0.0001)) * 100;
+    const wickBottom = ((low - overallLow) / Math.max(overallHigh - overallLow, 0.0001)) * 100;
+    const wickHeight = ((high - low) / Math.max(overallHigh - overallLow, 0.0001)) * 100;
+    return `
+      <div class="candle ${direction}" title="${item.label} O:${priceFmt(open)} C:${priceFmt(close)}">
+        <span class="wick" style="bottom:${wickBottom}%;height:${Math.max(wickHeight, 4)}%"></span>
+        <span class="body" style="bottom:${bodyBottom}%;height:${Math.max(bodyHeight, 4)}%"></span>
+      </div>
+    `;
+  }).join("");
   elements.marketTypeInput.value = quote.marketType === "spot" ? "spot" : "perpetual";
   const book = syntheticBook(quote);
   elements.orderBook.innerHTML = `
@@ -303,6 +339,9 @@ function renderPowerPanel() {
   const power = state.payload.power;
   elements.powerRegion.textContent = power.market.region;
   elements.powerPrice.textContent = `${fmt(power.market.tokenUsdt, 4)} USDT`;
+  elements.powerSettlementMeta.textContent = power.market.reportFile
+    ? `${power.market.reportFile} · ${power.market.settlementDate}`
+    : "Latest AEMO settlement breakdown";
   elements.powerGrid.innerHTML = [
     ["Wallet address", power.wallet.address],
     ["Coin balance", `${fmt(power.wallet.balance, 2)} ${power.market.tokenSymbol}`],
@@ -317,6 +356,17 @@ function renderPowerPanel() {
       <strong>${value}</strong>
     </article>
   `).join("");
+  elements.powerRegionList.innerHTML = (power.market.regionBreakdown || []).length
+    ? power.market.regionBreakdown.map((item) => `
+      <article class="region-row">
+        <div>
+          <strong>${item.regionId}</strong>
+          <div class="market-meta">${item.settlementDate}</div>
+        </div>
+        <div><strong>${fmt(item.audPerMWh, 2)} AUD/MWh</strong></div>
+      </article>
+    `).join("")
+    : `<article class="region-row"><div><strong>Reference fallback active</strong><div class="market-meta">${power.market.sourceError || "AEMO report unavailable"}</div></div></article>`;
   elements.powerAddressField.style.display = state.powerAction === "transfer" ? "grid" : "none";
   elements.powerSubmit.textContent = state.powerAction === "mint" ? "Mint" : state.powerAction === "redeem" ? "Redeem" : "Transfer";
   elements.powerSubmit.className = `submit-button ${state.powerAction === "redeem" ? "sell" : "buy"}`;

@@ -199,7 +199,8 @@ a {
 .price-badge,
 .chip,
 .seg,
-.bottom-item {
+.bottom-item,
+.time-chip {
   border-radius: 999px;
 }
 
@@ -222,10 +223,13 @@ a {
 .market-row,
 .asset-row,
 .order-row,
+.region-row,
 .deposit-card,
 .ticker-chip,
 .book-column,
-.power-stat {
+.power-stat,
+.chart-card,
+.region-card {
   background: linear-gradient(180deg, var(--panel-3), var(--panel-2));
   border: 1px solid var(--line);
 }
@@ -319,6 +323,114 @@ a {
   padding: 16px;
 }
 
+.chart-card,
+.region-card {
+  border-radius: 20px;
+  padding: 14px;
+  margin-bottom: 12px;
+}
+
+.chart-head,
+.chart-metrics,
+.chart-timeframes {
+  display: flex;
+}
+
+.chart-head {
+  justify-content: space-between;
+  gap: 12px;
+  align-items: flex-start;
+  margin-bottom: 14px;
+}
+
+.chart-metrics {
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.chart-metric {
+  min-width: 90px;
+}
+
+.chart-metric span {
+  display: block;
+  font-size: 0.74rem;
+  color: var(--muted);
+}
+
+.chart-metric strong {
+  display: block;
+  margin-top: 6px;
+  font-size: 0.95rem;
+}
+
+.chart-timeframes {
+  gap: 6px;
+}
+
+.time-chip {
+  padding: 7px 10px;
+  font-size: 0.75rem;
+  color: var(--muted);
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.time-chip.active {
+  color: var(--yellow);
+  background: var(--yellow-soft);
+  border-color: rgba(240, 185, 11, 0.18);
+}
+
+.candle-strip {
+  height: 180px;
+  display: grid;
+  grid-template-columns: repeat(18, minmax(0, 1fr));
+  align-items: end;
+  gap: 6px;
+  padding: 10px 2px 2px;
+  border-top: 1px solid var(--line);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.02), transparent),
+    repeating-linear-gradient(
+      to top,
+      transparent 0,
+      transparent 28px,
+      rgba(255, 255, 255, 0.04) 28px,
+      rgba(255, 255, 255, 0.04) 29px
+    );
+}
+
+.candle {
+  position: relative;
+  height: 100%;
+}
+
+.candle .wick,
+.candle .body {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  border-radius: 999px;
+}
+
+.candle .wick {
+  width: 2px;
+  background: rgba(255, 255, 255, 0.32);
+}
+
+.candle .body {
+  width: 10px;
+}
+
+.candle.up .body {
+  background: var(--green);
+}
+
+.candle.down .body {
+  background: var(--red);
+}
+
 .compact-panel {
   padding: 14px;
 }
@@ -370,7 +482,8 @@ a {
 
 .market-row,
 .asset-row,
-.order-row {
+.order-row,
+.region-row {
   justify-content: space-between;
   gap: 10px;
   align-items: center;
@@ -504,6 +617,11 @@ a {
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
+.region-list {
+  display: grid;
+  gap: 10px;
+}
+
 .deposit-card {
   flex-direction: column;
   gap: 8px;
@@ -628,9 +746,15 @@ a {
     grid-template-columns: 1fr;
   }
 
+  .chart-head,
+  .chart-metrics {
+    flex-direction: column;
+  }
+
   .market-row,
   .asset-row,
-  .order-row {
+  .order-row,
+  .region-row {
     align-items: flex-start;
     flex-direction: column;
   }

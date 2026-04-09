@@ -100,6 +100,19 @@
           <span class="price-badge" id="tradeLastPrice">--</span>
         </div>
 
+        <div class="chart-card">
+          <div class="chart-head">
+            <div class="chart-metrics" id="chartMetrics"></div>
+            <div class="chart-timeframes">
+              <span class="time-chip active">1m</span>
+              <span class="time-chip">15m</span>
+              <span class="time-chip">1h</span>
+              <span class="time-chip">4h</span>
+            </div>
+          </div>
+          <div class="candle-strip" id="candleStrip"></div>
+        </div>
+
         <div class="trade-layout">
           <div id="orderBook" class="order-book"></div>
           <form id="tradeForm" class="trade-form">
@@ -143,6 +156,15 @@
           <span class="price-badge amber" id="powerPrice">--</span>
         </div>
         <div class="power-grid" id="powerGrid"></div>
+        <div class="region-card">
+          <div class="panel-head compact-head">
+            <div>
+              <h2>Regional reference</h2>
+              <span class="muted" id="powerSettlementMeta">Latest AEMO settlement breakdown</span>
+            </div>
+          </div>
+          <div class="region-list" id="powerRegionList"></div>
+        </div>
         <form id="powerForm" class="trade-form">
           <div class="segmented">
             <button class="seg active buy" data-power-action="mint" type="button">Mint</button>
