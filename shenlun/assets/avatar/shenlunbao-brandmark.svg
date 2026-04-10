@@ -1,0 +1,18 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <radialGradient id="shine" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(188 158) rotate(52.7652) scale(104.795 96.1379)">
+      <stop stop-color="#FFDCAA" stop-opacity="0.36"/>
+      <stop offset="1" stop-color="#FFDCAA" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="panel" x1="128" y1="112" x2="396" y2="412" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#53140F"/>
+      <stop offset="0.6" stop-color="#9C2D21"/>
+      <stop offset="1" stop-color="#B24C33"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="164" fill="#F6EBDD"/>
+  <rect x="76" y="76" width="360" height="360" rx="116" fill="url(#panel)"/>
+  <rect x="76" y="76" width="360" height="360" rx="116" fill="url(#shine)"/>
+  <rect x="108" y="108" width="296" height="296" rx="88" stroke="rgba(255,241,221,0.22)" stroke-width="8"/>
+  <text x="256" y="308" text-anchor="middle" font-family="'Noto Serif SC', serif" font-size="164" font-weight="800" fill="#FFF6EB">申</text>
+</svg>
