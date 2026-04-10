@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@500;600;700;800&family=ZCOOL+XiaoWei&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css?v=20260410-file-intake">
+  <link rel="stylesheet" href="styles.css?v=20260410-shenlun-redesign">
 </head>
 <body>
   <div class="page-shell">
@@ -41,6 +41,20 @@
           <p class="hero-text">
             面向国考、省考、事业单位和选调生备考。提交题目、材料和作答后，系统会按题型分析审题、要点、逻辑、材料提炼、语言规范和格式要求，帮你把“感觉写得还行”拆成具体可改的分项问题。
           </p>
+          <div class="hero-proof">
+            <div>
+              <span>蒸馏规则库</span>
+              <strong>12 组</strong>
+            </div>
+            <div>
+              <span>覆盖场景</span>
+              <strong>5 类题型 + 面试</strong>
+            </div>
+            <div>
+              <span>输出逻辑</span>
+              <strong>评分 + 扣分点 + 改稿动作</strong>
+            </div>
+          </div>
           <div class="hero-actions">
             <a class="primary-button" href="#grader" data-target="#grader">立即试批</a>
             <a class="secondary-button" href="#sample-report" data-target="#sample-report">看报告样例</a>
@@ -49,6 +63,7 @@
             <span id="providerBadge">正在连接批改引擎</span>
             <span>自动生成批改结果</span>
             <span>名师蒸馏规则已接入</span>
+            <span>中公 / 吴红民 / 题型方法已蒸馏</span>
             <span>保留申论宝独立网页</span>
           </div>
         </div>
@@ -102,7 +117,31 @@
       <section class="feature-section" id="distill">
         <div class="section-heading">
           <p class="eyebrow">Distilled Playbook</p>
-          <h2 class="wide-heading">批改不只看字面，还会调用申论教研蒸馏规则</h2>
+          <h2 class="wide-heading">批改不只看字面，还会调用你之前做的申论教研蒸馏规则</h2>
+        </div>
+        <div class="distill-board">
+          <div class="distill-intro">
+            <span class="distill-label">已接入的教研底盘</span>
+            <h3>不是“万能作文模型”，而是按申论场景做过二次蒸馏的批改引擎</h3>
+            <p>当前后端已经内置了归纳概括优先级、归纳概括扣分重灾区、中公四步法、提出对策评分标准、综合分析深度标准、贯彻执行格式要求、吴红民大作文五关键、面试高分关键与追问应对等蒸馏片段。界面现在把这套底盘明确展示出来。</p>
+          </div>
+          <div class="distill-pillars">
+            <article>
+              <span>归纳概括</span>
+              <strong>对象、问题、原因、措施、结果</strong>
+              <p>优先抓概括对象，贴近材料原词，避免把问题、原因、影响混写。</p>
+            </article>
+            <article>
+              <span>提出对策</span>
+              <strong>针对性、可行性、操作性</strong>
+              <p>不是堆口号，而是主体明确、对应问题、路径完整、机制可落地。</p>
+            </article>
+            <article>
+              <span>大作文</span>
+              <strong>张力、标题、结构、材料转化</strong>
+              <p>重点看中心论点是否抓住深层矛盾，而不是只写“提升治理能力”。</p>
+            </article>
+          </div>
         </div>
         <div class="feature-grid">
           <article>
@@ -115,7 +154,7 @@
           </article>
           <article>
             <h3>最后给自查问题</h3>
-            <p>每次批改都会尽量输出可复用的自查方向，帮助你在下一篇作答前先排雷，形成稳定复盘习惯。</p>
+            <p>每次批改都会输出可复用的自查问题，帮助考生在下一篇动笔前先排雷，而不是批完就结束。</p>
           </article>
         </div>
       </section>
@@ -289,7 +328,7 @@
             <div class="intake-card">
               <div>
                 <strong>直接拖入材料和作答文件</strong>
-                <p>现在支持把题目要求、给定资料和考生作答分别上传。图片会自动 OCR，`TXT / DOCX / PDF` 会自动提取文字，再回填到下方输入框。</p>
+                <p>现在支持把题目要求、给定资料和考生作答分别上传。图片会自动 OCR，`TXT / DOCX / PDF` 会自动提取文字，再回填到下方输入框。进入批改时会叠加申论蒸馏规则，不只做字面改写。</p>
               </div>
               <p class="ocr-status" id="ocrStatus">建议把“题目要求 / 材料 / 作答”分开上传。若是老版 `.doc`，建议先转成 `.docx` 或 `.pdf`。</p>
             </div>
@@ -535,6 +574,6 @@
     </main>
   </div>
 
-  <script src="app.js?v=20260410-file-intake"></script>
+  <script src="app.js?v=20260410-shenlun-redesign"></script>
 </body>
 </html>
