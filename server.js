@@ -41,7 +41,7 @@ const BAIDU_OCR_API_KEY = process.env.BAIDU_OCR_API_KEY || "";
 const BAIDU_OCR_SECRET_KEY = process.env.BAIDU_OCR_SECRET_KEY || "";
 const BAIDU_OCR_ENDPOINT = process.env.BAIDU_OCR_ENDPOINT || "general_basic";
 const ACTIVATION_CODES = process.env.ACTIVATION_CODES || "";
-const SITE_VARIANT = (process.env.SITE_VARIANT || "unified").toLowerCase();
+const SITE_VARIANT = (process.env.SITE_VARIANT || "shenlun").toLowerCase();
 const USDT_TRC20_ADDRESS = process.env.USDT_TRC20_ADDRESS || "TTnPHLdS2x5tPBMTdi4Gktr1ExAfET7HDB";
 const USDT_ERC20_ADDRESS = process.env.USDT_ERC20_ADDRESS || "";
 const USDT_BEP20_ADDRESS = process.env.USDT_BEP20_ADDRESS || "";
@@ -58,9 +58,8 @@ const mimeTypes = {
 };
 
 function defaultHomePath() {
-  if (SITE_VARIANT === "shenlun") return path.join(ROOT, "shenlun", "index.html");
   if (SITE_VARIANT === "gaokao") return path.join(ROOT, "gaokao", "index.html");
-  return path.join(ROOT, "index.html");
+  return path.join(ROOT, "shenlun", "index.html");
 }
 
 const plans = {
