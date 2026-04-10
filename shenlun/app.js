@@ -90,6 +90,7 @@ const followupCard = document.querySelector("#followupCard");
 const followupQuestion = document.querySelector("#followupQuestion");
 const followupFocus = document.querySelector("#followupFocus");
 const followupAnswer = document.querySelector("#followupAnswer");
+const providerBadge = document.querySelector("#providerBadge");
 
 let pdfjsLoader;
 let mammothLoader;
@@ -133,10 +134,9 @@ async function api(path, options = {}) {
 
 async function bootstrapUser() {
   const query = state.userId ? `?userId=${encodeURIComponent(state.userId)}` : "";
-  const payload = await api(`/api/bootstrap${query}`, { method: "GET", headers: {} });
+  const payload = await api(`/api/shenlun/bootstrap${query}`, { method: "GET", headers: {} });
   state.userId = payload.user.id;
   window.localStorage.setItem("writemate-user-id", state.userId);
-  await loadHistory();
   return payload;
 }
 
@@ -308,6 +308,16 @@ function updateActivationStatus(user) {
   const planLabel = user.plan === "team" ? "高级版" : user.plan === "pro" ? "内测版" : "免费版";
   const quotaLabel = user.plan === "team" ? "300 次" : user.plan === "pro" ? "50 次" : "3 次";
   activationStatus.textContent = `当前账号：${planLabel}，可用额度约 ${quotaLabel}。`;
+}
+
+function updateProviderBadge(provider) {
+  if (!providerBadge) return;
+  const labels = {
+    deepseek: "当前引擎：DeepSeek + 名师蒸馏",
+    openai: "当前引擎：OpenAI + 名师蒸馏",
+    demo: "当前引擎：演示模式"
+  };
+  providerBadge.textContent = labels[provider] || "当前引擎：申论宝批改";
 }
 
 async function redeemCode() {
@@ -719,7 +729,9 @@ updateCount();
 toggleEssayReferenceMode();
 bootstrapUser().then((payload) => {
   updateActivationStatus(payload.user);
-  renderLearningProfile(payload.shenlunProfile);
+  state.history = payload.history || [];
+  renderLearningProfile(payload.profile);
+  updateProviderBadge(payload.provider);
 }).catch((error) => {
   console.error(error);
 });

@@ -3,6 +3,7 @@ const state = {
   history: [],
   profile: null,
   principalSummary: null,
+  provider: "demo",
   isSubmitting: false
 };
 
@@ -90,10 +91,25 @@ const heroReportCount = document.querySelector("#heroReportCount");
 const heroSchoolCount = document.querySelector("#heroSchoolCount");
 const heroClassCount = document.querySelector("#heroClassCount");
 const heroAverage = document.querySelector("#heroAverage");
+const heroServiceMode = document.querySelector("#heroServiceMode");
+const heroProviderNote = document.querySelector("#heroProviderNote");
 const barrierList = document.querySelector("#barrierList");
 const valueList = document.querySelector("#valueList");
 const serviceNarrative = document.querySelector("#serviceNarrative");
 const principalIssues = document.querySelector("#principalIssues");
+
+function renderProvider(provider) {
+  state.provider = provider || "demo";
+  const label = state.provider === "deepseek"
+    ? "DeepSeek 蒸馏"
+    : state.provider === "openai"
+      ? "OpenAI 蒸馏"
+      : "演示模式";
+  heroServiceMode.textContent = label;
+  heroProviderNote.textContent = state.provider === "demo"
+    ? "当前是演示评分模式，可继续保留独立高考宝网页做流程演示。"
+    : `当前高考宝独立网页已接入 ${label}，会返回真实批改与蒸馏反馈。`;
+}
 
 async function api(url, options = {}) {
   const response = await fetch(url, {
@@ -267,6 +283,7 @@ async function bootstrap() {
   const payload = await api(`/api/gaokao/bootstrap${query}`, { method: "GET", headers: {} });
   state.userId = payload.user.id;
   window.localStorage.setItem("writemate-user-id", state.userId);
+  renderProvider(payload.provider);
   renderProfile(payload.profile);
   renderHistory(payload.history);
   renderPrincipalSummary(payload.principalSummary || {});
@@ -336,6 +353,7 @@ async function submit() {
       })
     });
     renderReport(payload.report);
+    renderProvider(payload.provider);
     renderProfile(payload.profile);
     renderHistory(payload.history);
     const principalPayload = await api("/api/gaokao/principal-summary", { method: "GET", headers: {} });

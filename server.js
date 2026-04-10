@@ -1328,6 +1328,9 @@ function compareAgainstCohort(subject, className, studentName, currentScore) {
     const key = report.studentName || "未命名学生";
     if (!latestByStudent.has(key)) latestByStudent.set(key, report);
   });
+  if (studentName && !latestByStudent.has(studentName)) {
+    latestByStudent.set(studentName, { studentName, scaledScore: currentScore });
+  }
   const students = Array.from(latestByStudent.values());
   const classAverage = students.length
     ? Math.round(students.reduce((sum, item) => sum + Number(item.scaledScore || 0), 0) / students.length)
@@ -1337,8 +1340,11 @@ function compareAgainstCohort(subject, className, studentName, currentScore) {
     ? Math.round(subjectReports.reduce((sum, item) => sum + Number(item.scaledScore || 0), 0) / subjectReports.length)
     : null;
   const sortedScores = students.map((item) => Number(item.scaledScore || 0)).sort((a, b) => b - a);
-  const rank = students.findIndex((item) => (item.studentName || "") === studentName) + 1;
-  const percentile = students.length ? Math.round((1 - ((rank - 1) / students.length)) * 100) : null;
+  const rankIndex = students.findIndex((item) => (item.studentName || "") === studentName);
+  const rank = rankIndex >= 0 ? rankIndex + 1 : null;
+  const percentile = students.length && rank
+    ? Math.round(((students.length - rank + 1) / students.length) * 100)
+    : null;
   const topScore = sortedScores[0] || currentScore;
   return {
     classAverage,
@@ -2881,6 +2887,242 @@ async function gradeEssay(body, user) {
   };
 }
 
+function normalizeGaokaoDimensions(dimensions, config, fallbackDimensions = []) {
+  const candidates = Array.isArray(dimensions) ? dimensions : [];
+  return config.dimensions.map((dimension, index) => {
+    const matched = candidates.find((item) => item?.label === dimension.label) || candidates[index] || fallbackDimensions[index] || {};
+    return {
+      label: dimension.label,
+      maxScore: dimension.maxScore,
+      score: clamp(Math.round(Number(matched.score ?? fallbackDimensions[index]?.score ?? 0)), 0, dimension.maxScore),
+      comment: String(matched.comment || fallbackDimensions[index]?.comment || "")
+    };
+  });
+}
+
+function normalizeGaokaoList(items, fallbackItems = [], limit = 4) {
+  const source = Array.isArray(items) ? items : [];
+  return uniqueStrings(
+    source
+      .map((item) => String(item || "").trim())
+      .filter(Boolean),
+    limit
+  ).length
+    ? uniqueStrings(
+        source
+          .map((item) => String(item || "").trim())
+          .filter(Boolean),
+        limit
+      )
+    : (fallbackItems || []).slice(0, limit);
+}
+
+function gaokaoScoringPrompt(config) {
+  if (config.subject === "english") {
+    return [
+      "你是一位中国高考英语作文阅卷老师兼教研员。",
+      "请按高考英语应用文/读后续写的真实评分口径批改，不要鼓励式虚高。",
+      "评分要拉开档次，普通但完整的作文通常在 14-18 分；结构稳、表达准确、完成度高的作文才能到 20 分以上；明显漏要点、篇幅不足、语言错误多的作文要压低。",
+      "反馈必须具体、可执行，适合老师讲评和学生改稿。"
+    ].join("\n");
+  }
+  return [
+    "你是一位中国高考语文作文阅卷老师兼教研员。",
+    "请按高考语文作文真实阅卷口径评分，不要给鼓励分，不要泛泛说好。",
+    "评分要拉开档次，普通但成文的作文通常在 40-46 分；审题准、结构稳、内容充实、表达有层次的作文才可以上 50；偏题、空泛、篇幅明显不足的作文要明显压分。",
+    "反馈必须具体、可执行，适合老师讲评和学生改稿。"
+  ].join("\n");
+}
+
+async function openAiGaokaoReport(body, previousProfile) {
+  const subject = body.subject === "english" ? "english" : "chinese";
+  const examType = String(body.examType || (subject === "english" ? "task-writing" : "material-essay"));
+  const config = gaokaoSubjectConfig(subject, examType);
+  const baseReport = demoGaokaoReport({ ...body, subject, examType }, previousProfile);
+  const playbook = buildTeachingPlaybook("gaokao", subject, `${body.prompt}\n${body.requirements}\n${body.essay}`);
+  const schema = {
+    type: "object",
+    additionalProperties: false,
+    required: [
+      "scaledScore",
+      "estimatedLow",
+      "estimatedHigh",
+      "scoreConfidence",
+      "dimensions",
+      "strengths",
+      "issues",
+      "actionItems",
+      "teacherCheckpoints",
+      "revisionGuidance",
+      "coachingFocus",
+      "selfCorrectionPrompts"
+    ],
+    properties: {
+      scaledScore: { type: "integer", minimum: 0, maximum: config.targetMax },
+      estimatedLow: { type: "integer", minimum: 0, maximum: config.targetMax },
+      estimatedHigh: { type: "integer", minimum: 0, maximum: config.targetMax },
+      scoreConfidence: { type: "integer", minimum: 0, maximum: 100 },
+      dimensions: {
+        type: "array",
+        items: {
+          type: "object",
+          additionalProperties: false,
+          required: ["label", "score", "comment"],
+          properties: {
+            label: { type: "string" },
+            score: { type: "integer", minimum: 0, maximum: Math.max(...config.dimensions.map((item) => item.maxScore)) },
+            comment: { type: "string" }
+          }
+        }
+      },
+      strengths: { type: "array", items: { type: "string" } },
+      issues: { type: "array", items: { type: "string" } },
+      actionItems: { type: "array", items: { type: "string" } },
+      teacherCheckpoints: { type: "array", items: { type: "string" } },
+      revisionGuidance: { type: "string" },
+      coachingFocus: { type: "array", items: { type: "string" } },
+      selfCorrectionPrompts: { type: "array", items: { type: "string" } }
+    }
+  };
+
+  const response = await fetch("https://api.openai.com/v1/responses", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${OPENAI_API_KEY}`
+    },
+    body: JSON.stringify({
+      model: OPENAI_MODEL,
+      input: [
+        {
+          role: "developer",
+          content: [
+            {
+              type: "input_text",
+              text: [
+                gaokaoScoringPrompt(config),
+                `学科：${config.subjectLabel}`,
+                `题型：${examType}`,
+                `总分：${config.targetMax}`,
+                `维度：${config.dimensions.map((item) => `${item.label}（满分 ${item.maxScore}）`).join("、")}`,
+                `学生画像：${JSON.stringify(normalizeStudentProfile(body.studentProfile || {}))}`,
+                previousProfile ? `历史训练档案：${JSON.stringify(previousProfile)}` : "历史训练档案：暂无。",
+                playbook.focus.length ? `名师蒸馏重点：${playbook.focus.join("\n")}` : "名师蒸馏重点：无。",
+                playbook.pitfalls.length ? `高频失误提醒：${playbook.pitfalls.join("\n")}` : "高频失误提醒：无。",
+                playbook.actions.length ? `优先动作建议：${playbook.actions.join("\n")}` : "优先动作建议：请直接给出可执行改稿动作。",
+                `参考基线评分：${baseReport.scaledScore}/${config.targetMax}，建议区间 ${baseReport.estimatedLow}-${baseReport.estimatedHigh}，置信度 ${baseReport.scoreConfidence}%。`,
+                "输出必须是简体中文，且必须只返回 JSON。",
+                "JSON 字段必须包含：scaledScore, estimatedLow, estimatedHigh, scoreConfidence, dimensions, strengths, issues, actionItems, teacherCheckpoints, revisionGuidance, coachingFocus, selfCorrectionPrompts。",
+                "dimensions 中的 label 必须沿用给定评分维度；分数必须落在该维度满分范围内。",
+                "coachingFocus 要写成可直接给学生或老师使用的蒸馏重点；selfCorrectionPrompts 要写成让学生自己反思的追问。"
+              ].join("\n")
+            }
+          ]
+        },
+        {
+          role: "user",
+          content: [
+            {
+              type: "input_text",
+              text: [
+                `学校：${body.schoolName || "未填写"}`,
+                `班级：${body.className || "未填写"}`,
+                `年级：${body.gradeLevel || "高三"}`,
+                `学生：${body.studentName || "未命名学生"}`,
+                `作文题目：${body.prompt}`,
+                `写作要求：${body.requirements || "未填写"}`,
+                "学生作文：",
+                body.essay
+              ].join("\n\n")
+            }
+          ]
+        }
+      ],
+      text: {
+        format: {
+          type: "json_schema",
+          name: "gaokao_report",
+          strict: true,
+          schema
+        }
+      }
+    })
+  });
+  const payload = await response.json();
+  if (!response.ok) {
+    throw new Error(payload?.error?.message || "OpenAI Gaokao request failed");
+  }
+  const parsed = JSON.parse(payload.output_text);
+  return {
+    ...baseReport,
+    scaledScore: clamp(Math.round(Number(parsed.scaledScore ?? baseReport.scaledScore)), 0, config.targetMax),
+    estimatedLow: clamp(Math.round(Number(parsed.estimatedLow ?? baseReport.estimatedLow)), 0, config.targetMax),
+    estimatedHigh: clamp(Math.round(Number(parsed.estimatedHigh ?? baseReport.estimatedHigh)), 0, config.targetMax),
+    scoreConfidence: clamp(Math.round(Number(parsed.scoreConfidence ?? baseReport.scoreConfidence)), 35, 99),
+    dimensions: normalizeGaokaoDimensions(parsed.dimensions, config, baseReport.dimensions),
+    strengths: normalizeGaokaoList(parsed.strengths, baseReport.strengths, 4),
+    issues: normalizeGaokaoList(parsed.issues, baseReport.issues, 4),
+    actionItems: normalizeGaokaoList(parsed.actionItems, baseReport.actionItems, 4),
+    teacherCheckpoints: normalizeGaokaoList(parsed.teacherCheckpoints, baseReport.teacherCheckpoints, 4),
+    revisionGuidance: String(parsed.revisionGuidance || baseReport.revisionGuidance || ""),
+    coachingFocus: normalizeGaokaoList(parsed.coachingFocus, baseReport.coachingFocus, 4),
+    selfCorrectionPrompts: normalizeGaokaoList(parsed.selfCorrectionPrompts, baseReport.selfCorrectionPrompts, 4)
+  };
+}
+
+async function deepSeekGaokaoReport(body, previousProfile) {
+  const subject = body.subject === "english" ? "english" : "chinese";
+  const examType = String(body.examType || (subject === "english" ? "task-writing" : "material-essay"));
+  const config = gaokaoSubjectConfig(subject, examType);
+  const baseReport = demoGaokaoReport({ ...body, subject, examType }, previousProfile);
+  const playbook = buildTeachingPlaybook("gaokao", subject, `${body.prompt}\n${body.requirements}\n${body.essay}`);
+  const parsed = await deepSeekJsonChat({
+    systemPrompt: [
+      gaokaoScoringPrompt(config),
+      `学科：${config.subjectLabel}`,
+      `题型：${examType}`,
+      `总分：${config.targetMax}`,
+      `维度：${config.dimensions.map((item) => `${item.label}（满分 ${item.maxScore}）`).join("、")}`,
+      `学生画像：${JSON.stringify(normalizeStudentProfile(body.studentProfile || {}))}`,
+      previousProfile ? `历史训练档案：${JSON.stringify(previousProfile)}` : "历史训练档案：暂无。",
+      playbook.focus.length ? `名师蒸馏重点：${playbook.focus.join("\n")}` : "名师蒸馏重点：无。",
+      playbook.pitfalls.length ? `高频失误提醒：${playbook.pitfalls.join("\n")}` : "高频失误提醒：无。",
+      playbook.actions.length ? `优先动作建议：${playbook.actions.join("\n")}` : "优先动作建议：请直接给出可执行改稿动作。",
+      `参考基线评分：${baseReport.scaledScore}/${config.targetMax}，建议区间 ${baseReport.estimatedLow}-${baseReport.estimatedHigh}，置信度 ${baseReport.scoreConfidence}%。`,
+      "只返回 JSON，不要输出 Markdown。",
+      "JSON 字段必须包含：scaledScore, estimatedLow, estimatedHigh, scoreConfidence, dimensions, strengths, issues, actionItems, teacherCheckpoints, revisionGuidance, coachingFocus, selfCorrectionPrompts。",
+      "dimensions 中的 label 必须沿用给定评分维度；分数必须落在该维度满分范围内。",
+      "反馈必须具体、可执行，不要只说“多积累、多练习”。"
+    ].join("\n"),
+    userPrompt: [
+      `学校：${body.schoolName || "未填写"}`,
+      `班级：${body.className || "未填写"}`,
+      `年级：${body.gradeLevel || "高三"}`,
+      `学生：${body.studentName || "未命名学生"}`,
+      `作文题目：${body.prompt}`,
+      `写作要求：${body.requirements || "未填写"}`,
+      `学生作文：${body.essay}`
+    ].join("\n\n"),
+    fallbackError: "DeepSeek Gaokao request failed"
+  });
+
+  return {
+    ...baseReport,
+    scaledScore: clamp(Math.round(Number(parsed.scaledScore ?? baseReport.scaledScore)), 0, config.targetMax),
+    estimatedLow: clamp(Math.round(Number(parsed.estimatedLow ?? baseReport.estimatedLow)), 0, config.targetMax),
+    estimatedHigh: clamp(Math.round(Number(parsed.estimatedHigh ?? baseReport.estimatedHigh)), 0, config.targetMax),
+    scoreConfidence: clamp(Math.round(Number(parsed.scoreConfidence ?? baseReport.scoreConfidence)), 35, 99),
+    dimensions: normalizeGaokaoDimensions(parsed.dimensions, config, baseReport.dimensions),
+    strengths: normalizeGaokaoList(parsed.strengths, baseReport.strengths, 4),
+    issues: normalizeGaokaoList(parsed.issues, baseReport.issues, 4),
+    actionItems: normalizeGaokaoList(parsed.actionItems, baseReport.actionItems, 4),
+    teacherCheckpoints: normalizeGaokaoList(parsed.teacherCheckpoints, baseReport.teacherCheckpoints, 4),
+    revisionGuidance: String(parsed.revisionGuidance || baseReport.revisionGuidance || ""),
+    coachingFocus: normalizeGaokaoList(parsed.coachingFocus, baseReport.coachingFocus, 4),
+    selfCorrectionPrompts: normalizeGaokaoList(parsed.selfCorrectionPrompts, baseReport.selfCorrectionPrompts, 4)
+  };
+}
+
 function gaokaoSubjectConfig(subject, examType) {
   if (subject === "english") {
     return {
@@ -3203,8 +3445,12 @@ async function gradeGaokao(body, user) {
     ...normalizeStudentProfile(body.studentProfile || {})
   };
   saveGaokaoStudentProfile(user.id, subject, studentName, body.schoolName || "", className, mergedStudentProfile);
-  const provider = "demo";
-  const report = demoGaokaoReport({ ...body, studentProfile: mergedStudentProfile, subject }, previousProfile);
+  const provider = textProvider();
+  const report = provider === "deepseek"
+    ? await deepSeekGaokaoReport({ ...body, studentProfile: mergedStudentProfile, subject }, previousProfile)
+    : provider === "openai"
+      ? await openAiGaokaoReport({ ...body, studentProfile: mergedStudentProfile, subject }, previousProfile)
+      : demoGaokaoReport({ ...body, studentProfile: mergedStudentProfile, subject }, previousProfile);
   const record = {
     id: randomUUID(),
     userId: user.id,
@@ -4277,10 +4523,34 @@ const server = http.createServer(async (req, res) => {
       json(res, 200, {
         user,
         plans,
-        provider: "demo",
+        provider: textProvider(),
         history: getGaokaoHistory(user.id),
         profile: getLearningProfile(user.id, "gaokao") || buildGaokaoLearningProfile(user.id),
         principalSummary: buildPrincipalSummary()
+      });
+      return;
+    }
+
+    if (req.method === "GET" && url.pathname === "/api/shenlun/bootstrap") {
+      const user = getOrCreateUser(url.searchParams.get("userId"));
+      json(res, 200, {
+        user,
+        plans,
+        provider: textProvider(),
+        history: getShenlunHistory(user.id),
+        profile: getLearningProfile(user.id, "shenlun") || buildShenlunLearningProfile(user.id)
+      });
+      return;
+    }
+
+    if (req.method === "GET" && url.pathname === "/api/shenlun/bootstrap") {
+      const user = getOrCreateUser(url.searchParams.get("userId"));
+      json(res, 200, {
+        user,
+        plans,
+        provider: textProvider(),
+        history: getShenlunHistory(user.id),
+        profile: getLearningProfile(user.id, "shenlun") || buildShenlunLearningProfile(user.id)
       });
       return;
     }

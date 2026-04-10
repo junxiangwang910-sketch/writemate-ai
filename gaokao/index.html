@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>高考写作中枢 | 面向高中校长的语文英语批改系统</title>
+  <title>高考宝 | 面向高中校长的语文英语写作诊断系统</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@500;600;700;800&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -13,9 +13,9 @@
   <div class="page-shell">
     <header class="topbar">
       <div class="brand">
-        <div class="brand-mark">中枢</div>
+        <img class="brand-avatar" src="assets/gaokaobao-avatar.png" alt="高考宝头像">
         <div>
-          <p class="brand-title">高考写作中枢</p>
+          <p class="brand-title">高考宝</p>
           <p class="brand-subtitle">面向高中校长、教务主任与语文英语备课组的智能写作诊断系统</p>
         </div>
       </div>
@@ -23,7 +23,7 @@
         <a href="#vision">校长视角</a>
         <a href="#workspace">教师工作台</a>
         <a href="#classroom">班级讲评</a>
-        <a href="/shenlun/">申论版</a>
+        <a href="#history">最近批改</a>
       </nav>
     </header>
 
@@ -31,9 +31,9 @@
       <section class="hero" id="vision">
         <div class="hero-copy">
           <p class="eyebrow">For Principals And Teaching Leaders</p>
-          <h1>不是多一个批改工具，而是为学校建立写作提分数据库</h1>
+          <h1>不是多一个批改工具，而是把高考宝做成学校自己的写作提分数据库</h1>
           <p class="hero-text">
-            学校真正需要的，不是“自动打个分”，而是持续看见每个学生错在哪里、每个班共性问题是什么、每个教师讲评后有没有效果。这个版本把语文和英语写作批改、学生画像、班级讲评、群体对比和长期自我纠错都串成了一条完整服务链。
+            学校真正需要的，不是“自动打个分”，而是持续看见每个学生错在哪里、每个班共性问题是什么、每个教师讲评后有没有效果。这个版本把语文和英语写作批改、学生画像、班级讲评、群体对比和名师蒸馏建议都串成了一条完整服务链，而且保留高考宝单独网页入口。
           </p>
           <div class="hero-actions">
             <a class="primary-button" href="#workspace">进入教师工作台</a>
@@ -43,11 +43,19 @@
             <span>答题卡图片识别</span>
             <span>学生成长画像</span>
             <span>班级共性诊断</span>
+            <span>名师蒸馏建议</span>
             <span>校本数据库沉淀</span>
           </div>
         </div>
 
         <aside class="hero-panel">
+          <div class="hero-avatar-block">
+            <img class="hero-avatar" src="assets/gaokaobao-avatar.png" alt="高考宝独立头像">
+            <div>
+              <p>高考宝独立网页</p>
+              <span id="heroProviderNote">当前将以独立入口部署，并接入真实 AI 批改与蒸馏反馈。</span>
+            </div>
+          </div>
           <p>校长演示摘要</p>
           <strong id="heroReportCount">0</strong>
           <span>已沉淀作文样本</span>
@@ -296,16 +304,16 @@
 
               <section class="student-growth-card">
                 <div class="teacher-head">
-                  <p class="eyebrow">Student Growth</p>
-                  <h4>个性化提升路线</h4>
+                  <p class="eyebrow">Distilled Focus</p>
+                  <h4>名师蒸馏提升路线</h4>
                 </div>
                 <ul id="coachingFocus"></ul>
               </section>
 
               <section class="student-growth-card">
                 <div class="teacher-head">
-                  <p class="eyebrow">Self Correction</p>
-                  <h4>让学生自己发现错误的提问</h4>
+                  <p class="eyebrow">Distilled Self Check</p>
+                  <h4>蒸馏后的学生自查追问</h4>
                 </div>
                 <ul id="selfCorrectionPrompts"></ul>
               </section>
