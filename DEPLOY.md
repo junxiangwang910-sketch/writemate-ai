@@ -1,50 +1,83 @@
 # WriteMate AI Deployment Guide
 
-This app is ready to deploy as a small Node web service.
+This project can be deployed as a single Render web service that serves both:
 
-## Recommended quick option: Render
+- `/shenlun/` for 申论宝
+- `/gaokao/` for 高考作文批改与教师工作台
 
-Why Render:
-- It gives you a public URL quickly.
-- It supports Node web services.
-- It supports persistent disks, which matters because this app stores data in SQLite.
+## Recommended option: Render
+
+Render is the fastest way to get a public demo URL with Docker and persistent SQLite storage.
+
+## What is already configured
+
+The repo now includes a Render blueprint at [render.yaml](/Users/wangjunxiang/Downloads/codex/render.yaml) with:
+
+- Service name: `writemate-ai`
+- Runtime: Docker
+- Health check: `/health`
+- Persistent disk mounted at `/app/data`
+- Default provider mode set to `deepseek`
+- OCR env placeholders ready for manual secret entry
 
 ## Before deploying
 
 You need:
-- A GitHub account
+
+- A GitHub account with this repo pushed
 - A Render account
-- Optional: an OpenAI API key for real AI grading
+- A valid `DEEPSEEK_API_KEY`
+- Optional OCR credentials:
+  - `OPENAI_API_KEY`, or
+  - `BAIDU_OCR_API_KEY` and `BAIDU_OCR_SECRET_KEY`
 
 ## Important note about storage
 
-This app stores data in SQLite at:
+SQLite lives at:
 
-`/app/data/app-data.sqlite` inside Docker
+`/app/data/app-data.sqlite`
 
-If you deploy without persistent storage, your data can reset after redeploys or restarts.
+Do not deploy this app without a persistent disk, or your data may reset after restart or redeploy.
 
-## Render setup
+## Deploy on Render
 
-1. Put this project in a GitHub repository.
-2. In Render, create a new Web Service from that repo.
-3. Use these settings:
+1. Open Render and create a new Blueprint or Web Service from this GitHub repo.
+2. If Render detects [render.yaml](/Users/wangjunxiang/Downloads/codex/render.yaml), let it use that configuration.
+3. In the Render dashboard, fill the secret environment variables:
+   - `DEEPSEEK_API_KEY`
+   - `OPENAI_API_KEY` if you want OpenAI OCR
+   - `BAIDU_OCR_API_KEY` and `BAIDU_OCR_SECRET_KEY` if you want Baidu OCR
+4. Keep the disk mount at `/app/data`.
+5. Deploy and wait for `/health` to return `ok: true`.
 
-- Runtime: Docker
-- Dockerfile Path: `./Dockerfile`
-- Health Check Path: `/health`
-- Port: `3000`
+## Recommended environment variables
 
-4. Set environment variables:
+Non-secret defaults are already declared in the blueprint:
 
 - `HOST=0.0.0.0`
 - `PORT=3000`
-- `OPENAI_API_KEY=...` (optional)
-- `OPENAI_MODEL=gpt-5-mini` (optional)
+- `AI_PROVIDER=deepseek`
+- `DEEPSEEK_MODEL=deepseek-chat`
+- `OCR_PROVIDER=auto`
+- `BAIDU_OCR_ENDPOINT=general_basic`
 
-5. For persistent SQLite data, attach a persistent disk and mount it at:
+Secrets must be filled manually in Render:
 
-`/app/data`
+- `DEEPSEEK_API_KEY`
+- `OPENAI_API_KEY`
+- `BAIDU_OCR_API_KEY`
+- `BAIDU_OCR_SECRET_KEY`
+
+## After deployment
+
+Use these paths to verify:
+
+- `/health`
+- `/shenlun/`
+- `/gaokao/`
+
+If `/health` shows `provider: "deepseek"`, real-time AI grading is live.
+If `/health` shows `ocrProvider: "openai"` or `ocrProvider: "baidu"`, OCR is live.
 
 ## Local run
 

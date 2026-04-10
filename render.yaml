@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: voltx-exchange-demo
+    name: writemate-ai
     runtime: docker
     plan: free
     healthCheckPath: /health
@@ -9,5 +9,23 @@ services:
         value: 0.0.0.0
       - key: PORT
         value: 3000
-      - key: USDT_TRC20_ADDRESS
-        value: TTnPHLdS2x5tPBMTdi4Gktr1ExAfET7HDB
+      - key: AI_PROVIDER
+        value: deepseek
+      - key: DEEPSEEK_MODEL
+        value: deepseek-chat
+      - key: OCR_PROVIDER
+        value: auto
+      - key: BAIDU_OCR_ENDPOINT
+        value: general_basic
+      - key: DEEPSEEK_API_KEY
+        sync: false
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: BAIDU_OCR_API_KEY
+        sync: false
+      - key: BAIDU_OCR_SECRET_KEY
+        sync: false
+    disk:
+      name: writemate-data
+      mountPath: /app/data
+      sizeGB: 1
