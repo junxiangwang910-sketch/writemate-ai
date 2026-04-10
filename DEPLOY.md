@@ -3,7 +3,7 @@
 This project is now intended to be deployed as two separate public sites from the same repo:
 
 1. `shenlunbao-ai` with `SITE_VARIANT=shenlun`
-2. `gaokao-writing-ai` with `SITE_VARIANT=gaokao`
+2. `gaokaobao-ai` with `SITE_VARIANT=gaokao`
 
 ## Recommended option: Render
 
@@ -13,8 +13,8 @@ Render is the fastest way to get a public demo URL with Docker and persistent SQ
 
 The repo now includes a Render blueprint at [render.yaml](/Users/wangjunxiang/Downloads/codex/render.yaml) with:
 
-- Dedicated shenlun service: `shenlunbao-ai`
-- Dedicated gaokao service: `gaokao-writing-ai`
+- Dedicated 申论宝 service: `shenlunbao-ai`
+- Dedicated 高考宝 service: `gaokaobao-ai`
 - Runtime: Docker
 - Health check: `/health`
 - Persistent disk mounted at `/app/data`
@@ -82,7 +82,7 @@ Use these paths to verify:
 If the service is variant-based:
 
 - `SITE_VARIANT=shenlun` means `/` opens 申论宝
-- `SITE_VARIANT=gaokao` means `/` opens 高考写作站
+- `SITE_VARIANT=gaokao` means `/` opens 高考宝
 
 If `/health` shows `provider: "deepseek"`, real-time AI grading is live.
 If `/health` shows `ocrProvider: "openai"` or `ocrProvider: "baidu"`, OCR is live.

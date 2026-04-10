@@ -35,7 +35,7 @@ services:
       sizeGB: 1
 
   - type: web
-    name: gaokao-writing-ai
+    name: gaokaobao-ai
     runtime: docker
     plan: free
     healthCheckPath: /health
