@@ -2,6 +2,10 @@ services:
   - type: web
     name: shenlunbao-ai
     runtime: docker
+    branch: main
+    dockerContext: .
+    dockerfilePath: ./Dockerfile
+    autoDeployTrigger: commit
     plan: free
     healthCheckPath: /health
     envVars:
@@ -37,6 +41,10 @@ services:
   - type: web
     name: gaokaobao-ai
     runtime: docker
+    branch: main
+    dockerContext: .
+    dockerfilePath: ./Dockerfile
+    autoDeployTrigger: commit
     plan: free
     healthCheckPath: /health
     envVars:
