@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>高考写作中枢 | 面向高中校长的语文英语批改系统</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@500;600;700;800&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css?v=20260410-principal-showcase">
+</head>
+<body>
+  <div class="page-shell">
+    <header class="topbar">
+      <div class="brand">
+        <div class="brand-mark">中枢</div>
+        <div>
+          <p class="brand-title">高考写作中枢</p>
+          <p class="brand-subtitle">面向高中校长、教务主任与语文英语备课组的智能写作诊断系统</p>
+        </div>
+      </div>
+      <nav class="nav">
+        <a href="#vision">校长视角</a>
+        <a href="#workspace">教师工作台</a>
+        <a href="#classroom">班级讲评</a>
+        <a href="/shenlun/">申论版</a>
+      </nav>
+    </header>
+
+    <main>
+      <section class="hero" id="vision">
+        <div class="hero-copy">
+          <p class="eyebrow">For Principals And Teaching Leaders</p>
+          <h1>不是多一个批改工具，而是为学校建立写作提分数据库</h1>
+          <p class="hero-text">
+            学校真正需要的，不是“自动打个分”，而是持续看见每个学生错在哪里、每个班共性问题是什么、每个教师讲评后有没有效果。这个版本把语文和英语写作批改、学生画像、班级讲评、群体对比和长期自我纠错都串成了一条完整服务链。
+          </p>
+          <div class="hero-actions">
+            <a class="primary-button" href="#workspace">进入教师工作台</a>
+            <a class="secondary-button" href="#classroom">查看班级讲评</a>
+          </div>
+          <div class="hero-tags">
+            <span>答题卡图片识别</span>
+            <span>学生成长画像</span>
+            <span>班级共性诊断</span>
+            <span>校本数据库沉淀</span>
+          </div>
+        </div>
+
+        <aside class="hero-panel">
+          <p>校长演示摘要</p>
+          <strong id="heroReportCount">0</strong>
+          <span>已沉淀作文样本</span>
+          <div class="hero-mini-grid">
+            <div><b id="heroSchoolCount">0</b><span>覆盖学校</span></div>
+            <div><b id="heroClassCount">0</b><span>覆盖班级</span></div>
+            <div><b id="heroAverage">0</b><span>当前均分</span></div>
+            <div><b id="heroServiceMode">校本化</b><span>服务模式</span></div>
+          </div>
+        </aside>
+      </section>
+
+      <section class="showcase-grid">
+        <article class="showcase-card">
+          <p class="eyebrow">High Barrier</p>
+          <h3>我们提供的不是通用批改，而是学校自己的写作增长系统</h3>
+          <ul id="barrierList"></ul>
+        </article>
+        <article class="showcase-card">
+          <p class="eyebrow">Strategic Value</p>
+          <h3>给校长看的价值，不只是省老师时间</h3>
+          <ul id="valueList"></ul>
+        </article>
+        <article class="showcase-card">
+          <p class="eyebrow">School Narrative</p>
+          <h3>这套系统能为学校形成什么能力</h3>
+          <p id="serviceNarrative" class="long-copy"></p>
+          <div class="tag-row" id="principalIssues"></div>
+        </article>
+      </section>
+
+      <section class="service-section">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">Service Package</p>
+            <h2>面向学校可以提供的服务</h2>
+          </div>
+        </div>
+        <div class="service-grid">
+          <article>
+            <h3>校本作文数据库</h3>
+            <p>按年级、班级、学科沉淀学校自己的高频失分图谱，不再只靠经验判断。</p>
+          </article>
+          <article>
+            <h3>教师讲评分引擎</h3>
+            <p>先看班级共性问题，再看学生个性化建议，讲评更有抓手，课后发放也更统一。</p>
+          </article>
+          <article>
+            <h3>学生自我纠错训练</h3>
+            <p>每次批改都要求学生回答“我错在哪里、下一稿怎么改”，让改进能力真正内化。</p>
+          </article>
+          <article>
+            <h3>分层培优与补弱</h3>
+            <p>能看出谁是中段可提升学生，谁是明显短板学生，谁适合做冲刺培优。</p>
+          </article>
+        </div>
+      </section>
+
+      <section class="workspace-section" id="workspace">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">Teacher Workbench</p>
+            <h2>教师工作台</h2>
+          </div>
+        </div>
+
+        <div class="workspace-grid">
+          <form class="grader-form" id="gaokaoForm" onsubmit="return false;">
+            <div class="ocr-card">
+              <div>
+                <strong>答题卡图片转文字</strong>
+                <p>上传学生答题卡或作文纸图片后，系统会先识别文字，并尝试判断作文正文从哪一行开始，再回填到下方输入框。</p>
+              </div>
+              <label class="upload-box">
+                <span>选择答题卡图片</span>
+                <input id="imageInput" type="file" accept="image/*">
+              </label>
+              <div class="ocr-actions">
+                <button class="secondary-button" id="ocrButton" type="button">图片转文字</button>
+                <span id="ocrStatus">支持识别作文正文起始位置，再人工补题目和要求。</span>
+              </div>
+            </div>
+
+            <div class="field-row">
+              <label>
+                <span>学科</span>
+                <select id="subject">
+                  <option value="chinese">高考语文</option>
+                  <option value="english">高考英语</option>
+                </select>
+              </label>
+              <label>
+                <span>题型</span>
+                <select id="examType"></select>
+              </label>
+              <label>
+                <span>年级</span>
+                <select id="gradeLevel">
+                  <option>高一</option>
+                  <option>高二</option>
+                  <option selected>高三</option>
+                  <option>复读</option>
+                </select>
+              </label>
+            </div>
+
+            <div class="field-row">
+              <label>
+                <span>学校名称</span>
+                <input id="schoolName" type="text" placeholder="例如：市一中">
+              </label>
+              <label>
+                <span>班级名称</span>
+                <input id="className" type="text" placeholder="例如：高三 1 班">
+              </label>
+            </div>
+
+            <div class="field-row">
+              <label>
+                <span>学生姓名</span>
+                <input id="studentName" type="text" placeholder="李同学 / Amy">
+              </label>
+              <label>
+                <span>目标方向</span>
+                <input id="targetTrack" type="text" placeholder="例如：985 冲刺 / 英语稳 20+ / 语文作文突破 50+">
+              </label>
+            </div>
+
+            <div class="field-row">
+              <label>
+                <span>学生自述当前卡点</span>
+                <input id="currentIssue" type="text" placeholder="例如：审题容易跑偏 / 例子写不实 / 英语句子不稳">
+              </label>
+              <label>
+                <span>老师备注</span>
+                <input id="teacherComment" type="text" placeholder="例如：写作时爱空话 / 结构松 / 语言基础还行">
+              </label>
+            </div>
+
+            <div class="field-row">
+              <label>
+                <span>学生自我评价</span>
+                <select id="selfAssessment">
+                  <option value="">未填写</option>
+                  <option>能写出来，但得分不稳定</option>
+                  <option>思路有，但下笔容易空</option>
+                  <option>平时积累不够，写作自信不足</option>
+                  <option>基础还可以，想冲更高分</option>
+                </select>
+              </label>
+              <label>
+                <span>激励方式</span>
+                <select id="motivationStyle">
+                  <option value="">未设置</option>
+                  <option>需要小步反馈</option>
+                  <option>适合明确任务清单</option>
+                  <option>适合对标班级优秀样本</option>
+                  <option>适合老师点名督促</option>
+                </select>
+              </label>
+            </div>
+
+            <label>
+              <span>作文题目</span>
+              <textarea id="prompt" rows="4"></textarea>
+            </label>
+
+            <label>
+              <span>写作要求</span>
+              <textarea id="requirements" rows="3" placeholder="例如：不少于 800 字；文体自选；不得套作抄袭。"></textarea>
+            </label>
+
+            <label>
+              <span>学生作文</span>
+              <textarea id="essay" rows="14"></textarea>
+            </label>
+
+            <div class="form-footer">
+              <div class="word-box">
+                <span>篇幅统计</span>
+                <strong id="lengthCount">0</strong>
+              </div>
+              <div class="form-actions">
+                <button class="secondary-button" id="sampleButton" type="button">填入示例</button>
+                <button class="primary-button" id="submitButton" type="submit">生成诊断报告</button>
+              </div>
+            </div>
+          </form>
+
+          <aside class="report-panel">
+            <section class="profile-card">
+              <p class="eyebrow">Learning Profile</p>
+              <h3>账号长期画像</h3>
+              <div class="profile-grid">
+                <div><span>累计批改</span><strong id="profileTotal">0</strong></div>
+                <div><span>平均得分</span><strong id="profileAverage">0</strong></div>
+              </div>
+              <p class="profile-note" id="profileTrend">先完成第一次作文批改，系统再开始生成个人提分画像。</p>
+              <div class="tag-row" id="profileTags"></div>
+              <ul class="profile-list" id="profileActions"></ul>
+            </section>
+
+            <section class="empty-state" id="emptyState">
+              <p>诊断报告会显示在这里</p>
+              <span>学生看到的是自我改进路径，老师看到的是复核与讲评抓手，校长看到的是学校数据资产。</span>
+            </section>
+
+            <section class="report-content hidden" id="reportContent">
+              <div class="report-head">
+                <div>
+                  <p>单生诊断报告</p>
+                  <h3 id="reportTitle">高考作文报告</h3>
+                </div>
+                <strong id="overallScore">0</strong>
+              </div>
+
+              <div class="score-strip">
+                <div>
+                  <span>建议区间</span>
+                  <strong id="scoreRange">0-0</strong>
+                </div>
+                <div>
+                  <span>置信度</span>
+                  <strong id="scoreConfidence">0%</strong>
+                </div>
+              </div>
+
+              <div class="cohort-strip" id="cohortStrip"></div>
+              <div class="dimension-grid" id="dimensionGrid"></div>
+
+              <section class="report-block">
+                <h4>本次亮点</h4>
+                <ul id="strengthList"></ul>
+              </section>
+
+              <section class="report-block">
+                <h4>主要失分点</h4>
+                <ul id="issueList"></ul>
+              </section>
+
+              <section class="report-block">
+                <h4>下一稿任务清单</h4>
+                <ul id="actionList"></ul>
+                <p class="rewrite-text" id="revisionGuidance"></p>
+              </section>
+
+              <section class="student-growth-card">
+                <div class="teacher-head">
+                  <p class="eyebrow">Student Growth</p>
+                  <h4>个性化提升路线</h4>
+                </div>
+                <ul id="coachingFocus"></ul>
+              </section>
+
+              <section class="student-growth-card">
+                <div class="teacher-head">
+                  <p class="eyebrow">Self Correction</p>
+                  <h4>让学生自己发现错误的提问</h4>
+                </div>
+                <ul id="selfCorrectionPrompts"></ul>
+              </section>
+
+              <section class="teacher-card">
+                <div class="teacher-head">
+                  <p class="eyebrow">Teacher Review</p>
+                  <h4>老师复核一眼看这里</h4>
+                </div>
+                <ul id="teacherCheckpoints"></ul>
+              </section>
+            </section>
+          </aside>
+        </div>
+      </section>
+
+      <section class="history-section" id="classroom">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">Class Summary</p>
+            <h2>班级讲评与个性化建议发放</h2>
+          </div>
+        </div>
+        <div class="classroom-card">
+          <div class="field-row">
+            <label>
+              <span>班级名称</span>
+              <input id="classNameInput" type="text" placeholder="例如：高三 1 班">
+            </label>
+            <label>
+              <span>学科筛选</span>
+              <select id="classSubject">
+                <option value="">全部</option>
+                <option value="chinese">高考语文</option>
+                <option value="english">高考英语</option>
+              </select>
+            </label>
+          </div>
+          <div class="ocr-actions">
+            <button class="primary-button" id="classSummaryButton" type="button">生成班级讲评建议</button>
+            <span id="classSummaryStatus">系统会读取该班每个学生最近一篇作文，生成讲评分提纲和个性化建议。</span>
+          </div>
+          <div class="class-summary hidden" id="classSummary"></div>
+        </div>
+      </section>
+
+      <section class="history-section" id="history">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">Recent Reports</p>
+            <h2>最近批改记录</h2>
+          </div>
+        </div>
+        <div class="history-grid" id="historyGrid"></div>
+      </section>
+    </main>
+  </div>
+
+  <script src="app.js?v=20260410-principal-showcase"></script>
+</body>
+</html>

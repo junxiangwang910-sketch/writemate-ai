@@ -1,0 +1,612 @@
+:root {
+  --bg: #f4ecdf;
+  --surface: rgba(255, 251, 246, 0.82);
+  --surface-strong: #fffaf4;
+  --ink: #1d1813;
+  --muted: #6b6156;
+  --line: rgba(29, 24, 19, 0.1);
+  --line-strong: rgba(29, 24, 19, 0.18);
+  --brand: #aa5232;
+  --brand-deep: #7b2a18;
+  --teal: #1d5c57;
+  --gold: #ce9b46;
+  --shadow: 0 28px 90px rgba(74, 44, 20, 0.12);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  color: var(--ink);
+  font-family: "Manrope", "Noto Serif SC", sans-serif;
+  background:
+    radial-gradient(circle at 14% 8%, rgba(206, 155, 70, 0.18), transparent 22%),
+    radial-gradient(circle at 88% 12%, rgba(29, 92, 87, 0.15), transparent 24%),
+    linear-gradient(180deg, #fbf6ee 0%, #f2e8d9 56%, #eee6de 100%);
+}
+
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background-image:
+    linear-gradient(rgba(29, 24, 19, 0.026) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(29, 24, 19, 0.026) 1px, transparent 1px);
+  background-size: 34px 34px;
+  mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.86), transparent 88%);
+}
+
+.page-shell {
+  width: min(1280px, calc(100% - 32px));
+  margin: 0 auto;
+  padding: 24px 0 72px;
+}
+
+.topbar,
+.hero-panel,
+.showcase-card,
+.grader-form,
+.report-panel,
+.ocr-card,
+.profile-card,
+.teacher-card,
+.student-growth-card,
+.classroom-card,
+.class-brief,
+.student-card,
+.history-card,
+.history-empty,
+.dimension-card,
+.service-grid article {
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+}
+
+.topbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 18px;
+  padding: 16px 18px;
+  border: 1px solid var(--line);
+  border-radius: 24px;
+  background: rgba(255, 251, 246, 0.76);
+  box-shadow: var(--shadow);
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.brand-mark {
+  display: grid;
+  place-items: center;
+  width: 58px;
+  height: 58px;
+  border-radius: 18px;
+  color: #fff9f3;
+  font-weight: 800;
+  font-size: 1rem;
+  background: linear-gradient(135deg, var(--brand-deep), var(--brand), var(--gold));
+}
+
+.brand-title,
+.brand-subtitle,
+.eyebrow,
+.hero-panel p,
+.hero-panel span,
+.teacher-head p {
+  margin: 0;
+}
+
+.brand-title {
+  font-weight: 800;
+}
+
+.brand-subtitle,
+.nav a,
+.hero-text,
+.showcase-card p,
+.service-grid p,
+.profile-note,
+.empty-state span,
+.dimension-card p,
+.history-time,
+.history-range,
+.long-copy {
+  color: var(--muted);
+}
+
+.nav {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.nav a {
+  text-decoration: none;
+}
+
+.hero {
+  display: grid;
+  grid-template-columns: 1.08fr 0.92fr;
+  gap: 28px;
+  align-items: center;
+  padding: 44px 0 24px;
+}
+
+.eyebrow {
+  color: var(--brand);
+  font-size: 0.86rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.hero h1,
+.section-heading h2,
+.profile-card h3,
+.report-head h3,
+.showcase-card h3 {
+  margin: 0;
+}
+
+.hero h1 {
+  max-width: 11ch;
+  font-family: "Noto Serif SC", serif;
+  font-size: clamp(3rem, 5vw, 5.8rem);
+  line-height: 1.02;
+  letter-spacing: -0.05em;
+}
+
+.hero-text {
+  max-width: 64ch;
+  line-height: 1.9;
+  font-size: 1.05rem;
+}
+
+.hero-actions,
+.hero-tags,
+.field-row,
+.ocr-actions,
+.form-footer,
+.report-head,
+.score-strip,
+.history-head {
+  display: flex;
+  gap: 12px;
+}
+
+.hero-actions,
+.hero-tags {
+  margin-top: 24px;
+  flex-wrap: wrap;
+}
+
+.hero-tags span,
+.tag-row span,
+.cohort-strip span {
+  padding: 8px 12px;
+  border: 1px solid rgba(170, 82, 50, 0.16);
+  border-radius: 999px;
+  background: rgba(255, 251, 246, 0.78);
+  color: var(--brand-deep);
+  font-weight: 700;
+}
+
+button,
+input,
+textarea,
+select {
+  font: inherit;
+}
+
+button {
+  border: 0;
+  cursor: pointer;
+  transition: transform 180ms ease, box-shadow 180ms ease;
+}
+
+button:hover,
+a.primary-button:hover,
+a.secondary-button:hover {
+  transform: translateY(-1px);
+}
+
+.primary-button,
+.secondary-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 13px 20px;
+  border-radius: 999px;
+  text-decoration: none;
+}
+
+.primary-button {
+  color: #fffaf4;
+  background: linear-gradient(135deg, var(--brand-deep), var(--brand));
+  box-shadow: 0 18px 36px rgba(170, 82, 50, 0.2);
+}
+
+.secondary-button {
+  color: var(--ink);
+  border: 1px solid var(--line);
+  background: rgba(255, 251, 246, 0.84);
+}
+
+.hero-panel {
+  padding: 28px;
+  border-radius: 34px;
+  color: #fff9f3;
+  background:
+    radial-gradient(circle at 86% 16%, rgba(206, 155, 70, 0.44), transparent 25%),
+    linear-gradient(160deg, #183d45, #8b3a24 60%, #241a16);
+  box-shadow: 0 34px 100px rgba(59, 30, 17, 0.25);
+}
+
+.hero-panel strong {
+  display: block;
+  margin: 12px 0;
+  font-size: 5.5rem;
+  line-height: 0.9;
+}
+
+.hero-mini-grid,
+.showcase-grid,
+.service-grid,
+.profile-grid,
+.dimension-grid,
+.history-grid,
+.student-grid {
+  display: grid;
+  gap: 14px;
+}
+
+.hero-mini-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin-top: 20px;
+}
+
+.hero-mini-grid div,
+.profile-grid div {
+  padding: 14px;
+  border-radius: 18px;
+  background: rgba(255, 250, 245, 0.1);
+  border: 1px solid rgba(255, 250, 245, 0.12);
+}
+
+.hero-mini-grid b,
+.profile-grid strong,
+.history-card strong {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 1.18rem;
+}
+
+.showcase-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin-top: 8px;
+}
+
+.showcase-card,
+.service-grid article,
+.ocr-card,
+.profile-card,
+.empty-state,
+.report-content,
+.teacher-card,
+.student-growth-card,
+.classroom-card,
+.class-brief,
+.student-card,
+.history-card,
+.history-empty,
+.dimension-card {
+  border: 1px solid var(--line);
+  border-radius: 24px;
+  background: var(--surface);
+}
+
+.showcase-card,
+.service-grid article,
+.ocr-card,
+.profile-card,
+.empty-state,
+.report-content,
+.teacher-card,
+.student-growth-card,
+.classroom-card,
+.class-brief,
+.student-card,
+.history-card,
+.history-empty,
+.dimension-card {
+  padding: 18px;
+}
+
+.showcase-card ul,
+.service-grid article p,
+.profile-list,
+.report-block ul,
+.teacher-card ul,
+.student-growth-card ul,
+.student-block ul {
+  margin: 12px 0 0;
+}
+
+.showcase-card ul,
+.profile-list,
+.report-block ul,
+.teacher-card ul,
+.student-growth-card ul,
+.student-block ul {
+  padding-left: 18px;
+}
+
+.showcase-card li,
+.profile-list li,
+.report-block li,
+.teacher-card li,
+.student-growth-card li,
+.student-block li {
+  margin-bottom: 10px;
+  line-height: 1.68;
+}
+
+.service-section,
+.workspace-section,
+.history-section {
+  margin-top: 32px;
+}
+
+.section-heading {
+  margin-bottom: 16px;
+}
+
+.service-grid {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.workspace-grid {
+  display: grid;
+  grid-template-columns: 1.05fr 0.95fr;
+  gap: 22px;
+}
+
+.grader-form,
+.report-panel {
+  border: 1px solid var(--line);
+  border-radius: 28px;
+  background: var(--surface);
+  box-shadow: var(--shadow);
+}
+
+.grader-form {
+  padding: 22px;
+}
+
+.report-panel {
+  padding: 18px;
+}
+
+label {
+  display: grid;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+label span {
+  font-weight: 700;
+}
+
+.field-row {
+  align-items: stretch;
+}
+
+.field-row label {
+  flex: 1;
+}
+
+input,
+textarea,
+select {
+  width: 100%;
+  padding: 14px 16px;
+  border: 1px solid var(--line-strong);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.74);
+  color: var(--ink);
+  resize: vertical;
+}
+
+textarea {
+  line-height: 1.75;
+}
+
+.upload-box {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 86px;
+  border: 1px dashed var(--line-strong);
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.5);
+}
+
+.upload-box input {
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+
+.ocr-actions,
+.form-footer,
+.report-head,
+.score-strip,
+.history-head {
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+}
+
+.word-box,
+.score-strip div {
+  padding: 14px 16px;
+  border-radius: 18px;
+  border: 1px solid var(--line);
+  background: rgba(255, 251, 246, 0.8);
+}
+
+.profile-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin: 14px 0;
+}
+
+.empty-state {
+  display: grid;
+  place-items: center;
+  min-height: 280px;
+  text-align: center;
+}
+
+.hidden {
+  display: none;
+}
+
+.report-head strong {
+  font-size: 2.5rem;
+}
+
+.cohort-strip,
+.tag-row {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.cohort-strip {
+  margin: 18px 0 4px;
+}
+
+.dimension-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin-top: 16px;
+}
+
+.dimension-top {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  align-items: center;
+}
+
+.dimension-top h4,
+.teacher-head h4,
+.report-block h4,
+.student-block h4,
+.history-card p {
+  margin: 0;
+}
+
+.report-block {
+  margin-top: 18px;
+}
+
+.rewrite-text,
+.long-copy {
+  line-height: 1.8;
+}
+
+.rewrite-text {
+  margin: 12px 0 0;
+  padding: 14px 16px;
+  border-radius: 18px;
+  background: rgba(29, 92, 87, 0.08);
+}
+
+.teacher-card {
+  margin-top: 18px;
+  background:
+    linear-gradient(180deg, rgba(29, 92, 87, 0.08), rgba(29, 92, 87, 0.02)),
+    rgba(255, 251, 246, 0.84);
+}
+
+.student-growth-card {
+  margin-top: 18px;
+  background:
+    linear-gradient(180deg, rgba(206, 155, 70, 0.1), rgba(206, 155, 70, 0.02)),
+    rgba(255, 251, 246, 0.84);
+}
+
+.class-summary {
+  margin-top: 18px;
+}
+
+.student-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin-top: 16px;
+}
+
+.student-block {
+  margin-top: 14px;
+}
+
+.history-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.small-history-button {
+  margin-top: 12px;
+  width: 100%;
+}
+
+@media (max-width: 1120px) {
+  .hero,
+  .workspace-grid,
+  .showcase-grid,
+  .service-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .history-grid,
+  .student-grid,
+  .dimension-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 720px) {
+  .page-shell {
+    width: min(100% - 20px, 1280px);
+  }
+
+  .topbar,
+  .field-row,
+  .ocr-actions,
+  .form-footer,
+  .report-head,
+  .score-strip,
+  .history-head {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .hero-mini-grid,
+  .profile-grid,
+  .history-grid,
+  .student-grid,
+  .dimension-grid {
+    grid-template-columns: 1fr;
+  }
+}

@@ -160,6 +160,50 @@ function openDatabase() {
       provider TEXT NOT NULL,
       FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
     );
+    CREATE TABLE IF NOT EXISTS gaokao_reports (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL,
+      timestamp TEXT NOT NULL,
+      subject TEXT NOT NULL,
+      subject_label TEXT NOT NULL,
+      exam_type TEXT NOT NULL,
+      grade_level TEXT NOT NULL,
+      student_name TEXT NOT NULL,
+      school_name TEXT NOT NULL,
+      class_name TEXT NOT NULL DEFAULT '',
+      prompt TEXT NOT NULL,
+      requirements TEXT NOT NULL,
+      essay TEXT NOT NULL,
+      scaled_score REAL NOT NULL,
+      target_max INTEGER NOT NULL,
+      estimated_low INTEGER NOT NULL,
+      estimated_high INTEGER NOT NULL,
+      score_confidence INTEGER NOT NULL,
+      dimensions_json TEXT NOT NULL,
+      strengths_json TEXT NOT NULL,
+      issues_json TEXT NOT NULL,
+      action_items_json TEXT NOT NULL,
+      teacher_checkpoints_json TEXT NOT NULL,
+      revision_guidance TEXT NOT NULL,
+      coaching_focus_json TEXT NOT NULL DEFAULT '[]',
+      self_correction_json TEXT NOT NULL DEFAULT '[]',
+      cohort_snapshot_json TEXT NOT NULL DEFAULT '{}',
+      student_profile_json TEXT NOT NULL DEFAULT '{}',
+      profile_snapshot_json TEXT NOT NULL,
+      provider TEXT NOT NULL,
+      FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
+    );
+    CREATE TABLE IF NOT EXISTS gaokao_student_profiles (
+      user_id TEXT NOT NULL,
+      subject TEXT NOT NULL,
+      student_name TEXT NOT NULL,
+      school_name TEXT NOT NULL DEFAULT '',
+      class_name TEXT NOT NULL DEFAULT '',
+      profile_json TEXT NOT NULL,
+      updated_at TEXT NOT NULL,
+      PRIMARY KEY(user_id, subject, student_name, class_name),
+      FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
+    );
     CREATE TABLE IF NOT EXISTS shenlun_rubrics (
       question_type TEXT PRIMARY KEY,
       label TEXT NOT NULL,
@@ -298,11 +342,23 @@ function openDatabase() {
   `);
 
   migrateJsonIfNeeded(db);
+  ensureColumn(db, "gaokao_reports", "class_name", "TEXT NOT NULL DEFAULT ''");
+  ensureColumn(db, "gaokao_reports", "coaching_focus_json", "TEXT NOT NULL DEFAULT '[]'");
+  ensureColumn(db, "gaokao_reports", "self_correction_json", "TEXT NOT NULL DEFAULT '[]'");
+  ensureColumn(db, "gaokao_reports", "cohort_snapshot_json", "TEXT NOT NULL DEFAULT '{}'");
+  ensureColumn(db, "gaokao_reports", "student_profile_json", "TEXT NOT NULL DEFAULT '{}'");
   ensureMeta(db);
   seedShenlunRubrics(db);
   seedActivationCodes(db);
   seedKnowledgeSnippets(db);
   return db;
+}
+
+function ensureColumn(db, tableName, columnName, definition) {
+  const columns = db.prepare(`PRAGMA table_info(${tableName})`).all();
+  if (!columns.some((column) => column.name === columnName)) {
+    db.exec(`ALTER TABLE ${tableName} ADD COLUMN ${columnName} ${definition}`);
+  }
 }
 
 function ensureMeta(db) {
@@ -411,6 +467,38 @@ function seedKnowledgeSnippets(db) {
       title: "追问应对",
       content: "遇到追问时，不要重复第一轮答案，应该补场景、补步骤、补边界，体现规则意识、沟通能力和解决问题能力。",
       tags: ["面试", "追问", "规则意识", "沟通"]
+    },
+    {
+      id: "gaokao-chinese-review",
+      product: "gaokao",
+      scenario: "chinese",
+      title: "高考语文作文复核重点",
+      content: "语文作文先看是否偏题，再看中心是否稳定、材料是否支撑观点、结构是否有推进，最后再决定表达分是否需要上调或下调。",
+      tags: ["语文", "审题", "立意", "结构", "复核"]
+    },
+    {
+      id: "gaokao-chinese-growth",
+      product: "gaokao",
+      scenario: "chinese",
+      title: "语文作文提分路径",
+      content: "语文作文提分通常不是靠堆辞藻，而是先把中心句写准，再让每段只完成一个分任务，例子要服务观点，结尾要回扣题意。",
+      tags: ["语文", "中心句", "段落", "例子", "结尾"]
+    },
+    {
+      id: "gaokao-english-review",
+      product: "gaokao",
+      scenario: "english",
+      title: "高考英语书面表达复核重点",
+      content: "英语作文复核先看任务是否完成、要点是否覆盖，再看段落结构和语法准确性，最后判断词汇句式是否真正带来加分。",
+      tags: ["英语", "任务完成", "要点覆盖", "语法", "复核"]
+    },
+    {
+      id: "gaokao-english-growth",
+      product: "gaokao",
+      scenario: "english",
+      title: "英语作文提分路径",
+      content: "英语作文想稳分，先把要点写全，再用清晰连接词组织段落，优先保证基础语法正确，再逐步增加高级句式而不是一次堆太多复杂结构。",
+      tags: ["英语", "要点", "连接词", "语法", "句式"]
     }
   ];
   const stmt = db.prepare("INSERT OR IGNORE INTO knowledge_snippets (id, product, scenario, title, content, tags_json) VALUES (?, ?, ?, ?, ?, ?)");
@@ -788,6 +876,107 @@ function getShenlunHistory(userId) {
   return db.prepare("SELECT * FROM shenlun_reports WHERE user_id = ? ORDER BY timestamp ASC").all(userId).map(mapShenlunReport);
 }
 
+function mapGaokaoReport(row) {
+  return {
+    id: row.id,
+    userId: row.user_id,
+    timestamp: row.timestamp,
+    subject: row.subject,
+    subjectLabel: row.subject_label,
+    examType: row.exam_type,
+    gradeLevel: row.grade_level,
+    studentName: row.student_name,
+    schoolName: row.school_name,
+    className: row.class_name || "",
+    prompt: row.prompt,
+    requirements: row.requirements,
+    essay: row.essay,
+    scaledScore: row.scaled_score,
+    targetMax: row.target_max,
+    estimatedLow: row.estimated_low,
+    estimatedHigh: row.estimated_high,
+    scoreConfidence: row.score_confidence,
+    dimensions: JSON.parse(row.dimensions_json),
+    strengths: JSON.parse(row.strengths_json),
+    issues: JSON.parse(row.issues_json),
+    actionItems: JSON.parse(row.action_items_json),
+    teacherCheckpoints: JSON.parse(row.teacher_checkpoints_json),
+    revisionGuidance: row.revision_guidance,
+    coachingFocus: JSON.parse(row.coaching_focus_json || "[]"),
+    selfCorrectionPrompts: JSON.parse(row.self_correction_json || "[]"),
+    cohortSnapshot: JSON.parse(row.cohort_snapshot_json || "{}"),
+    studentProfile: JSON.parse(row.student_profile_json || "{}"),
+    profileSnapshot: JSON.parse(row.profile_snapshot_json),
+    provider: row.provider
+  };
+}
+
+function getGaokaoHistory(userId) {
+  return db.prepare("SELECT * FROM gaokao_reports WHERE user_id = ? ORDER BY timestamp ASC").all(userId).map(mapGaokaoReport);
+}
+
+function getGaokaoClassReports(className, subject = "") {
+  const normalizedClass = String(className || "").trim();
+  if (!normalizedClass) return [];
+  const rows = subject
+    ? db.prepare(`
+      SELECT * FROM gaokao_reports
+      WHERE class_name = ? AND subject = ?
+      ORDER BY timestamp DESC
+    `).all(normalizedClass, subject)
+    : db.prepare(`
+      SELECT * FROM gaokao_reports
+      WHERE class_name = ?
+      ORDER BY timestamp DESC
+    `).all(normalizedClass);
+  return rows.map(mapGaokaoReport);
+}
+
+function normalizeStudentProfile(profile = {}) {
+  return {
+    targetTrack: String(profile.targetTrack || "").trim(),
+    currentIssue: String(profile.currentIssue || "").trim(),
+    motivationStyle: String(profile.motivationStyle || "").trim(),
+    selfAssessment: String(profile.selfAssessment || "").trim(),
+    teacherComment: String(profile.teacherComment || "").trim(),
+    parentExpectation: String(profile.parentExpectation || "").trim()
+  };
+}
+
+function getGaokaoStudentProfile(userId, subject, studentName, className = "") {
+  const row = db.prepare(`
+    SELECT * FROM gaokao_student_profiles
+    WHERE user_id = ? AND subject = ? AND student_name = ? AND class_name = ?
+  `).get(userId, subject, studentName, className);
+  if (!row) return null;
+  return JSON.parse(row.profile_json || "{}");
+}
+
+function saveGaokaoStudentProfile(userId, subject, studentName, schoolName, className, profile) {
+  const normalized = normalizeStudentProfile(profile);
+  db.prepare(`
+    INSERT OR REPLACE INTO gaokao_student_profiles (
+      user_id, subject, student_name, school_name, class_name, profile_json, updated_at
+    ) VALUES (?, ?, ?, ?, ?, ?, ?)
+  `).run(
+    userId,
+    subject,
+    studentName,
+    schoolName || "",
+    className || "",
+    JSON.stringify(normalized),
+    new Date().toISOString()
+  );
+  return normalized;
+}
+
+function getGaokaoSubjectReports(subject = "") {
+  const rows = subject
+    ? db.prepare("SELECT * FROM gaokao_reports WHERE subject = ? ORDER BY timestamp DESC").all(subject)
+    : db.prepare("SELECT * FROM gaokao_reports ORDER BY timestamp DESC").all();
+  return rows.map(mapGaokaoReport);
+}
+
 function getLearningProfile(userId, product) {
   const row = db.prepare("SELECT * FROM user_learning_profiles WHERE user_id = ? AND product = ?").get(userId, product);
   if (!row) return null;
@@ -878,6 +1067,229 @@ function buildShenlunLearningProfile(userId) {
   };
 }
 
+function buildGaokaoLearningProfile(userId) {
+  const history = getGaokaoHistory(userId);
+  if (!history.length) {
+    return {
+      totalReports: 0,
+      averageScore: 0,
+      strongestAreas: [],
+      weakestAreas: [],
+      recurringIssues: [],
+      subjectDistribution: [],
+      focusTags: [],
+      trendText: "先完成第一次作文批改，系统再开始生成个人提分画像。",
+      nextActions: ["先上传 1 篇语文或英语作文，建立初始档案。"]
+    };
+  }
+
+  const recent = history.slice(-10);
+  const dimensionBuckets = new Map();
+  recent.forEach((report) => {
+    (report.dimensions || []).forEach((dimension) => {
+      const normalized = dimension.maxScore ? (Number(dimension.score || 0) / Number(dimension.maxScore || 1)) * 100 : Number(dimension.score || 0);
+      if (!dimensionBuckets.has(dimension.label)) dimensionBuckets.set(dimension.label, []);
+      dimensionBuckets.get(dimension.label).push(normalized);
+    });
+  });
+
+  const dimensionAverages = Array.from(dimensionBuckets.entries()).map(([label, scores]) => ({
+    label,
+    score: Math.round(scores.reduce((sum, item) => sum + item, 0) / Math.max(scores.length, 1))
+  }));
+  const strongestAreas = dimensionAverages.slice().sort((a, b) => b.score - a.score).slice(0, 3);
+  const weakestAreas = dimensionAverages.slice().sort((a, b) => a.score - b.score).slice(0, 3);
+  const recurringIssues = rankTags(
+    recent.map((item) => (item.issues || []).filter((issue) => !String(issue).includes("老师复核") && !String(issue).includes("给老师"))),
+    6
+  ).map((item) => item.label);
+  const subjectDistribution = rankTags(recent.map((item) => [item.subjectLabel]), 4);
+  const focusTags = rankTags([
+    recurringIssues,
+    weakestAreas.map((item) => item.label),
+    subjectDistribution.map((item) => item.label)
+  ], 6).map((item) => item.label);
+  const recentScores = recent.map((item) => Number(item.scaledScore || 0) / Math.max(Number(item.targetMax || 1), 1));
+  let trendText = "样本还不多，先继续累计 2 到 3 次作文，趋势会更稳定。";
+  if (recentScores.length >= 3) {
+    const mid = Math.max(1, Math.floor(recentScores.length / 2));
+    const early = recentScores.slice(0, mid);
+    const later = recentScores.slice(mid);
+    const earlyAvg = early.reduce((sum, item) => sum + item, 0) / Math.max(early.length, 1);
+    const laterAvg = later.reduce((sum, item) => sum + item, 0) / Math.max(later.length, 1);
+    const diff = Math.round((laterAvg - earlyAvg) * 100);
+    trendText = diff >= 5
+      ? "最近几次作文有稳定上扬，说明修改建议正在生效。"
+      : diff <= -5
+        ? "最近波动偏大，建议先回到最基础的审题和结构。"
+        : "整体分数比较稳定，下一步要靠补齐短板继续拉开。";
+  }
+
+  return {
+    totalReports: history.length,
+    averageScore: Math.round(history.reduce((sum, item) => sum + Number(item.scaledScore || 0), 0) / history.length),
+    strongestAreas,
+    weakestAreas,
+    recurringIssues,
+    subjectDistribution,
+    focusTags,
+    trendText,
+    nextActions: [
+      weakestAreas[0] ? `下一次优先盯住“${weakestAreas[0].label}”。` : "继续保持当前训练节奏。",
+      recurringIssues[0] ? `你最常见的问题是“${recurringIssues[0]}”，写前先列一个检查清单。` : "继续累计样本，让画像更稳定。",
+      subjectDistribution[0] ? `最近练得最多的是${subjectDistribution[0].label}，建议交叉练另一科保持手感。` : "建议语文、英语交替练习。"
+    ]
+  };
+}
+
+function buildGaokaoClassDigest(className, subject = "") {
+  const reports = getGaokaoClassReports(className, subject);
+  if (!reports.length) {
+    return {
+      className,
+      subject: subject || "all",
+      totalStudents: 0,
+      averageScore: 0,
+      teacherBrief: "当前班级还没有可用作文记录，先完成批改后再生成讲评清单。",
+      commonIssues: [],
+      briefingPoints: [],
+      students: []
+    };
+  }
+
+  const latestByStudent = new Map();
+  reports.forEach((report) => {
+    const key = `${report.studentName || "未命名学生"}::${report.subject}`;
+    if (!latestByStudent.has(key)) latestByStudent.set(key, report);
+  });
+  const students = Array.from(latestByStudent.values());
+  const averageScore = Math.round(students.reduce((sum, item) => sum + Number(item.scaledScore || 0), 0) / Math.max(students.length, 1));
+  const commonIssues = rankTags(students.map((item) => item.issues || []), 6).map((item) => item.label);
+  const weakDimensions = rankTags(
+    students.map((item) => {
+      const sorted = (item.dimensions || []).slice().sort((a, b) => {
+        const left = Number(a.score || 0) / Math.max(Number(a.maxScore || 1), 1);
+        const right = Number(b.score || 0) / Math.max(Number(b.maxScore || 1), 1);
+        return left - right;
+      });
+      return sorted.slice(0, 2).map((dimension) => dimension.label);
+    }),
+    5
+  ).map((item) => item.label);
+
+  const teacherBrief = students.length >= 3
+    ? `本次${className}共统计 ${students.length} 份最近作文，班级平均分约 ${averageScore}。讲评分先抓“${commonIssues.slice(0, 2).join("、") || weakDimensions.slice(0, 2).join("、")}”，再分层点名提醒。`
+    : `当前${className}已累计 ${students.length} 份作文，建议先把高频问题讲透，再逐个发个性化建议。`;
+
+  return {
+    className,
+    subject: subject || "all",
+    totalStudents: students.length,
+    averageScore,
+    teacherBrief,
+    commonIssues,
+    briefingPoints: [
+      weakDimensions[0] ? `这次班级共性短板首先是“${weakDimensions[0]}”。` : "先从审题与结构讲起。",
+      commonIssues[0] ? `讲评分建议先重点解释“${commonIssues[0]}”为什么会丢分。` : "先挑 2 到 3 篇典型样卷做示范。",
+      "个性化建议发放时，优先用每个学生最新一篇作文的三条行动建议。"
+    ],
+    students: students
+      .sort((a, b) => Number(b.scaledScore || 0) - Number(a.scaledScore || 0))
+      .map((report) => ({
+        studentName: report.studentName || "未命名学生",
+        subjectLabel: report.subjectLabel,
+        score: report.scaledScore,
+        targetMax: report.targetMax,
+        scoreRange: `${report.estimatedLow}-${report.estimatedHigh}`,
+        keyIssues: (report.issues || []).slice(0, 2),
+        personalizedAdvice: (report.actionItems || []).slice(0, 3),
+        coachingFocus: (report.coachingFocus || []).slice(0, 3),
+        selfCorrectionPrompts: (report.selfCorrectionPrompts || []).slice(0, 3),
+        guidance: report.revisionGuidance || "",
+        teacherFocus: (report.teacherCheckpoints || []).slice(0, 2)
+      }))
+  };
+}
+
+function compareAgainstCohort(subject, className, studentName, currentScore) {
+  const classReports = getGaokaoClassReports(className, subject);
+  const latestByStudent = new Map();
+  classReports.forEach((report) => {
+    const key = report.studentName || "未命名学生";
+    if (!latestByStudent.has(key)) latestByStudent.set(key, report);
+  });
+  const students = Array.from(latestByStudent.values());
+  const classAverage = students.length
+    ? Math.round(students.reduce((sum, item) => sum + Number(item.scaledScore || 0), 0) / students.length)
+    : null;
+  const subjectReports = getGaokaoSubjectReports(subject);
+  const allAverage = subjectReports.length
+    ? Math.round(subjectReports.reduce((sum, item) => sum + Number(item.scaledScore || 0), 0) / subjectReports.length)
+    : null;
+  const sortedScores = students.map((item) => Number(item.scaledScore || 0)).sort((a, b) => b - a);
+  const rank = students.findIndex((item) => (item.studentName || "") === studentName) + 1;
+  const percentile = students.length ? Math.round((1 - ((rank - 1) / students.length)) * 100) : null;
+  const topScore = sortedScores[0] || currentScore;
+  return {
+    classAverage,
+    allAverage,
+    topScore,
+    rank,
+    classSize: students.length,
+    percentile
+  };
+}
+
+function buildPrincipalSummary(subject = "") {
+  const reports = getGaokaoSubjectReports(subject);
+  if (!reports.length) {
+    return {
+      subject: subject || "all",
+      schoolCount: 0,
+      classCount: 0,
+      reportCount: 0,
+      averageScore: 0,
+      serviceNarrative: "当前还没有学校样本数据，先完成一轮班级试批后即可生成校长视角摘要。",
+      strategicValue: [],
+      commonIssues: [],
+      highBarrierPoints: []
+    };
+  }
+
+  const schoolSet = new Set(reports.map((item) => item.schoolName).filter(Boolean));
+  const classSet = new Set(reports.map((item) => `${item.schoolName}::${item.className || "未分班"}`));
+  const averageScore = Math.round(reports.reduce((sum, item) => sum + Number(item.scaledScore || 0), 0) / reports.length);
+  const commonIssues = rankTags(reports.map((item) => item.issues || []), 6).map((item) => item.label);
+  const focusDimensions = rankTags(
+    reports.map((item) => {
+      const sorted = (item.dimensions || []).slice().sort((a, b) => (Number(a.score || 0) / Math.max(Number(a.maxScore || 1), 1)) - (Number(b.score || 0) / Math.max(Number(b.maxScore || 1), 1)));
+      return sorted.slice(0, 2).map((dimension) => dimension.label);
+    }),
+    5
+  ).map((item) => item.label);
+
+  return {
+    subject: subject || "all",
+    schoolCount: schoolSet.size,
+    classCount: classSet.size,
+    reportCount: reports.length,
+    averageScore,
+    serviceNarrative: `系统已经不只是给分，而是在做“学生画像 + 班级共性诊断 + 学校写作数据库沉淀”。校长关心的不是单次批改，而是是否能持续拉升作文得分与自我纠错能力。`,
+    strategicValue: [
+      "为学校沉淀校本作文数据库，逐步形成不同年级、不同班型、不同学科的失分图谱。",
+      "帮助教师把讲评分从经验驱动升级到数据驱动，先抓共性问题，再分发个性化建议。",
+      "通过长期画像提醒学生自己最稳定的错误模式，促成自我修正，而不是只被动看分。"
+    ],
+    commonIssues,
+    focusDimensions,
+    highBarrierPoints: [
+      "不是通用作文机器人，而是基于学校自己的作文记录持续学习群体失分规律。",
+      "建议同时参考学生画像、同班对比、历史表现和全库样本，门槛高于单篇点评产品。",
+      "越用越强，数据资产和校本训练反馈会形成明显护城河。"
+    ]
+  };
+}
+
 function getKnowledgeSnippets(product, scenario, queryText = "") {
   const rows = db.prepare("SELECT * FROM knowledge_snippets WHERE product = ? AND scenario = ?").all(product, scenario);
   const query = String(queryText || "");
@@ -920,6 +1332,49 @@ function insertShenlunReport(record) {
     JSON.stringify(record.weaknesses),
     JSON.stringify(record.missing),
     record.rewrite,
+    record.provider
+  );
+}
+
+function insertGaokaoReport(record) {
+  db.prepare(`
+    INSERT INTO gaokao_reports (
+      id, user_id, timestamp, subject, subject_label, exam_type, grade_level, student_name, school_name, class_name,
+      prompt, requirements, essay, scaled_score, target_max, estimated_low, estimated_high, score_confidence,
+      dimensions_json, strengths_json, issues_json, action_items_json, teacher_checkpoints_json,
+      revision_guidance, coaching_focus_json, self_correction_json, cohort_snapshot_json,
+      student_profile_json, profile_snapshot_json, provider
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `).run(
+    record.id,
+    record.userId,
+    record.timestamp,
+    record.subject,
+    record.subjectLabel,
+    record.examType,
+    record.gradeLevel,
+    record.studentName,
+    record.schoolName,
+    record.className || "",
+    record.prompt,
+    record.requirements,
+    record.essay,
+    record.scaledScore,
+    record.targetMax,
+    record.estimatedLow,
+    record.estimatedHigh,
+    record.scoreConfidence,
+    JSON.stringify(record.dimensions),
+    JSON.stringify(record.strengths),
+    JSON.stringify(record.issues),
+    JSON.stringify(record.actionItems),
+    JSON.stringify(record.teacherCheckpoints),
+    record.revisionGuidance,
+    JSON.stringify(record.coachingFocus || []),
+    JSON.stringify(record.selfCorrectionPrompts || []),
+    JSON.stringify(record.cohortSnapshot || {}),
+    JSON.stringify(record.studentProfile || {}),
+    JSON.stringify(record.profileSnapshot || {}),
     record.provider
   );
 }
@@ -2144,6 +2599,344 @@ async function gradeEssay(body, user) {
   };
 }
 
+function gaokaoSubjectConfig(subject, examType) {
+  if (subject === "english") {
+    return {
+      subject: "english",
+      subjectLabel: "高考英语",
+      targetMax: examType === "continuation" ? 25 : 25,
+      dimensions: [
+        { key: "task", label: "任务完成", maxScore: 5 },
+        { key: "points", label: "要点覆盖", maxScore: 5 },
+        { key: "organization", label: "篇章结构", maxScore: 5 },
+        { key: "language", label: "语言准确", maxScore: 5 },
+        { key: "upgrade", label: "词汇句式", maxScore: 5 }
+      ]
+    };
+  }
+  return {
+    subject: "chinese",
+    subjectLabel: "高考语文",
+    targetMax: 60,
+    dimensions: [
+      { key: "intent", label: "审题立意", maxScore: 12 },
+      { key: "content", label: "内容充实", maxScore: 12 },
+      { key: "structure", label: "结构推进", maxScore: 12 },
+      { key: "expression", label: "语言表达", maxScore: 12 },
+      { key: "development", label: "发展等级", maxScore: 12 }
+    ]
+  };
+}
+
+function englishCoverage(prompt, essay) {
+  const keywords = Array.from(new Set(
+    String(prompt || "")
+      .toLowerCase()
+      .replace(/[^a-z\s]/g, " ")
+      .split(/\s+/)
+      .filter((word) => word.length >= 4)
+  ));
+  if (!keywords.length) return 0.75;
+  const body = String(essay || "").toLowerCase();
+  const hits = keywords.filter((word) => body.includes(word)).length;
+  return hits / keywords.length;
+}
+
+function chineseEssayMetrics(prompt, essay) {
+  const text = String(essay || "");
+  const compact = text.replace(/\s/g, "");
+  const charTotal = compact.length;
+  const paragraphCount = text.split(/\n+/).map((item) => item.trim()).filter(Boolean).length;
+  const sentenceCount = countSentences(text);
+  const hasTitle = /^.{4,28}\n/.test(text.trim());
+  const hasOpening = paragraphCount >= 3;
+  const hasExamples = /例如|比如|正如|有人说|曾经|材料|现实中|生活中|历史上/.test(text);
+  const hasTurn = /但是|然而|同时|另一方面|进一步|因此|所以|由此可见|总之/.test(text);
+  const hasConclusion = /总之|因此|由此可见|归根到底|面向未来|最终/.test(text);
+  const promptFit = chineseCoverage(prompt, text);
+  return { charTotal, paragraphCount, sentenceCount, hasTitle, hasOpening, hasExamples, hasTurn, hasConclusion, promptFit };
+}
+
+function englishEssayMetrics(prompt, essay) {
+  const text = String(essay || "");
+  const wordTotal = getWords(text).length;
+  const paragraphCount = countParagraphs(text);
+  const connectorCount = countConnectors(text);
+  const longSentenceCount = countLongSentences(text);
+  const promptFit = englishCoverage(prompt, text);
+  const hasGreeting = /dear\s|hello\s/i.test(text);
+  const hasClosing = /yours|sincerely|best regards|thank you/i.test(text);
+  return { wordTotal, paragraphCount, connectorCount, longSentenceCount, promptFit, hasGreeting, hasClosing };
+}
+
+function buildStudentGrowthAdvice(subject, studentProfile, cohortContext, weakestLabel) {
+  const actions = [];
+  if (studentProfile.targetTrack) {
+    actions.push(`你当前的目标方向是“${studentProfile.targetTrack}”，后续改稿要先围绕这个目标把最不稳定的短板补齐。`);
+  }
+  if (studentProfile.currentIssue) {
+    actions.push(`你自己也提到目前最卡的是“${studentProfile.currentIssue}”，下一轮练习不要贪多，先只攻这一个点。`);
+  }
+  if (studentProfile.teacherComment) {
+    actions.push(`老师最近提醒你“${studentProfile.teacherComment}”，系统建议把它设成这周作文自查第一项。`);
+  }
+  if (weakestLabel) {
+    actions.push(`当前最值得优先修的是“${weakestLabel}”，因为它最容易形成连锁失分。`);
+  }
+  if (cohortContext?.classAverage != null) {
+    const delta = Math.round((cohortContext.currentScore || 0) - cohortContext.classAverage);
+    if (delta >= 3) {
+      actions.push(`你目前高于班级均分约 ${delta} 分，下一步重点不是多写，而是把失分点变得更稳定。`);
+    } else if (delta <= -3) {
+      actions.push(`你目前比班级均分低约 ${Math.abs(delta)} 分，建议先做“低门槛、可重复”的纠错训练，连续 3 次只盯固定错误。`);
+    } else {
+      actions.push("你现在大致处在班级中段，最适合通过稳定改错把自己往上拉，而不是一味追求花哨表达。");
+    }
+  }
+  return actions.slice(0, 4);
+}
+
+function buildSelfCorrectionPrompts(subject, weakestDimension, issues = []) {
+  const starter = subject === "english"
+    ? ["我有没有把题目要求写全？", "有没有哪一句我自己读起来就不稳？", "有没有一段可以更清楚地重写？"]
+    : ["我的中心句是否真的扣题？", "每一段有没有完成自己的任务？", "哪一处最像空话，能不能换成例子或分析？"];
+  if (weakestDimension) {
+    starter.unshift(`这次我最容易丢分的是“${weakestDimension}”，下一稿我打算怎么改？`);
+  }
+  if (issues[0]) {
+    starter.push(`如果把“${issues[0]}”这个问题改掉，我的分数最可能从哪里提升？`);
+  }
+  return starter.slice(0, 4);
+}
+
+function demoGaokaoReport(body, previousProfile) {
+  const subject = body.subject === "english" ? "english" : "chinese";
+  const examType = String(body.examType || (subject === "english" ? "practical-writing" : "material-essay"));
+  const config = gaokaoSubjectConfig(subject, examType);
+  const snippets = getKnowledgeSnippets("gaokao", subject, `${body.prompt}\n${body.essay}`);
+  const studentProfile = normalizeStudentProfile(body.studentProfile || {});
+  if (subject === "english") {
+    const metrics = englishEssayMetrics(body.prompt, body.essay);
+    const minWords = examType === "continuation" ? 120 : 80;
+    const dimensions = [
+      {
+        label: "任务完成",
+        score: clamp(Math.round(2 + metrics.promptFit * 3 + (metrics.wordTotal >= minWords ? 1 : 0)), 1, 5),
+        maxScore: 5,
+        comment: metrics.wordTotal >= minWords ? "基本完成写作任务，但仍需更贴合题干中的动作要求。" : "篇幅偏短，阅卷时容易被判断为任务展开不足。"
+      },
+      {
+        label: "要点覆盖",
+        score: clamp(Math.round(2 + metrics.promptFit * 3), 1, 5),
+        maxScore: 5,
+        comment: metrics.promptFit >= 0.58 ? "主要信息点有覆盖，但细节还可以更完整。" : "题目关键信息覆盖不足，建议先列要点再写。"
+      },
+      {
+        label: "篇章结构",
+        score: clamp(Math.round(2 + Math.min(metrics.paragraphCount, 3) * 0.8 + Math.min(metrics.connectorCount, 5) * 0.25), 1, 5),
+        maxScore: 5,
+        comment: metrics.paragraphCount >= 3 ? "段落意识较清楚，阅卷老师能较快抓到结构。" : "分段还不够清楚，建议至少形成开头、主体、结尾。"
+      },
+      {
+        label: "语言准确",
+        score: clamp(Math.round(3 + (metrics.longSentenceCount <= 2 ? 1 : 0) - Math.max(metrics.longSentenceCount - 3, 0) * 0.4), 1, 5),
+        maxScore: 5,
+        comment: metrics.longSentenceCount <= 2 ? "语言相对稳，适合继续在准确前提下升级表达。" : "长句偏多，容易带来语法失误，先保准确再求复杂。"
+      },
+      {
+        label: "词汇句式",
+        score: clamp(Math.round(2 + Math.min(metrics.connectorCount, 4) * 0.4 + (metrics.hasGreeting || metrics.hasClosing ? 1 : 0)), 1, 5),
+        maxScore: 5,
+        comment: "可以继续增加更自然的连接和句式变化，但不建议为高级而牺牲准确。"
+      }
+    ];
+    const scaledScore = dimensions.reduce((sum, item) => sum + item.score, 0);
+    const confidence = clamp(Math.round(78 - Math.abs(metrics.wordTotal - minWords) / 8), 58, 90);
+    const cohort = compareAgainstCohort(subject, body.className || body.schoolName || "", body.studentName || "", scaledScore);
+    const weakestDimension = dimensions.slice().sort((a, b) => (a.score / a.maxScore) - (b.score / b.maxScore))[0]?.label || "";
+    const growthAdvice = buildStudentGrowthAdvice(subject, studentProfile, { ...cohort, currentScore: scaledScore }, weakestDimension);
+    const selfCorrectionPrompts = buildSelfCorrectionPrompts(subject, weakestDimension, [
+      metrics.promptFit < 0.58 ? "题目要点覆盖还不够满，容易丢任务分。" : "要点基本覆盖，但细节支撑还不够具体。",
+      metrics.longSentenceCount > 2 ? "复杂句偏多而不够稳，建议先降难度保准确。" : "语言准确性尚可，但句式升级空间还在。"
+    ]);
+    return {
+      subject,
+      subjectLabel: config.subjectLabel,
+      examType,
+      gradeLevel: body.gradeLevel || "高三",
+      studentName: body.studentName || "未命名学生",
+      schoolName: body.schoolName || "",
+      className: body.className || "",
+      prompt: body.prompt,
+      requirements: body.requirements || "",
+      essay: body.essay,
+      targetMax: config.targetMax,
+      scaledScore,
+      estimatedLow: Math.max(0, scaledScore - 2),
+      estimatedHigh: Math.min(config.targetMax, scaledScore + 2),
+      scoreConfidence: confidence,
+      dimensions,
+      strengths: [
+        metrics.wordTotal >= minWords ? `篇幅基本达标，当前约 ${metrics.wordTotal} 词。` : `已经完成基本作答，但当前约 ${metrics.wordTotal} 词，篇幅偏紧。`,
+        metrics.paragraphCount >= 3 ? "有明确分段，老师快速扫卷时更容易判断结构。" : "已有基础结构意识，继续把段落边界拉清楚会更稳。",
+        snippets[0] ? `当前写法和教研要点“${snippets[0].title}”是同方向的。` : "整体方向可用，具备继续提分的基础。"
+      ],
+      issues: [
+        metrics.promptFit < 0.58 ? "题目要点覆盖还不够满，容易丢任务分。" : "要点基本覆盖，但细节支撑还不够具体。",
+        metrics.longSentenceCount > 2 ? "复杂句偏多而不够稳，建议先降难度保准确。" : "语言准确性尚可，但句式升级空间还在。",
+        "如果这是给老师复核，优先看 AI 是否把任务完成分压得过低或过高。"
+      ],
+      actionItems: [
+        "写前先把题目动作词和信息点圈出来，再对应成 2 到 3 个段落。",
+        "优先写对基础句，再局部加入 1 到 2 个高级句式。",
+        "交卷前单查时态、主谓一致和拼写。"
+      ],
+      teacherCheckpoints: [
+        "先看是否完成题目规定任务，再决定是否接受 AI 分数。",
+        "如果要点写全但表达一般，人工可考虑上调 1 分左右。",
+        "如果篇幅明显不足或偏题，人工应比 AI 更严格。"
+      ],
+      revisionGuidance: previousProfile?.recurringIssues?.length
+        ? `你最近长期问题集中在“${previousProfile.recurringIssues.slice(0, 2).join("、")}”。这次修改时先不求花哨，先把这些旧问题逐条消掉。`
+        : "下一稿先按“任务是否完成、要点是否写全、句子是否稳”这三个问题自查，再考虑润色。",
+      coachingFocus: growthAdvice,
+      selfCorrectionPrompts,
+      cohortSnapshot: cohort,
+      studentProfile,
+      profileSnapshot: previousProfile || {}
+    };
+  }
+
+  const metrics = chineseEssayMetrics(body.prompt, body.essay);
+  const dimensions = [
+    {
+      label: "审题立意",
+      score: clamp(Math.round(6 + metrics.promptFit * 6 + (metrics.hasTitle ? 1 : 0)), 4, 12),
+      maxScore: 12,
+      comment: metrics.promptFit >= 0.56 ? "基本围绕题意展开，但中心还能再压得更稳。" : "存在偏表层回应的风险，老师复核时应重点看是否真正扣题。"
+    },
+    {
+      label: "内容充实",
+      score: clamp(Math.round(5 + Math.min(metrics.charTotal / 180, 4) + (metrics.hasExamples ? 2 : 0)), 4, 12),
+      maxScore: 12,
+      comment: metrics.hasExamples ? "有一定材料或例子支撑，不至于空转。" : "例证和细节不足，容易显得只有观点没有展开。"
+    },
+    {
+      label: "结构推进",
+      score: clamp(Math.round(5 + Math.min(metrics.paragraphCount, 5) + (metrics.hasTurn ? 2 : 0)), 4, 12),
+      maxScore: 12,
+      comment: metrics.paragraphCount >= 4 ? "段落推进基本清楚，适合老师快速扫读。" : "结构层次还不够展开，建议至少形成起承转合。"
+    },
+    {
+      label: "语言表达",
+      score: clamp(Math.round(6 + Math.min(metrics.sentenceCount / 8, 2) + (metrics.hasConclusion ? 2 : 0)), 4, 12),
+      maxScore: 12,
+      comment: "语言整体可读，但还需要继续减少泛泛空话，增强句子力度。"
+    },
+    {
+      label: "发展等级",
+      score: clamp(Math.round(4 + (metrics.hasExamples ? 2 : 0) + (metrics.hasTurn ? 2 : 0) + (metrics.hasConclusion ? 1 : 0) + (metrics.hasTitle ? 1 : 0)), 3, 12),
+      maxScore: 12,
+      comment: "发展等级主要看思考深度和表达完成度，老师复核时要重点看是否真的有层次推进。"
+    }
+  ];
+  let scaledScore = dimensions.reduce((sum, item) => sum + item.score, 0);
+  if (metrics.charTotal < 700) scaledScore -= 4;
+  if (metrics.charTotal > 1300) scaledScore -= 2;
+  scaledScore = clamp(scaledScore, 20, config.targetMax);
+  const confidence = clamp(Math.round(80 - Math.abs(metrics.charTotal - 900) / 25), 55, 91);
+  const cohort = compareAgainstCohort(subject, body.className || body.schoolName || "", body.studentName || "", scaledScore);
+  const weakestDimension = dimensions.slice().sort((a, b) => (a.score / a.maxScore) - (b.score / b.maxScore))[0]?.label || "";
+  const growthAdvice = buildStudentGrowthAdvice(subject, studentProfile, { ...cohort, currentScore: scaledScore }, weakestDimension);
+  const selfCorrectionPrompts = buildSelfCorrectionPrompts(subject, weakestDimension, [
+    metrics.promptFit < 0.56 ? "审题压得还不够准，老师应优先看是否存在偏题风险。" : "立意方向基本对，但中心句还可以更锋利。",
+    !metrics.hasExamples ? "例证不足，内容容易显得虚。" : "例子有了，但还要让它真正服务分论点。"
+  ]);
+  return {
+    subject,
+    subjectLabel: config.subjectLabel,
+    examType,
+    gradeLevel: body.gradeLevel || "高三",
+    studentName: body.studentName || "未命名学生",
+    schoolName: body.schoolName || "",
+    className: body.className || "",
+    prompt: body.prompt,
+    requirements: body.requirements || "",
+    essay: body.essay,
+    targetMax: config.targetMax,
+    scaledScore,
+    estimatedLow: Math.max(0, scaledScore - 4),
+    estimatedHigh: Math.min(config.targetMax, scaledScore + 4),
+    scoreConfidence: confidence,
+    dimensions,
+    strengths: [
+      metrics.hasTitle ? "标题意识较好，阅卷时第一眼观感不会太差。" : "已形成基本成文状态，具备进一步打磨基础。",
+      metrics.paragraphCount >= 4 ? `当前有 ${metrics.paragraphCount} 段，结构雏形比较完整。` : "已经有段落区分，继续强化段间推进会更稳。",
+      metrics.hasExamples ? "文章里有例证或现实支撑，不完全停留在空泛议论。" : "中心方向基本可用，下一步关键是补材料和细节。"
+    ],
+    issues: [
+      metrics.promptFit < 0.56 ? "审题压得还不够准，老师应优先看是否存在偏题风险。" : "立意方向基本对，但中心句还可以更锋利。",
+      !metrics.hasExamples ? "例证不足，内容容易显得虚。" : "例子有了，但还要让它真正服务分论点。",
+      metrics.charTotal < 780 ? "篇幅偏短，发展等级和内容充实度都会受影响。" : "老师复核时重点看结构推进分是否与文章完成度匹配。"
+    ],
+    actionItems: [
+      "先把题意压成一句中心句，再决定每段各承担什么任务。",
+      "每个主体段尽量做到“观点一句 + 例子一组 + 回扣一句”。",
+      "结尾不要只喊口号，要把题目关键词再扣回来。"
+    ],
+    teacherCheckpoints: [
+      "先看是否偏题，再看中心句是否真正统领全文。",
+      "如果文章结构清楚但例子偏虚，人工可维持中档，不宜高判。",
+      "如果立意准确、结构稳、语言完整，人工可在 AI 区间上沿给分。"
+    ],
+    revisionGuidance: previousProfile?.recurringIssues?.length
+      ? `你的长期问题里，“${previousProfile.recurringIssues.slice(0, 2).join("、")}”出现频率最高。这次改稿时先只改这两个问题，提分会更明显。`
+      : "建议下一稿先重写开头中心句和每段首句，先把骨架立住，再补细节。",
+    coachingFocus: growthAdvice,
+    selfCorrectionPrompts,
+    cohortSnapshot: cohort,
+    studentProfile,
+    profileSnapshot: previousProfile || {}
+  };
+}
+
+async function gradeGaokao(body, user) {
+  const history = getGaokaoHistory(user.id);
+  const plan = plans[user.plan] || plans.free;
+  if (history.length >= plan.quota) {
+    throw new Error("QUOTA_EXCEEDED");
+  }
+
+  const previousProfile = getLearningProfile(user.id, "gaokao");
+  const subject = body.subject === "english" ? "english" : "chinese";
+  const studentName = String(body.studentName || "未命名学生").trim();
+  const className = String(body.className || "").trim();
+  const persistedStudentProfile = getGaokaoStudentProfile(user.id, subject, studentName, className) || {};
+  const mergedStudentProfile = {
+    ...persistedStudentProfile,
+    ...normalizeStudentProfile(body.studentProfile || {})
+  };
+  saveGaokaoStudentProfile(user.id, subject, studentName, body.schoolName || "", className, mergedStudentProfile);
+  const provider = "demo";
+  const report = demoGaokaoReport({ ...body, studentProfile: mergedStudentProfile, subject }, previousProfile);
+  const record = {
+    id: randomUUID(),
+    userId: user.id,
+    timestamp: new Date().toLocaleString(),
+    provider,
+    ...report
+  };
+  insertGaokaoReport(record);
+  const profile = buildGaokaoLearningProfile(user.id);
+  saveLearningProfile(user.id, "gaokao", profile);
+  return {
+    provider,
+    report: record,
+    history: getGaokaoHistory(user.id),
+    profile
+  };
+}
+
 function tokenizeChinese(text) {
   return Array.from(new Set(
     String(text || "")
@@ -2805,11 +3598,234 @@ async function extractShenlunImage({ imageDataUrl }) {
   return JSON.parse(payload.output_text);
 }
 
+async function extractGaokaoImage({ imageDataUrl, subject }) {
+  const provider = imageOcrProvider();
+  if (provider === "baidu") {
+    return baiduOcrGaokaoImage({ imageDataUrl, subject });
+  }
+  if (!OPENAI_API_KEY) {
+    return {
+      prompt: "",
+      requirements: "",
+      essay: "",
+      notes: "当前环境还没有配置 OCR 服务密钥。页面流程已经接好，补上 OpenAI 或百度 OCR 配置后，就能直接把答题卡图片转成文字。"
+    };
+  }
+
+  const schema = {
+    type: "object",
+    additionalProperties: false,
+    required: ["prompt", "requirements", "essay", "notes"],
+    properties: {
+      prompt: { type: "string" },
+      requirements: { type: "string" },
+      essay: { type: "string" },
+      notes: { type: "string" }
+    }
+  };
+
+  const subjectLabel = subject === "english" ? "高考英语作文" : "高考语文作文";
+  const response = await fetch("https://api.openai.com/v1/responses", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${OPENAI_API_KEY}`
+    },
+    body: JSON.stringify({
+      model: OPENAI_MODEL,
+      input: [
+        {
+          role: "developer",
+          content: [
+            {
+              type: "input_text",
+              text: [
+                `你是一个${subjectLabel}答题卡 OCR 整理助手。`,
+                "请识别图片文字，并尽量拆分成：作文题目、写作要求、学生正文。",
+                "如果图片里只有作文正文，就把 essay 填满，其余字段可留空。",
+                "不要编造图片里没有的内容，只输出简体中文 JSON。"
+              ].join("\n")
+            }
+          ]
+        },
+        {
+          role: "user",
+          content: [
+            {
+              type: "input_text",
+              text: "请把这张答题卡/作文图片中的内容整理成 prompt、requirements、essay。"
+            },
+            {
+              type: "input_image",
+              image_url: imageDataUrl
+            }
+          ]
+        }
+      ],
+      text: {
+        format: {
+          type: "json_schema",
+          name: "gaokao_ocr",
+          strict: true,
+          schema
+        }
+      }
+    })
+  });
+
+  const payload = await response.json();
+  if (!response.ok) {
+    throw new Error(payload?.error?.message || "OpenAI OCR request failed");
+  }
+  const parsed = JSON.parse(payload.output_text);
+  const fallback = splitGaokaoOcrText(
+    [parsed.prompt || "", parsed.requirements || "", parsed.essay || ""].filter(Boolean).join("\n"),
+    subject
+  );
+  return {
+    prompt: parsed.prompt || fallback.prompt,
+    requirements: parsed.requirements || fallback.requirements,
+    essay: parsed.essay || fallback.essay,
+    notes: parsed.notes || fallback.notes
+  };
+}
+
 function stripDataUrlPrefix(imageDataUrl) {
   return String(imageDataUrl || "").replace(/^data:image\/[a-zA-Z0-9.+-]+;base64,/, "");
 }
 
 let baiduAccessTokenCache = { token: "", expiresAt: 0 };
+
+function normalizeOcrLines(text) {
+  return String(text || "")
+    .split(/\r?\n+/)
+    .map((line) => line.replace(/\s+/g, " ").trim())
+    .filter(Boolean);
+}
+
+function splitGaokaoChineseOcrText(rawText) {
+  const lines = normalizeOcrLines(rawText);
+  if (!lines.length) {
+    return {
+      prompt: "",
+      requirements: "",
+      essay: "",
+      notes: "没有识别到可用文字，请换一张更清晰、角度更正的答题卡图片。"
+    };
+  }
+
+  const essayStartPatterns = [
+    /^题目[:：]?\s*/,
+    /^标题[:：]?\s*/,
+    /^作文[:：]?\s*/,
+    /^[《].+[》]$/,
+    /^[_\-—]{2,}/
+  ];
+  const promptPatterns = [
+    /阅读下面的材料/,
+    /根据要求写作/,
+    /请以.+为题/,
+    /请结合.+写/,
+    /请写一篇/,
+    /材料作文/,
+    /命题作文/,
+    /话题作文/
+  ];
+  const requirementPatterns = [
+    /^要求[:：]/,
+    /不少于\d+字/,
+    /文体不限|文体自选/,
+    /不得套作|不得抄袭/,
+    /选准角度|确定立意|自拟标题/
+  ];
+
+  let essayStartIndex = -1;
+  let promptEndIndex = -1;
+  let requirementStartIndex = -1;
+
+  lines.forEach((line, index) => {
+    if (promptEndIndex === -1 && promptPatterns.some((pattern) => pattern.test(line))) {
+      promptEndIndex = index;
+    }
+    if (requirementStartIndex === -1 && requirementPatterns.some((pattern) => pattern.test(line))) {
+      requirementStartIndex = index;
+    }
+    if (essayStartIndex === -1 && essayStartPatterns.some((pattern) => pattern.test(line))) {
+      essayStartIndex = index;
+    }
+  });
+
+  if (essayStartIndex === -1) {
+    for (let index = 0; index < lines.length; index += 1) {
+      const line = lines[index];
+      const maybeEssayTitle = line.length >= 4 && line.length <= 18 && !promptPatterns.some((pattern) => pattern.test(line)) && !requirementPatterns.some((pattern) => pattern.test(line));
+      const next = lines[index + 1] || "";
+      const nextLooksLikeBody = next.length >= 18;
+      if (maybeEssayTitle && nextLooksLikeBody) {
+        essayStartIndex = index;
+        break;
+      }
+    }
+  }
+
+  if (essayStartIndex === -1) {
+    if (requirementStartIndex !== -1) {
+      essayStartIndex = Math.min(requirementStartIndex + 1, lines.length - 1);
+    } else if (promptEndIndex !== -1) {
+      essayStartIndex = Math.min(promptEndIndex + 2, lines.length - 1);
+    } else {
+      essayStartIndex = 0;
+    }
+  }
+
+  const promptLines = lines.slice(0, essayStartIndex).filter((line) => !requirementPatterns.some((pattern) => pattern.test(line)));
+  const requirementLines = lines.slice(0, essayStartIndex).filter((line) => requirementPatterns.some((pattern) => pattern.test(line)));
+  const essayLines = lines.slice(essayStartIndex);
+
+  let notes = "已按语文答题卡场景尝试识别作文起始位置，请重点校对标题行和正文第一段。";
+  if (!essayLines.length || essayLines.join("").length < 80) {
+    notes = "已尝试识别作文起始位置，但正文长度偏短，请人工确认是否从正确位置开始截取。";
+  }
+
+  return {
+    prompt: promptLines.join("\n"),
+    requirements: requirementLines.join("\n"),
+    essay: essayLines.join("\n"),
+    notes
+  };
+}
+
+function splitGaokaoEnglishOcrText(rawText) {
+  const lines = normalizeOcrLines(rawText);
+  if (!lines.length) {
+    return {
+      prompt: "",
+      requirements: "",
+      essay: "",
+      notes: "没有识别到可用文字，请换一张更清晰的答题卡图片。"
+    };
+  }
+
+  const requirementPatterns = [/词数/, /不少于/, /写作内容/, /注意[:：]?/, /100 words/i];
+  let essayStartIndex = lines.findIndex((line, index) => {
+    const next = lines[index + 1] || "";
+    return line.length >= 4 && line.length <= 80 && /[A-Za-z]/.test(line) && next.length >= 20;
+  });
+  if (essayStartIndex === -1) {
+    essayStartIndex = Math.max(lines.findIndex((line) => requirementPatterns.some((pattern) => pattern.test(line))) + 1, 0);
+  }
+
+  return {
+    prompt: lines.slice(0, essayStartIndex).filter((line) => !requirementPatterns.some((pattern) => pattern.test(line))).join("\n"),
+    requirements: lines.slice(0, essayStartIndex).filter((line) => requirementPatterns.some((pattern) => pattern.test(line))).join("\n"),
+    essay: lines.slice(essayStartIndex).join("\n"),
+    notes: "已按英语答题卡场景尝试识别正文起始位置，请人工校对首段是否完整。"
+  };
+}
+
+function splitGaokaoOcrText(rawText, subject) {
+  return subject === "english" ? splitGaokaoEnglishOcrText(rawText) : splitGaokaoChineseOcrText(rawText);
+}
 
 async function getBaiduAccessToken() {
   const now = Date.now();
@@ -2871,6 +3887,47 @@ async function baiduOcrShenlunImage({ imageDataUrl }) {
   };
 }
 
+async function baiduOcrGaokaoImage({ imageDataUrl, subject }) {
+  if (!BAIDU_OCR_API_KEY || !BAIDU_OCR_SECRET_KEY) {
+    throw new Error("BAIDU_OCR_REQUIRES_KEYS");
+  }
+
+  const accessToken = await getBaiduAccessToken();
+  const endpoint = String(BAIDU_OCR_ENDPOINT || "general_basic").replace(/[^a-z_]/g, "") || "general_basic";
+  const ocrUrl = new URL(`https://aip.baidubce.com/rest/2.0/ocr/v1/${endpoint}`);
+  ocrUrl.searchParams.set("access_token", accessToken);
+
+  const body = new URLSearchParams();
+  body.set("image", stripDataUrlPrefix(imageDataUrl));
+  body.set("paragraph", "true");
+
+  const response = await fetch(ocrUrl, {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body
+  });
+  const payload = await response.json();
+  if (!response.ok || payload.error_code) {
+    throw new Error(payload?.error_msg || "BAIDU_OCR_REQUEST_FAILED");
+  }
+
+  const words = (payload.words_result || []).map((item) => item.words).filter(Boolean);
+  const text = words.join("\n").trim();
+  if (!text) {
+    return {
+      prompt: "",
+      requirements: "",
+      essay: "",
+      notes: "百度 OCR 没有识别到明显文字，请换一张更清晰的答题卡图片。"
+    };
+  }
+  const parsed = splitGaokaoOcrText(text, subject);
+  return {
+    ...parsed,
+    notes: `${parsed.notes} 百度 OCR 已完成底层识别，请重点检查作文起始位置是否准确。`
+  };
+}
+
 function serveStatic(req, res) {
   const pathname = new URL(req.url, `http://${req.headers.host}`).pathname;
   let filePath = pathname === "/" ? path.join(ROOT, "exchange", "index.html") : path.join(ROOT, pathname);
@@ -2912,6 +3969,7 @@ const server = http.createServer(async (req, res) => {
         plans,
         history: getUserHistory(user.id),
         shenlunProfile: getLearningProfile(user.id, "shenlun") || buildShenlunLearningProfile(user.id),
+        gaokaoProfile: getLearningProfile(user.id, "gaokao") || buildGaokaoLearningProfile(user.id),
         draft: getDraft(user.id) || {
           task: "task2",
           name: user.name === "Guest" ? "" : user.name,
@@ -2919,6 +3977,19 @@ const server = http.createServer(async (req, res) => {
           essay: ""
         },
         admin: adminStats()
+      });
+      return;
+    }
+
+    if (req.method === "GET" && url.pathname === "/api/gaokao/bootstrap") {
+      const user = getOrCreateUser(url.searchParams.get("userId"));
+      json(res, 200, {
+        user,
+        plans,
+        provider: "demo",
+        history: getGaokaoHistory(user.id),
+        profile: getLearningProfile(user.id, "gaokao") || buildGaokaoLearningProfile(user.id),
+        principalSummary: buildPrincipalSummary()
       });
       return;
     }
@@ -3071,6 +4142,60 @@ const server = http.createServer(async (req, res) => {
     if (req.method === "GET" && url.pathname === "/api/shenlun/history") {
       const user = getOrCreateUser(url.searchParams.get("userId"));
       json(res, 200, { history: getShenlunHistory(user.id) });
+      return;
+    }
+
+    if (req.method === "GET" && url.pathname === "/api/gaokao/history") {
+      const user = getOrCreateUser(url.searchParams.get("userId"));
+      json(res, 200, { history: getGaokaoHistory(user.id) });
+      return;
+    }
+
+    if (req.method === "GET" && url.pathname === "/api/gaokao/profile") {
+      const user = getOrCreateUser(url.searchParams.get("userId"));
+      json(res, 200, { profile: getLearningProfile(user.id, "gaokao") || buildGaokaoLearningProfile(user.id) });
+      return;
+    }
+
+    if (req.method === "GET" && url.pathname === "/api/gaokao/class-summary") {
+      const className = url.searchParams.get("className") || "";
+      const subject = url.searchParams.get("subject") || "";
+      json(res, 200, { summary: buildGaokaoClassDigest(className, subject) });
+      return;
+    }
+
+    if (req.method === "GET" && url.pathname === "/api/gaokao/principal-summary") {
+      const subject = url.searchParams.get("subject") || "";
+      json(res, 200, { summary: buildPrincipalSummary(subject) });
+      return;
+    }
+
+    if (req.method === "POST" && url.pathname === "/api/gaokao/grade") {
+      const body = await parseBody(req);
+      const user = getOrCreateUser(body.userId);
+      const result = await gradeGaokao({
+        subject: body.subject || "chinese",
+        examType: body.examType || "",
+        gradeLevel: body.gradeLevel || "高三",
+        studentName: body.studentName || "",
+        schoolName: body.schoolName || "",
+        className: body.className || "",
+        prompt: body.prompt || "",
+        requirements: body.requirements || "",
+        essay: body.essay || "",
+        studentProfile: body.studentProfile || {}
+      }, user);
+      json(res, 200, result);
+      return;
+    }
+
+    if (req.method === "POST" && url.pathname === "/api/gaokao/ocr") {
+      const body = await parseBody(req);
+      const result = await extractGaokaoImage({
+        imageDataUrl: body.imageDataUrl || "",
+        subject: body.subject || "chinese"
+      });
+      json(res, 200, result);
       return;
     }
 

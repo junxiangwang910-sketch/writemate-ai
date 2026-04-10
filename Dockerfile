@@ -7,6 +7,7 @@ COPY index.html ./
 COPY styles.css ./
 COPY app.js ./
 COPY server.js ./
+COPY gaokao ./gaokao
 COPY shenlun ./shenlun
 COPY trade ./trade
 COPY power ./power
