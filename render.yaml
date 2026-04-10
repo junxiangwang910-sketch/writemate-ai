@@ -9,6 +9,8 @@ services:
         value: 0.0.0.0
       - key: PORT
         value: 3000
+      - key: SITE_VARIANT
+        value: unified
       - key: AI_PROVIDER
         value: deepseek
       - key: DEEPSEEK_MODEL
@@ -17,6 +19,8 @@ services:
         value: auto
       - key: BAIDU_OCR_ENDPOINT
         value: general_basic
+      - key: ACTIVATION_CODES
+        value: SHENLUN-TEST-001,SHENLUN-TEST-002,SHENLUN-TEST-003,SHENLUN-TEST-004,SHENLUN-TEST-005
       - key: DEEPSEEK_API_KEY
         sync: false
       - key: OPENAI_API_KEY
@@ -27,5 +31,75 @@ services:
         sync: false
     disk:
       name: writemate-data
+      mountPath: /app/data
+      sizeGB: 1
+
+  - type: web
+    name: shenlunbao-ai
+    runtime: docker
+    plan: free
+    healthCheckPath: /health
+    envVars:
+      - key: HOST
+        value: 0.0.0.0
+      - key: PORT
+        value: 3000
+      - key: SITE_VARIANT
+        value: shenlun
+      - key: AI_PROVIDER
+        value: deepseek
+      - key: DEEPSEEK_MODEL
+        value: deepseek-chat
+      - key: OCR_PROVIDER
+        value: auto
+      - key: BAIDU_OCR_ENDPOINT
+        value: general_basic
+      - key: ACTIVATION_CODES
+        value: SHENLUN-TEST-001,SHENLUN-TEST-002,SHENLUN-TEST-003,SHENLUN-TEST-004,SHENLUN-TEST-005
+      - key: DEEPSEEK_API_KEY
+        sync: false
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: BAIDU_OCR_API_KEY
+        sync: false
+      - key: BAIDU_OCR_SECRET_KEY
+        sync: false
+    disk:
+      name: shenlunbao-data
+      mountPath: /app/data
+      sizeGB: 1
+
+  - type: web
+    name: gaokao-writing-ai
+    runtime: docker
+    plan: free
+    healthCheckPath: /health
+    envVars:
+      - key: HOST
+        value: 0.0.0.0
+      - key: PORT
+        value: 3000
+      - key: SITE_VARIANT
+        value: gaokao
+      - key: AI_PROVIDER
+        value: deepseek
+      - key: DEEPSEEK_MODEL
+        value: deepseek-chat
+      - key: OCR_PROVIDER
+        value: auto
+      - key: BAIDU_OCR_ENDPOINT
+        value: general_basic
+      - key: ACTIVATION_CODES
+        value: SHENLUN-TEST-001,SHENLUN-TEST-002,SHENLUN-TEST-003,SHENLUN-TEST-004,SHENLUN-TEST-005
+      - key: DEEPSEEK_API_KEY
+        sync: false
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: BAIDU_OCR_API_KEY
+        sync: false
+      - key: BAIDU_OCR_SECRET_KEY
+        sync: false
+    disk:
+      name: gaokao-writing-data
       mountPath: /app/data
       sizeGB: 1
