@@ -571,11 +571,10 @@ button:disabled {
   font-weight: 800;
 }
 
-.ocr-card,
+.intake-card,
 .sample-card {
   display: grid;
-  grid-template-columns: 1fr auto auto;
-  align-items: center;
+  grid-template-columns: 1fr;
   gap: 14px;
   padding: 16px;
   border: 1px dashed rgba(158, 47, 36, 0.28);
@@ -588,8 +587,8 @@ button:disabled {
   grid-template-columns: 1fr auto;
 }
 
-.ocr-card strong,
-.ocr-card p,
+.intake-card strong,
+.intake-card p,
 .sample-card strong,
 .sample-card p,
 .activation-card strong,
@@ -597,10 +596,40 @@ button:disabled {
   margin: 0;
 }
 
-.ocr-card p,
+.intake-card p,
 .sample-card p,
 .activation-card p,
 .ocr-status {
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+.upload-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.upload-panel {
+  display: grid;
+  gap: 12px;
+  padding: 18px;
+  border: 1px solid rgba(158, 47, 36, 0.18);
+  border-radius: 24px;
+  background: rgba(255, 255, 255, 0.52);
+}
+
+.upload-copy {
+  display: grid;
+  gap: 6px;
+}
+
+.upload-copy strong,
+.upload-copy p {
+  margin: 0;
+}
+
+.upload-copy p {
   color: var(--muted);
   line-height: 1.6;
 }
@@ -633,12 +662,30 @@ button:disabled {
   outline: none;
 }
 
-.upload-box {
-  width: fit-content;
+.upload-dropzone {
+  display: grid;
+  place-items: center;
+  gap: 10px;
+  min-height: 164px;
+  padding: 18px;
+  border-radius: 22px;
+  border: 1.5px dashed rgba(158, 47, 36, 0.28);
+  background:
+    linear-gradient(180deg, rgba(255, 250, 241, 0.88), rgba(255, 255, 255, 0.74));
   cursor: pointer;
+  text-align: center;
+  transition: border-color 0.18s ease, background 0.18s ease, transform 0.18s ease;
 }
 
-.upload-box span {
+.upload-dropzone:hover,
+.upload-dropzone.is-dragover {
+  transform: translateY(-1px);
+  border-color: rgba(158, 47, 36, 0.5);
+  background:
+    linear-gradient(180deg, rgba(255, 244, 228, 0.95), rgba(255, 250, 241, 0.82));
+}
+
+.upload-dropzone span {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -647,10 +694,16 @@ button:disabled {
   border-radius: 999px;
   color: var(--ink);
   border: 1px solid var(--line);
-  background: rgba(255, 250, 241, 0.78);
+  background: rgba(255, 250, 241, 0.9);
 }
 
-.upload-box input {
+.upload-dropzone em {
+  color: var(--muted);
+  font-style: normal;
+  line-height: 1.6;
+}
+
+.upload-dropzone input {
   display: none;
 }
 
@@ -813,12 +866,13 @@ textarea {
   .hero,
   .grader-layout,
   .interview-layout,
-  .ocr-card,
+  .intake-card,
   .sample-card,
   .activation-card,
   .feature-grid,
   .pricing-grid,
   .pain-grid,
+  .upload-grid,
   .report-sample-grid,
   .contact-card {
     grid-template-columns: 1fr;

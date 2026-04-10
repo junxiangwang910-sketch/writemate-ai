@@ -43,9 +43,16 @@ const strengthList = document.querySelector("#strengthList");
 const weaknessList = document.querySelector("#weaknessList");
 const missingTags = document.querySelector("#missingTags");
 const rewriteText = document.querySelector("#rewriteText");
-const imageInput = document.querySelector("#imageInput");
-const ocrButton = document.querySelector("#ocrButton");
 const ocrStatus = document.querySelector("#ocrStatus");
+const promptFileInput = document.querySelector("#promptFileInput");
+const materialFileInput = document.querySelector("#materialFileInput");
+const answerFileInput = document.querySelector("#answerFileInput");
+const promptDropzone = document.querySelector("#promptDropzone");
+const materialDropzone = document.querySelector("#materialDropzone");
+const answerDropzone = document.querySelector("#answerDropzone");
+const promptFileStatus = document.querySelector("#promptFileStatus");
+const materialFileStatus = document.querySelector("#materialFileStatus");
+const answerFileStatus = document.querySelector("#answerFileStatus");
 const submitButton = document.querySelector("#submitButton");
 const sampleButton = document.querySelector("#sampleButton");
 const activationCode = document.querySelector("#activationCode");
@@ -83,6 +90,9 @@ const followupCard = document.querySelector("#followupCard");
 const followupQuestion = document.querySelector("#followupQuestion");
 const followupFocus = document.querySelector("#followupFocus");
 const followupAnswer = document.querySelector("#followupAnswer");
+
+let pdfjsLoader;
+let mammothLoader;
 
 const sampleShenlun = {
   questionType: "summary",
@@ -486,39 +496,193 @@ function readImageAsDataUrl(file) {
   });
 }
 
-async function extractImageText() {
-  const file = imageInput.files?.[0];
-  if (!file) {
-    window.alert("请先选择一张图片。");
+function loadScript(src) {
+  return new Promise((resolve, reject) => {
+    const existing = document.querySelector(`script[data-src="${src}"]`);
+    if (existing?.dataset.loaded === "true") {
+      resolve();
+      return;
+    }
+    if (existing) {
+      existing.addEventListener("load", () => resolve(), { once: true });
+      existing.addEventListener("error", () => reject(new Error(`LOAD_SCRIPT_FAILED:${src}`)), { once: true });
+      return;
+    }
+    const script = document.createElement("script");
+    script.src = src;
+    script.async = true;
+    script.dataset.src = src;
+    script.addEventListener("load", () => {
+      script.dataset.loaded = "true";
+      resolve();
+    }, { once: true });
+    script.addEventListener("error", () => reject(new Error(`LOAD_SCRIPT_FAILED:${src}`)), { once: true });
+    document.head.appendChild(script);
+  });
+}
+
+async function getPdfJs() {
+  if (!pdfjsLoader) {
+    pdfjsLoader = loadScript("https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js")
+      .catch(() => loadScript("https://unpkg.com/pdfjs-dist@3.11.174/build/pdf.min.js"))
+      .then(() => window.pdfjsLib || window["pdfjs-dist/build/pdf"]);
+  }
+  const pdfjs = await pdfjsLoader;
+  if (!pdfjs) throw new Error("PDF_PARSER_UNAVAILABLE");
+  if (pdfjs.GlobalWorkerOptions) {
+    pdfjs.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+  }
+  return pdfjs;
+}
+
+async function getMammoth() {
+  if (!mammothLoader) {
+    mammothLoader = loadScript("https://unpkg.com/mammoth@1.8.0/mammoth.browser.min.js")
+      .then(() => window.mammoth);
+  }
+  const mammoth = await mammothLoader;
+  if (!mammoth) throw new Error("DOCX_PARSER_UNAVAILABLE");
+  return mammoth;
+}
+
+async function extractTextFromPdf(file) {
+  const pdfjs = await getPdfJs();
+  const arrayBuffer = await file.arrayBuffer();
+  const documentTask = pdfjs.getDocument({ data: new Uint8Array(arrayBuffer) });
+  const pdf = await documentTask.promise;
+  const pages = [];
+  for (let pageNumber = 1; pageNumber <= pdf.numPages; pageNumber += 1) {
+    const page = await pdf.getPage(pageNumber);
+    const content = await page.getTextContent();
+    const pageText = (content.items || [])
+      .map((item) => item.str || "")
+      .join(" ")
+      .replace(/\s+/g, " ")
+      .trim();
+    if (pageText) pages.push(pageText);
+  }
+  return pages.join("\n\n").trim();
+}
+
+async function extractTextFromDocx(file) {
+  if (/\.doc$/i.test(file.name)) {
+    throw new Error("DOC_LEGACY_NOT_SUPPORTED");
+  }
+  const mammoth = await getMammoth();
+  const arrayBuffer = await file.arrayBuffer();
+  const result = await mammoth.extractRawText({ arrayBuffer });
+  return String(result.value || "").trim();
+}
+
+async function extractTextFromImage(file) {
+  const imageDataUrl = await readImageAsDataUrl(file);
+  const result = await api("/api/shenlun/ocr", {
+    method: "POST",
+    body: JSON.stringify({ imageDataUrl })
+  });
+  return {
+    text: [result.prompt, result.material, result.answer].filter(Boolean).join("\n\n").trim(),
+    notes: result.notes || "图片识别完成，请检查文字是否准确。"
+  };
+}
+
+function getTargetRefs(target) {
+  return {
+    prompt: { input: promptText, status: promptFileStatus, label: "题目要求" },
+    material: { input: materialText, status: materialFileStatus, label: "给定资料" },
+    answer: { input: answerText, status: answerFileStatus, label: "考生作答" }
+  }[target];
+}
+
+async function extractTextFromFile(file) {
+  const name = file.name || "";
+  const lower = name.toLowerCase();
+  const type = file.type || "";
+
+  if (type.startsWith("image/")) {
+    return extractTextFromImage(file);
+  }
+  if (type === "text/plain" || lower.endsWith(".txt")) {
+    return { text: (await file.text()).trim(), notes: "TXT 文字已导入。" };
+  }
+  if (type === "application/pdf" || lower.endsWith(".pdf")) {
+    return { text: await extractTextFromPdf(file), notes: "PDF 文字已提取完成。" };
+  }
+  if (
+    type === "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+    || lower.endsWith(".docx")
+    || lower.endsWith(".doc")
+  ) {
+    return { text: await extractTextFromDocx(file), notes: "Word 文档文字已提取完成。" };
+  }
+  throw new Error("UNSUPPORTED_UPLOAD_FORMAT");
+}
+
+async function importFileToField(target, file) {
+  const refs = getTargetRefs(target);
+  if (!refs || !file) return;
+  const { input, status, label } = refs;
+
+  if (file.size > 20 * 1024 * 1024) {
+    window.alert(`${label}文件太大了，建议先压缩到 20MB 以内。`);
     return;
   }
 
-  if (file.size > 5 * 1024 * 1024) {
-    window.alert("图片太大了，请先压缩到 5MB 以内。");
-    return;
-  }
-
-  ocrButton.disabled = true;
-  ocrStatus.textContent = "正在识别图片文字，请稍等...";
+  status.textContent = `正在导入${label}...`;
+  ocrStatus.textContent = `正在处理 ${file.name}，请稍等...`;
 
   try {
-    const imageDataUrl = await readImageAsDataUrl(file);
-    const result = await api("/api/shenlun/ocr", {
-      method: "POST",
-      body: JSON.stringify({ imageDataUrl })
-    });
-
-    if (result.prompt) promptText.value = result.prompt;
-    if (result.material) materialText.value = result.material;
-    if (result.answer) answerText.value = result.answer;
-    updateCount();
-    ocrStatus.textContent = result.notes || "识别完成，请检查文字是否准确，再点击生成批改报告。";
+    const result = await extractTextFromFile(file);
+    if (!result.text) {
+      throw new Error("EMPTY_EXTRACTED_TEXT");
+    }
+    input.value = result.text;
+    if (target === "answer") updateCount();
+    status.textContent = `${file.name} 已导入，共 ${countChars(result.text)} 字。`;
+    ocrStatus.textContent = result.notes || `${label}已导入，请检查后再提交批改。`;
   } catch (error) {
-    ocrStatus.textContent = "识别失败，请检查 API key 或换一张更清晰的图片。";
-    window.alert(error.message === "OCR_REQUIRES_OPENAI_API_KEY" ? "图片识别暂不可用，请稍后再试。" : error.message);
-  } finally {
-    ocrButton.disabled = false;
+    const messages = {
+      DOC_LEGACY_NOT_SUPPORTED: "老版 .doc 暂不稳定，建议另存为 .docx 或 PDF 后再上传。",
+      EMPTY_EXTRACTED_TEXT: `${label}没有提取到可用文字，请换一份更清晰的文件。`,
+      PDF_PARSER_UNAVAILABLE: "PDF 解析组件加载失败，请刷新页面后重试。",
+      DOCX_PARSER_UNAVAILABLE: "Word 解析组件加载失败，请刷新页面后重试。",
+      UNSUPPORTED_UPLOAD_FORMAT: "暂只支持图片、PDF、DOCX、TXT 文件。"
+    };
+    status.textContent = `${label}导入失败，请重新上传。`;
+    ocrStatus.textContent = `${label}导入失败。`;
+    window.alert(messages[error.message] || error.message);
   }
+}
+
+function bindUploadField({ input, dropzone, target }) {
+  if (!input || !dropzone) return;
+
+  input.addEventListener("change", async () => {
+    const file = input.files?.[0];
+    if (!file) return;
+    await importFileToField(target, file);
+    input.value = "";
+  });
+
+  ["dragenter", "dragover"].forEach((eventName) => {
+    dropzone.addEventListener(eventName, (event) => {
+      event.preventDefault();
+      dropzone.classList.add("is-dragover");
+    });
+  });
+
+  ["dragleave", "dragend", "drop"].forEach((eventName) => {
+    dropzone.addEventListener(eventName, (event) => {
+      event.preventDefault();
+      dropzone.classList.remove("is-dragover");
+    });
+  });
+
+  dropzone.addEventListener("drop", async (event) => {
+    const file = event.dataTransfer?.files?.[0];
+    if (!file) return;
+    await importFileToField(target, file);
+  });
 }
 
 form.addEventListener("submit", submitShenlun);
@@ -526,7 +690,6 @@ submitButton.addEventListener("click", submitShenlun);
 ["input", "change", "keyup", "paste"].forEach((eventName) => {
   answerText.addEventListener(eventName, () => window.setTimeout(updateCount, 0));
 });
-ocrButton.addEventListener("click", extractImageText);
 sampleButton.addEventListener("click", fillSample);
 activateButton.addEventListener("click", redeemCode);
 questionType.addEventListener("change", toggleEssayReferenceMode);
@@ -537,6 +700,10 @@ interviewVideoInput.addEventListener("change", handleInterviewVideoUpload);
 modeCards.forEach((card) => {
   card.addEventListener("click", () => setInterviewMode(card.dataset.mode));
 });
+
+bindUploadField({ input: promptFileInput, dropzone: promptDropzone, target: "prompt" });
+bindUploadField({ input: materialFileInput, dropzone: materialDropzone, target: "material" });
+bindUploadField({ input: answerFileInput, dropzone: answerDropzone, target: "answer" });
 
 document.querySelectorAll("[data-target]").forEach((node) => {
   node.addEventListener("click", (event) => {

@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@500;600;700;800&family=ZCOOL+XiaoWei&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css?v=20260408-interview-modes">
+  <link rel="stylesheet" href="styles.css?v=20260410-file-intake">
 </head>
 <body>
   <div class="page-shell">
@@ -251,17 +251,50 @@
         </div>
         <div class="grader-layout">
           <form class="grader-form" id="shenlunForm" onsubmit="return false;">
-            <div class="ocr-card">
+            <div class="intake-card">
               <div>
-                <strong>图片识别文字</strong>
-                <p>上传题目/材料/作答截图，系统会先识别文字并回填到下方输入框，确认无误后再批改。</p>
+                <strong>直接拖入材料和作答文件</strong>
+                <p>现在支持把题目要求、给定资料和考生作答分别上传。图片会自动 OCR，`TXT / DOCX / PDF` 会自动提取文字，再回填到下方输入框。</p>
               </div>
-              <label class="upload-box">
-                <span>选择图片</span>
-                <input id="imageInput" type="file" accept="image/*">
-              </label>
-              <button class="secondary-button" id="ocrButton" type="button">识别图片文字</button>
-              <p class="ocr-status" id="ocrStatus">支持截图、照片和扫描图。识别后请检查文字。</p>
+              <p class="ocr-status" id="ocrStatus">建议把“题目要求 / 材料 / 作答”分开上传。若是老版 `.doc`，建议先转成 `.docx` 或 `.pdf`。</p>
+            </div>
+
+            <div class="upload-grid">
+              <section class="upload-panel">
+                <div class="upload-copy">
+                  <strong>导入题目要求</strong>
+                  <p>适合上传题干截图、命题要求、老师布置的题目文档。</p>
+                </div>
+                <label class="upload-dropzone" id="promptDropzone">
+                  <input id="promptFileInput" type="file" accept=".txt,.pdf,.doc,.docx,image/*,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/msword,text/plain">
+                  <span>拖动或点击上传题目文件</span>
+                  <em id="promptFileStatus">支持图片、PDF、DOCX、TXT。</em>
+                </label>
+              </section>
+
+              <section class="upload-panel">
+                <div class="upload-copy">
+                  <strong>导入给定资料</strong>
+                  <p>适合上传整份材料、题本扫描件、老师发的 PDF 或 Word 材料。</p>
+                </div>
+                <label class="upload-dropzone" id="materialDropzone">
+                  <input id="materialFileInput" type="file" accept=".txt,.pdf,.doc,.docx,image/*,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/msword,text/plain">
+                  <span>拖动或点击上传材料文件</span>
+                  <em id="materialFileStatus">支持图片、PDF、DOCX、TXT。</em>
+                </label>
+              </section>
+
+              <section class="upload-panel">
+                <div class="upload-copy">
+                  <strong>导入考生作答</strong>
+                  <p>适合上传答题纸照片、手写扫描件、打字版 Word 或 PDF 作答。</p>
+                </div>
+                <label class="upload-dropzone" id="answerDropzone">
+                  <input id="answerFileInput" type="file" accept=".txt,.pdf,.doc,.docx,image/*,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/msword,text/plain">
+                  <span>拖动或点击上传作答文件</span>
+                  <em id="answerFileStatus">支持图片、PDF、DOCX、TXT。</em>
+                </label>
+              </section>
             </div>
 
             <div class="field-row">
@@ -467,6 +500,6 @@
     </main>
   </div>
 
-  <script src="app.js?v=20260408-interview-modes"></script>
+  <script src="app.js?v=20260410-file-intake"></script>
 </body>
 </html>
