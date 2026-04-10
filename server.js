@@ -3303,7 +3303,7 @@ function demoGaokaoReport(body, previousProfile) {
       strengths: [
         metrics.wordTotal >= minWords ? `篇幅基本达标，当前约 ${metrics.wordTotal} 词。` : `已经完成基本作答，但当前约 ${metrics.wordTotal} 词，篇幅偏紧。`,
         metrics.paragraphCount >= 3 ? "有明确分段，老师快速扫卷时更容易判断结构。" : "已有基础结构意识，继续把段落边界拉清楚会更稳。",
-        snippets[0] ? `当前写法和教研要点“${snippets[0].title}”是同方向的。` : "整体方向可用，具备继续提分的基础。"
+        playbook.snippets[0] ? `当前写法和教研要点“${playbook.snippets[0].title}”是同方向的。` : "整体方向可用，具备继续提分的基础。"
       ],
       issues: [
         metrics.promptFit < 0.58 ? "题目要点覆盖还不够满，容易丢任务分。" : "要点基本覆盖，但细节支撑还不够具体。",
@@ -4527,18 +4527,6 @@ const server = http.createServer(async (req, res) => {
         history: getGaokaoHistory(user.id),
         profile: getLearningProfile(user.id, "gaokao") || buildGaokaoLearningProfile(user.id),
         principalSummary: buildPrincipalSummary()
-      });
-      return;
-    }
-
-    if (req.method === "GET" && url.pathname === "/api/shenlun/bootstrap") {
-      const user = getOrCreateUser(url.searchParams.get("userId"));
-      json(res, 200, {
-        user,
-        plans,
-        provider: textProvider(),
-        history: getShenlunHistory(user.id),
-        profile: getLearningProfile(user.id, "shenlun") || buildShenlunLearningProfile(user.id)
       });
       return;
     }
