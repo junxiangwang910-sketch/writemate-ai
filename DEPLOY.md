@@ -1,7 +1,8 @@
 # WriteMate AI Deployment Guide
 
-This project is now intended to be deployed as two separate public sites from the same repo:
+This project is now intended to be deployed as three separate public sites from the same repo:
 
+1. `studypath-ai` from `study-abroad-advisor/`
 1. `shenlunbao-ai` with `SITE_VARIANT=shenlun`
 2. `gaokaobao-ai` with `SITE_VARIANT=gaokao`
 
@@ -13,6 +14,7 @@ Render is the fastest way to get a public demo URL with Docker and persistent SQ
 
 The repo now includes a Render blueprint at [render.yaml](/Users/wangjunxiang/Downloads/codex/render.yaml) with:
 
+- Dedicated 留学宝 service: `studypath-ai`
 - Dedicated 申论宝 service: `shenlunbao-ai`
 - Dedicated 高考宝 service: `gaokaobao-ai`
 - Runtime: Docker
@@ -50,6 +52,23 @@ Do not deploy this app without a persistent disk, or your data may reset after r
    - `BAIDU_OCR_API_KEY` and `BAIDU_OCR_SECRET_KEY` if you want Baidu OCR
 5. Keep the disk mount at `/app/data`.
 6. Deploy and wait for `/health` to return `ok: true`.
+
+## 留学宝 deployment note
+
+`studypath-ai` is deployed from the repo subdirectory:
+
+`study-abroad-advisor/`
+
+If the public `studypath-ai` service returns a generic 404 like `Route not found`, the service is usually pointing at the wrong repo or wrong root directory. The correct setup is:
+
+- Service name: `studypath-ai`
+- Runtime: `Node`
+- Root Directory: `study-abroad-advisor`
+- Build Command: `npm install`
+- Start Command: `npm start`
+- Health Check Path: `/health`
+
+If needed, re-create the Render service from the repo blueprint so the `rootDir` is applied correctly.
 
 ## Recommended environment variables
 
