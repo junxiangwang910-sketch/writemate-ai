@@ -141,9 +141,23 @@ const GAOKAO_MVP = (() => {
     });
   }
 
+  function enrichExamChanges(exams = []) {
+    return exams.map((exam, index) => {
+      if (Object.prototype.hasOwnProperty.call(exam, "scoreChange")) return exam;
+      const nextOlder = exams[index + 1];
+      if (!nextOlder) return { ...exam, scoreChange: "", changeTrend: "" };
+      const diff = Number(exam.averageScore || 0) - Number(nextOlder.averageScore || 0);
+      return {
+        ...exam,
+        scoreChange: `${diff >= 0 ? "+" : ""}${diff.toFixed(1)}`,
+        changeTrend: diff >= 0 ? "up" : "down"
+      };
+    });
+  }
+
   async function loadExams(select) {
     const payload = await api("/api/exams/list");
-    const exams = payload.exams?.length ? payload.exams : mockExams;
+    const exams = enrichExamChanges(payload.exams?.length ? payload.exams : mockExams);
     if (!select) return exams;
     select.innerHTML = exams.map((exam) => `
       <option value="${exam.id}">${exam.name} · ${exam.className} · ${exam.date}</option>
@@ -178,6 +192,7 @@ const GAOKAO_MVP = (() => {
         </div>
         <div class="actions-row">
           <a class="button-ghost" href="/gaokao/exam-analysis.html?examId=${exam.id}">查看分析</a>
+          <a class="button-ghost" href="/gaokao/exam-scores.html?examId=${exam.id}">录入成绩</a>
           <a class="button-ghost" href="/gaokao/exam-upload.html?examId=${exam.id}">继续上传</a>
         </div>
       </article>
@@ -197,8 +212,32 @@ const GAOKAO_MVP = (() => {
 
   async function initTeacherDashboard() {
     navify("teacher-dashboard");
-    const exams = await loadExams();
-    renderExamList(document.querySelector("#examList"), exams);
+    function renderDashboardStats(exams) {
+      const usingMock = exams.every((exam) => String(exam.id).startsWith("mock-"));
+      const stats = usingMock ? {
+        exams: 3,
+        students: 28,
+        average: "87.5",
+        followUp: 6
+      } : {
+        exams: exams.length,
+        students: exams.reduce((sum, exam) => Math.max(sum, Number(exam.studentCount || 0)), 0),
+        average: exams.length ? Number(exams[0].averageScore || 0).toFixed(1) : "0.0",
+        followUp: Math.max(0, Math.round((Number(exams[0]?.studentCount || 0)) * 0.25))
+      };
+      document.querySelector("#statExamCount").textContent = String(stats.exams);
+      document.querySelector("#statAverage").textContent = String(stats.average);
+      document.querySelector("#statStudents").textContent = String(stats.students);
+      document.querySelector("#statFollowUp").textContent = String(stats.followUp);
+    }
+
+    async function refreshDashboard() {
+      const exams = await loadExams();
+      renderExamList(document.querySelector("#examList"), exams);
+      renderDashboardStats(exams);
+    }
+
+    await refreshDashboard();
     renderPriorityList(document.querySelector("#principalFocusList"), mockDashboardFocus);
     document.querySelector("#classCompareList").innerHTML = mockClassCompare.map((item) => `
       <div class="compare-row">
@@ -207,21 +246,24 @@ const GAOKAO_MVP = (() => {
         <span class="compare-change ${item.trend}">${item.change}</span>
       </div>
     `).join("");
-    const stats = exams === mockExams ? {
-      exams: 3,
-      students: 28,
-      average: "87.5",
-      followUp: 6
-    } : {
-      exams: exams.length,
-      students: exams.reduce((sum, exam) => sum + Number(exam.studentCount || 0), 0),
-      average: exams.length ? (exams.reduce((sum, exam) => sum + Number(exam.averageScore || 0), 0) / exams.length).toFixed(1) : "0.0",
-      followUp: Math.max(0, Math.round(exams.reduce((sum, exam) => sum + Number(exam.studentCount || 0), 0) * 0.2))
-    };
-    document.querySelector("#statExamCount").textContent = String(stats.exams);
-    document.querySelector("#statAverage").textContent = String(stats.average);
-    document.querySelector("#statStudents").textContent = String(stats.students);
-    document.querySelector("#statFollowUp").textContent = String(stats.followUp);
+
+    const seedBtn = document.querySelector("#seedBtn");
+    const seedBanner = document.querySelector("#seedBanner");
+    if (seedBtn) {
+      seedBtn.addEventListener("click", async () => {
+        seedBtn.textContent = "正在初始化…";
+        seedBtn.disabled = true;
+        try {
+          await api("/api/demo/seed", { method: "POST", body: "{}" });
+          seedBanner.style.display = "block";
+          seedBtn.style.display = "none";
+          await refreshDashboard();
+        } catch (_e) {
+          seedBtn.textContent = "初始化失败，重试";
+          seedBtn.disabled = false;
+        }
+      });
+    }
   }
 
   async function initExamNew() {
@@ -257,7 +299,117 @@ const GAOKAO_MVP = (() => {
           })
         });
       }
-      status.innerHTML = `考试已创建。<a href="/gaokao/exam-upload.html?examId=${created.exam.id}">继续上传学生答题卡</a>`;
+      status.innerHTML = `考试已创建。
+        <a href="/gaokao/exam-scores.html?examId=${created.exam.id}" style="margin-left:8px">▶ 立即录入学生成绩</a>
+        <a href="/gaokao/exam-upload.html?examId=${created.exam.id}" style="margin-left:8px">上传答题卡图片</a>`;
+    });
+  }
+
+  async function initExamScores() {
+    const examId = getCurrentExamId();
+    const status = document.querySelector("#submitStatus");
+
+    let exam = null;
+    let questions = [];
+    try {
+      const examList = await api("/api/exams/list");
+      const exams = enrichExamChanges(examList.exams || []);
+      exam = exams.find((e) => e.id === examId);
+    } catch (_error) {}
+
+    if (!exam) {
+      status.textContent = "找不到考试，请先新建考试。";
+      return;
+    }
+
+    document.querySelector("#scoresTitle").textContent = `录入成绩 · ${exam.name}`;
+    document.querySelector("#examInfoText").textContent = `${exam.subject} · ${exam.className} · ${exam.date}`;
+    document.querySelector("#analysisLink").href = `/gaokao/exam-analysis.html?examId=${exam.id}`;
+
+    try {
+      const analysis = await api(`/api/exams/${examId}/analysis`);
+      questions = analysis.questionStats || [];
+    } catch (_error) {
+      questions = [1, 2, 3, 4, 5, 6, 7, 8].map((n, i) => ({
+        questionNo: String(n),
+        score: [12, 12, 12, 12, 18, 18, 18, 16][i],
+        knowledgePoint: ["函数与导数", "三角函数", "数列", "概率统计", "立体几何", "解析几何", "导数", "压轴综合"][i]
+      }));
+    }
+
+    const thead = document.querySelector("#tableHead");
+    thead.innerHTML = `<tr>
+      <th>姓名</th>
+      ${questions.map((q) =>
+        `<th>第${q.questionNo}题<br><span style="font-weight:400;color:var(--muted)">(满分${q.score})</span></th>`
+      ).join("")}
+      <th>合计</th>
+    </tr>`;
+
+    let rowCount = 0;
+    function addRow(name = "", scores = {}) {
+      rowCount += 1;
+      const rid = `row-${rowCount}`;
+      const tr = document.createElement("tr");
+      tr.dataset.rid = rid;
+      tr.innerHTML = `
+        <td><input type="text" placeholder="学生姓名" value="${name}" class="student-name-input" required></td>
+        ${questions.map((q) => {
+          const v = scores[q.questionNo] !== undefined ? scores[q.questionNo] : "";
+          return `<td><input type="number" min="0" max="${q.score}" step="0.5" value="${v}"
+            data-qno="${q.questionNo}" data-max="${q.score}" class="score-input"></td>`;
+        }).join("")}
+        <td class="total-cell" id="total-${rid}">0</td>
+      `;
+      document.querySelector("#tableBody").appendChild(tr);
+
+      tr.querySelectorAll(".score-input").forEach((input) => {
+        input.addEventListener("input", () => {
+          const total = [...tr.querySelectorAll(".score-input")]
+            .reduce((sum, el) => sum + (parseFloat(el.value) || 0), 0);
+          document.querySelector(`#total-${rid}`).textContent = total.toFixed(1);
+        });
+      });
+
+      tr.querySelectorAll(".score-input")[0]?.dispatchEvent(new Event("input"));
+    }
+
+    ["", "", "", "", ""].forEach(() => addRow());
+
+    document.querySelector("#addRowBtn").addEventListener("click", () => addRow());
+
+    document.querySelector("#submitBtn").addEventListener("click", async () => {
+      const rows = [];
+      document.querySelectorAll("#tableBody tr").forEach((tr) => {
+        const name = tr.querySelector(".student-name-input")?.value?.trim();
+        if (!name) return;
+        const scores = {};
+        tr.querySelectorAll(".score-input").forEach((input) => {
+          const v = parseFloat(input.value);
+          if (!isNaN(v)) scores[input.dataset.qno] = v;
+        });
+        rows.push({ name, scores });
+      });
+
+      if (!rows.length) {
+        status.textContent = "请至少录入一名学生的成绩。";
+        return;
+      }
+
+      status.textContent = `正在保存 ${rows.length} 名学生的成绩…`;
+      document.querySelector("#submitBtn").disabled = true;
+
+      try {
+        const result = await api("/api/exams/import-scores", {
+          method: "POST",
+          body: JSON.stringify({ examId, rows })
+        });
+        status.innerHTML = `✅ 已保存 ${result.imported} 名学生成绩。
+          <a href="/gaokao/exam-analysis.html?examId=${examId}" style="margin-left:12px">查看考试分析 →</a>`;
+      } catch (err) {
+        status.textContent = `保存失败：${err.message}`;
+        document.querySelector("#submitBtn").disabled = false;
+      }
     });
   }
 
@@ -550,6 +702,7 @@ const GAOKAO_MVP = (() => {
     const page = document.body.dataset.page;
     if (page === "teacher-dashboard") await initTeacherDashboard();
     if (page === "exam-new") await initExamNew();
+    if (page === "exam-scores") await initExamScores();
     if (page === "exam-upload") await initExamUpload();
     if (page === "exam-analysis") await initExamAnalysis();
     if (page === "student-report") await initStudentReport();

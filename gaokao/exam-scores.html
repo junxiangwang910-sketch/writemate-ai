@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>高考宝 | 录入成绩</title>
+  <link rel="stylesheet" href="/gaokao/mvp.css">
+  <style>
+    .score-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+    .score-table th, .score-table td { padding: 8px 10px; border: 1px solid var(--line); text-align: center; }
+    .score-table th { background: var(--surface-soft); font-weight: 800; }
+    .score-table td:first-child { text-align: left; min-width: 100px; }
+    .score-table input[type=number] { width: 56px; padding: 6px 8px; border-radius: 6px; border: 1px solid var(--line); text-align: center; font-size: 14px; }
+    .score-table input[type=text] { width: 90px; padding: 6px 8px; border-radius: 6px; border: 1px solid var(--line); font-size: 14px; }
+    .total-cell { font-weight: 800; color: var(--brand); }
+    .add-row-btn { margin-top: 12px; }
+    .overflow-x { overflow-x: auto; }
+  </style>
+</head>
+<body data-page="exam-scores">
+  <div class="page-shell">
+    <header class="topbar">
+      <div>
+        <p class="brand-title">高考宝 · 楚汉高中</p>
+        <p class="brand-subtitle" id="scorePageMeta">高二数学 · 2025-2026学年第二学期 / 当前位置：录入成绩</p>
+      </div>
+      <nav class="nav">
+        <a href="/gaokao/teacher-dashboard.html">工作台</a>
+        <a href="/gaokao/exam-new.html">新建考试</a>
+        <a href="/gaokao/exam-analysis.html">考试分析</a>
+        <a href="/gaokao/student-track.html">学生跟踪</a>
+      </nav>
+    </header>
+
+    <section class="section">
+      <div class="section-header">
+        <h1 class="section-title" id="scoresTitle">录入学生成绩</h1>
+        <p class="section-note">按题录入每位学生的得分，系统自动计算总分并生成分析报告。</p>
+      </div>
+      <article class="card" id="examInfoCard">
+        <p class="mini-note" id="examInfoText">正在加载考试信息…</p>
+      </article>
+    </section>
+
+    <section class="section">
+      <article class="card">
+        <div class="overflow-x">
+          <table class="score-table" id="scoresTable">
+            <thead id="tableHead"></thead>
+            <tbody id="tableBody"></tbody>
+          </table>
+        </div>
+        <div class="actions-row add-row-btn">
+          <button class="button-ghost" id="addRowBtn">＋ 添加学生</button>
+        </div>
+      </article>
+    </section>
+
+    <section class="section">
+      <div class="actions-row">
+        <button class="button" id="submitBtn">保存成绩并生成分析</button>
+        <a class="button-ghost" id="analysisLink" href="/gaokao/exam-analysis.html">查看考试分析</a>
+      </div>
+      <p class="status-box" id="submitStatus" data-status>填写完成后点击保存。</p>
+    </section>
+  </div>
+  <script src="/gaokao/mvp.js"></script>
+</body>
+</html>
