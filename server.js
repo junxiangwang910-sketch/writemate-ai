@@ -944,6 +944,61 @@ function generateTeachFocus(knowledgePoint, errorType) {
   return "重点讲关键步骤的选择逻辑，而不是直接展示答案。";
 }
 
+async function analyzeWithDeepSeek(imageDataUrl, question) {
+  if (!DEEPSEEK_API_KEY) return null;
+
+  const prompt = `你是高中数学阅卷专家。请分析这名学生的作答图片。
+
+题目知识点：${question.knowledge_point}
+题目类型：${question.question_type}
+满分：${question.score}分
+标准步骤：${question.standard_steps}
+标准答案要点：${question.standard_answer}
+
+请判断：
+1. 学生写到了标准步骤的第几步（step_reached，填数字，从1开始）
+2. 主要错误类型（main_error_type）：从"方法问题/步骤问题/计算错误/习惯问题"中选一个
+3. 次要错误类型（secondary_error_type）：简短描述
+4. 薄弱知识点（weak_knowledge_points）：列出1-2个，JSON数组
+5. 薄弱能力点（weak_ability_points）：列出1-2个，JSON数组
+6. 给老师的建议（teacher_feedback）：一句话，说明哪步出错、建议怎么讲
+7. 给学生的建议（student_feedback）：一句话，鼓励性语气指出问题
+8. 下步练习重点（next_practice_focus）：一句话
+
+仅输出JSON，不要其他内容。格式：
+{"step_reached":2,"main_error_type":"方法问题","secondary_error_type":"...","weak_knowledge_points":["..."],"weak_ability_points":["..."],"teacher_feedback":"...","student_feedback":"...","next_practice_focus":"...","confidence":"中"}`;
+
+  try {
+    const response = await fetch("https://api.deepseek.com/chat/completions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${DEEPSEEK_API_KEY}`
+      },
+      body: JSON.stringify({
+        model: DEEPSEEK_MODEL || "deepseek-chat",
+        messages: [{
+          role: "user",
+          content: [
+            { type: "image_url", image_url: { url: imageDataUrl } },
+            { type: "text", text: prompt }
+          ]
+        }],
+        max_tokens: 800,
+        temperature: 0.1
+      })
+    });
+
+    if (!response.ok) return null;
+    const data = await response.json();
+    const text = data.choices?.[0]?.message?.content || "";
+    return safeJsonParse(text);
+  } catch (err) {
+    console.error("DeepSeek vision error:", err.message);
+    return null;
+  }
+}
+
 function createMockAiAnalysis(question, scoreLevel = 0) {
   // scoreLevel: 0 = 中等失分(50-95%), 1 = 严重失分(<50%), 2 = 接近满分(>95%,小问题)
   const kp = String(question.knowledgePoint || question.knowledge_point || "");
@@ -5337,7 +5392,8 @@ const server = http.createServer(async (req, res) => {
       const questions = db.prepare("SELECT * FROM questions WHERE exam_id = ? ORDER BY CAST(question_no AS INTEGER), question_no").all(exam.id);
       const cards = Array.isArray(body.cards) ? body.cards : [];
       const processed = [];
-      cards.forEach((card, cardIndex) => {
+      for (let cardIndex = 0; cardIndex < cards.length; cardIndex++) {
+        const card = cards[cardIndex];
         const student = ensureStudentRecord(card.studentName, exam.class_name, card.studentNo);
         if (card.imageDataUrl) {
           saveDataUrlAsset(card.imageDataUrl, `exam-${exam.id}-student-${student.id}`);
@@ -5351,14 +5407,33 @@ const server = http.createServer(async (req, res) => {
           INSERT INTO question_scores (id, exam_id, student_id, question_id, score_got, ai_analysis)
           VALUES (?, ?, ?, ?, ?, ?)
         `);
-        const scoredRows = questions.map((question, questionIndex) => {
+        const scoredRows = [];
+        for (let questionIndex = 0; questionIndex < questions.length; questionIndex++) {
+          const question = questions[questionIndex];
           const maxScore = Number(question.score);
-          const ratio = [1, 0.75, 0.5, 0.25][(cardIndex + questionIndex) % 4];
-          const scoreGot = Number(Math.max(0, Math.round(maxScore * ratio * 10) / 10));
+          let analysis = null;
+          let scoreGot = 0;
+
+          if (card.imageDataUrl && DEEPSEEK_API_KEY) {
+            analysis = await analyzeWithDeepSeek(card.imageDataUrl, question);
+          }
+
+          if (analysis && typeof analysis.step_reached === "number") {
+            const totalSteps = (question.standard_steps || "").split("->").length || 4;
+            const ratio = analysis.step_reached / totalSteps;
+            scoreGot = Number(Math.max(0, Math.min(maxScore, Math.round(maxScore * ratio * 10) / 10)));
+          } else {
+            const fallbackLevel = (cardIndex + questionIndex) % 3;
+            analysis = createMockAiAnalysis({ knowledgePoint: question.knowledge_point }, fallbackLevel);
+            const ratio = [0.6, 0.3, 1.0][fallbackLevel];
+            scoreGot = Number(Math.max(0, Math.min(maxScore, Math.round(maxScore * ratio * 10) / 10)));
+          }
+
+          if (card.scoreOverrides && card.scoreOverrides[question.question_no] !== undefined) {
+            scoreGot = Number(card.scoreOverrides[question.question_no]);
+          }
+
           totalScore += scoreGot;
-          const analysis = createMockAiAnalysis({
-            knowledgePoint: question.knowledge_point
-          }, cardIndex + questionIndex);
           insertQuestionScore.run(
             randomUUID(),
             exam.id,
@@ -5367,8 +5442,8 @@ const server = http.createServer(async (req, res) => {
             scoreGot,
             JSON.stringify(analysis)
           );
-          return { ...question, scoreGot, ai_analysis: JSON.stringify(analysis) };
-        });
+          scoredRows.push({ ...question, scoreGot, ai_analysis: JSON.stringify(analysis) });
+        }
 
         db.prepare(`
           INSERT INTO student_scores (id, exam_id, student_id, total_score, created_at)
@@ -5386,7 +5461,7 @@ const server = http.createServer(async (req, res) => {
           studentName: student.name,
           totalScore: Number(totalScore.toFixed(1))
         });
-      });
+      }
       json(res, 200, { uploaded: processed.length, students: processed });
       return;
     }
