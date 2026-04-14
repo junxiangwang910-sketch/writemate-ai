@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>高考宝 | 上传答题卡</title>
+  <link rel="stylesheet" href="mvp.css">
+</head>
+<body data-page="exam-upload">
+  <div class="page-shell">
+    <header class="topbar">
+      <div>
+        <p class="brand-title">高考宝</p>
+        <p class="brand-subtitle">老师工作台 / 当前位置：上传答题卡</p>
+      </div>
+      <nav class="nav">
+        <a data-nav-page="teacher-dashboard" href="/gaokao/teacher-dashboard.html">工作台</a>
+        <a data-nav-page="exam-new" href="/gaokao/exam-new.html">新建考试</a>
+        <a data-nav-page="exam-upload" href="/gaokao/exam-upload.html">上传答题卡</a>
+        <a data-nav-page="exam-analysis" href="/gaokao/exam-analysis.html">考试分析</a>
+      </nav>
+    </header>
+
+    <section class="section">
+      <div class="section-header">
+        <h1 class="section-title">批量上传学生答题卡</h1>
+        <p class="section-note">第一阶段按文件名自动生成学生姓名，先用 mock AI 数据跑通分析流程。</p>
+      </div>
+      <form class="card grid cols-2" id="uploadForm">
+        <label class="field">
+          <span>选择考试</span>
+          <select id="examSelect"></select>
+        </label>
+        <label class="field">
+          <span>学生答题卡图片</span>
+          <input id="cardImages" type="file" accept="image/*" multiple>
+        </label>
+        <div class="actions-row">
+          <button class="button" type="submit">开始上传并生成分析</button>
+          <a class="button-ghost" href="/gaokao/exam-analysis.html">直接去分析页</a>
+        </div>
+      </form>
+      <p class="status-box" id="uploadStatus" data-status>建议一次先上传一个班的答题卡图片。</p>
+    </section>
+  </div>
+  <script src="mvp.js"></script>
+</body>
+</html>

@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>高考宝 | 学生报告</title>
+  <link rel="stylesheet" href="mvp.css">
+</head>
+<body data-page="student-report">
+  <div class="page-shell">
+    <header class="topbar">
+      <div>
+        <p class="brand-title">高考宝</p>
+        <p class="brand-subtitle">老师工作台 / 当前位置：学生报告</p>
+      </div>
+      <nav class="nav">
+        <a data-nav-page="teacher-dashboard" href="/gaokao/teacher-dashboard.html">工作台</a>
+        <a data-nav-page="exam-analysis" href="/gaokao/exam-analysis.html">考试分析</a>
+        <a data-nav-page="student-report" href="/gaokao/student-report.html">学生报告</a>
+        <a data-nav-page="student-track" href="/gaokao/student-track.html">一对一跟踪</a>
+      </nav>
+    </header>
+
+    <section class="section">
+      <div class="section-header">
+        <h1 class="section-title" id="studentTitle">学生个人报告</h1>
+        <p class="section-note" id="studentMeta">学生画像与补弱建议</p>
+      </div>
+      <article class="card">
+        <p class="stat-label">本次成绩</p>
+        <strong class="stat-value" id="studentScore">--</strong>
+      </article>
+    </section>
+
+    <section class="section">
+      <div class="grid cols-2">
+        <article class="card">
+          <h2 class="card-title">主要薄弱知识点</h2>
+          <ul class="list" id="weakPoints"></ul>
+        </article>
+        <article class="card">
+          <h2 class="card-title">主要薄弱能力点</h2>
+          <ul class="list" id="weakAbilities"></ul>
+        </article>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="grid cols-2">
+        <article class="card">
+          <h2 class="card-title">建议优先补的 3 个点</h2>
+          <ul class="list" id="actionList"></ul>
+        </article>
+        <article class="card">
+          <h2 class="card-title">推荐训练任务</h2>
+          <ul class="list" id="focusTasks"></ul>
+        </article>
+      </div>
+    </section>
+
+    <section class="section">
+      <article class="card">
+        <h2 class="card-title">错题明细</h2>
+        <div class="table-like" id="wrongDetails"></div>
+        <div class="actions-row">
+          <a class="button" id="trackLink" href="/gaokao/student-track.html">查看一对一跟踪</a>
+        </div>
+      </article>
+    </section>
+  </div>
+  <script src="mvp.js"></script>
+</body>
+</html>

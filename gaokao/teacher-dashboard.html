@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>高考宝 | 老师工作台</title>
+  <link rel="stylesheet" href="mvp.css">
+</head>
+<body data-page="teacher-dashboard">
+  <div class="page-shell">
+    <header class="topbar">
+      <div>
+        <p class="brand-title">高考宝</p>
+        <p class="brand-subtitle">老师工作台 / 当前位置：工作台</p>
+      </div>
+      <nav class="nav">
+        <a data-nav-page="teacher-dashboard" href="/gaokao/teacher-dashboard.html">工作台</a>
+        <a data-nav-page="exam-new" href="/gaokao/exam-new.html">新建考试</a>
+        <a data-nav-page="exam-upload" href="/gaokao/exam-upload.html">上传答题卡</a>
+        <a data-nav-page="exam-analysis" href="/gaokao/exam-analysis.html">考试分析</a>
+      </nav>
+    </header>
+
+    <section class="section">
+      <div class="section-header">
+        <h1 class="section-title">高二数学考后分析工作台</h1>
+        <p class="section-note">先看最近考试，再决定本周讲评和重点学生跟进。</p>
+      </div>
+      <div class="grid cols-4">
+        <article class="card stat-card">
+          <p class="stat-label">最近考试数</p>
+          <strong id="statExamCount">0</strong>
+        </article>
+        <article class="card stat-card">
+          <p class="stat-label">平均分</p>
+          <strong id="statAverage">0</strong>
+        </article>
+        <article class="card stat-card">
+          <p class="stat-label">已录入学生</p>
+          <strong id="statStudents">0</strong>
+        </article>
+        <article class="card stat-card">
+          <p class="stat-label">待跟进学生</p>
+          <strong id="statFollowUp">0</strong>
+        </article>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-header">
+        <h2 class="section-title">最近考试</h2>
+        <p class="section-note">从这里进入分析页或继续补传答题卡。</p>
+      </div>
+      <div class="exam-list" id="examList"></div>
+    </section>
+  </div>
+  <script src="mvp.js"></script>
+</body>
+</html>

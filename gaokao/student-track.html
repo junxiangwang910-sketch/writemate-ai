@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>高考宝 | 一对一跟踪</title>
+  <link rel="stylesheet" href="mvp.css">
+</head>
+<body data-page="student-track">
+  <div class="page-shell">
+    <header class="topbar">
+      <div>
+        <p class="brand-title">高考宝</p>
+        <p class="brand-subtitle">老师工作台 / 当前位置：一对一跟踪</p>
+      </div>
+      <nav class="nav">
+        <a data-nav-page="teacher-dashboard" href="/gaokao/teacher-dashboard.html">工作台</a>
+        <a data-nav-page="exam-analysis" href="/gaokao/exam-analysis.html">考试分析</a>
+        <a data-nav-page="student-report" href="/gaokao/student-report.html">学生报告</a>
+        <a data-nav-page="student-track" href="/gaokao/student-track.html">一对一跟踪</a>
+      </nav>
+    </header>
+
+    <section class="section">
+      <div class="section-header">
+        <h1 class="section-title" id="trackTitle">重点学生一对一跟踪</h1>
+        <p class="section-note">连续看成绩变化、薄弱点变化和任务完成情况。</p>
+      </div>
+      <article class="card">
+        <p class="card-note" id="trackSummary" data-status>正在加载跟踪结论。</p>
+      </article>
+    </section>
+
+    <section class="section">
+      <div class="grid cols-2">
+        <article class="card">
+          <h2 class="card-title">近几次成绩变化</h2>
+          <div class="student-list" id="trendList"></div>
+        </article>
+        <article class="card">
+          <h2 class="card-title">当前重点跟踪内容</h2>
+          <h3 class="card-title">高频薄弱点</h3>
+          <ul class="list" id="trackWeakPoints"></ul>
+          <h3 class="card-title">本周任务</h3>
+          <ul class="list" id="trackTasks"></ul>
+        </article>
+      </div>
+    </section>
+  </div>
+  <script src="mvp.js"></script>
+</body>
+</html>

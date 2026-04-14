@@ -7,6 +7,7 @@ const { DatabaseSync } = require("node:sqlite");
 
 const ROOT = __dirname;
 const DATA_DIR = path.join(ROOT, "data");
+const UPLOAD_DIR = path.join(DATA_DIR, "uploads");
 const JSON_DB_PATH = path.join(DATA_DIR, "app-data.json");
 const SQLITE_DB_PATH = path.join(DATA_DIR, "app-data.sqlite");
 const ENV_PATH = path.join(ROOT, ".env");
@@ -54,7 +55,12 @@ const mimeTypes = {
   ".css": "text/css; charset=utf-8",
   ".json": "application/json; charset=utf-8",
   ".svg": "image/svg+xml",
-  ".webmanifest": "application/manifest+json; charset=utf-8"
+  ".webmanifest": "application/manifest+json; charset=utf-8",
+  ".png": "image/png",
+  ".jpg": "image/jpeg",
+  ".jpeg": "image/jpeg",
+  ".webp": "image/webp",
+  ".pdf": "application/pdf"
 };
 
 function defaultHomePath() {
@@ -96,6 +102,9 @@ let aemoPriceCache = {
 function ensureDataDir() {
   if (!fs.existsSync(DATA_DIR)) {
     fs.mkdirSync(DATA_DIR, { recursive: true });
+  }
+  if (!fs.existsSync(UPLOAD_DIR)) {
+    fs.mkdirSync(UPLOAD_DIR, { recursive: true });
   }
 }
 
@@ -239,6 +248,62 @@ function openDatabase() {
       updated_at TEXT NOT NULL,
       PRIMARY KEY(user_id, product),
       FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
+    );
+    CREATE TABLE IF NOT EXISTS exams (
+      id TEXT PRIMARY KEY,
+      name TEXT NOT NULL,
+      date TEXT NOT NULL,
+      subject TEXT NOT NULL,
+      class_name TEXT NOT NULL,
+      created_at TEXT NOT NULL,
+      answer_assets_json TEXT NOT NULL DEFAULT '[]'
+    );
+    CREATE TABLE IF NOT EXISTS questions (
+      id TEXT PRIMARY KEY,
+      exam_id TEXT NOT NULL,
+      question_no TEXT NOT NULL,
+      score REAL NOT NULL,
+      knowledge_point TEXT NOT NULL,
+      question_type TEXT NOT NULL,
+      difficulty TEXT NOT NULL,
+      standard_answer TEXT NOT NULL,
+      standard_steps TEXT NOT NULL,
+      FOREIGN KEY(exam_id) REFERENCES exams(id) ON DELETE CASCADE
+    );
+    CREATE TABLE IF NOT EXISTS students (
+      id TEXT PRIMARY KEY,
+      name TEXT NOT NULL,
+      class_name TEXT NOT NULL,
+      student_no TEXT NOT NULL
+    );
+    CREATE TABLE IF NOT EXISTS student_scores (
+      id TEXT PRIMARY KEY,
+      exam_id TEXT NOT NULL,
+      student_id TEXT NOT NULL,
+      total_score REAL NOT NULL,
+      created_at TEXT NOT NULL,
+      FOREIGN KEY(exam_id) REFERENCES exams(id) ON DELETE CASCADE,
+      FOREIGN KEY(student_id) REFERENCES students(id) ON DELETE CASCADE
+    );
+    CREATE TABLE IF NOT EXISTS question_scores (
+      id TEXT PRIMARY KEY,
+      exam_id TEXT NOT NULL,
+      student_id TEXT NOT NULL,
+      question_id TEXT NOT NULL,
+      score_got REAL NOT NULL,
+      ai_analysis TEXT NOT NULL,
+      FOREIGN KEY(exam_id) REFERENCES exams(id) ON DELETE CASCADE,
+      FOREIGN KEY(student_id) REFERENCES students(id) ON DELETE CASCADE,
+      FOREIGN KEY(question_id) REFERENCES questions(id) ON DELETE CASCADE
+    );
+    CREATE TABLE IF NOT EXISTS ai_reports (
+      id TEXT PRIMARY KEY,
+      exam_id TEXT NOT NULL,
+      student_id TEXT NOT NULL,
+      report_json TEXT NOT NULL,
+      created_at TEXT NOT NULL,
+      FOREIGN KEY(exam_id) REFERENCES exams(id) ON DELETE CASCADE,
+      FOREIGN KEY(student_id) REFERENCES students(id) ON DELETE CASCADE
     );
     CREATE TABLE IF NOT EXISTS app_meta (
       key TEXT PRIMARY KEY,
@@ -443,6 +508,22 @@ function seedKnowledgeSnippets(db) {
       tags: ["大作文", "张力", "立意", "材料转化"]
     },
     {
+      id: "shenlun-essay-argument-shape",
+      product: "shenlun",
+      scenario: "essay",
+      title: "大作文论证成型标准",
+      content: "大作文不是把三个漂亮标题拼在一起，而是总论点先压准，再让每个分论点各自承担不同任务。高分段落通常能做到观点一句、分析一句、材料或现实例证一组、回扣一句，避免整段只有态度没有论证。",
+      tags: ["大作文", "总论点", "分论点", "论证", "段落"]
+    },
+    {
+      id: "shenlun-essay-material-lift",
+      product: "shenlun",
+      scenario: "essay",
+      title: "大作文材料转化规则",
+      content: "材料使用不是把案例重新讲一遍，而是把案例提炼成治理逻辑、制度原则或价值取向。凡是只复述故事、不解释故事说明什么，都会被视为材料联系浅、论证深度弱。",
+      tags: ["大作文", "材料联系", "治理逻辑", "制度原则", "论证深度"]
+    },
+    {
       id: "shenlun-essay-penalty",
       product: "shenlun",
       scenario: "essay",
@@ -457,6 +538,22 @@ function seedKnowledgeSnippets(db) {
       title: "归纳概括优先级",
       content: "归纳概括题要优先抓对象、问题、原因、措施和结果，尽量贴近材料原词，分层表达，避免加入过多主观发挥。",
       tags: ["归纳概括", "对象", "原因", "措施"]
+    },
+    {
+      id: "shenlun-summary-object-lock",
+      product: "shenlun",
+      scenario: "summary",
+      title: "归纳概括先锁对象",
+      content: "归纳概括题最怕答着答着对象漂移。题目让概括问题，就不要混进过多对策；题目让概括原因，就不要把现象和影响一起塞进去。高分答案往往先锁准对象，再做分类整合。",
+      tags: ["归纳概括", "概括对象", "问题", "原因", "影响"]
+    },
+    {
+      id: "shenlun-summary-material-words",
+      product: "shenlun",
+      scenario: "summary",
+      title: "归纳概括原词优先",
+      content: "概括题加工材料不是自由发挥，而是先保留材料中的稳定表述和限定词，再做合并同类项。把“平台重复填报”改写成自己想象中的抽象概念，很容易出现提炼失真和审题跑偏。",
+      tags: ["归纳概括", "材料原词", "限定词", "合并同类项", "提炼"]
     },
     {
       id: "shenlun-summary-precision",
@@ -483,6 +580,22 @@ function seedKnowledgeSnippets(db) {
       tags: ["提出对策", "主体", "执行路径", "长效机制"]
     },
     {
+      id: "shenlun-solution-one-to-one",
+      product: "shenlun",
+      scenario: "solution",
+      title: "对策题一一对应原则",
+      content: "对策题先找问题，再写措施，最好能形成明显的一一对应关系。没有问题支撑的措施容易显得悬空；没有主体、步骤和反馈闭环的措施，即使方向正确，也会被认为操作性不足。",
+      tags: ["提出对策", "问题对应", "主体", "步骤", "反馈闭环"]
+    },
+    {
+      id: "shenlun-solution-boundary",
+      product: "shenlun",
+      scenario: "solution",
+      title: "对策题越权扣分点",
+      content: "提出对策题常见失分是把建议写得很大，却不符合题目身份和场景边界。题目如果是基层治理场景，就要优先写基层可执行、部门可协同、群众可感知的动作，而不是空泛上升到宏大制度口号。",
+      tags: ["提出对策", "越权", "场景边界", "基层治理", "可执行"]
+    },
+    {
       id: "shenlun-solution-offcn-standard",
       product: "shenlun",
       scenario: "solution",
@@ -499,6 +612,22 @@ function seedKnowledgeSnippets(db) {
       tags: ["综合分析", "观点", "原因", "影响", "辩证"]
     },
     {
+      id: "shenlun-analysis-chain",
+      product: "shenlun",
+      scenario: "analysis",
+      title: "综合分析因果链要求",
+      content: "综合分析题的关键不是态度正确，而是分析链条完整。至少要说明现象为什么出现、会造成什么影响、背后有什么张力或边界，不能只写“要高度重视”“意义重大”这种空判断。",
+      tags: ["综合分析", "因果链", "影响", "张力", "边界"]
+    },
+    {
+      id: "shenlun-analysis-balance",
+      product: "shenlun",
+      scenario: "analysis",
+      title: "综合分析辩证表达",
+      content: "遇到涉及效率与公平、技术与人文、统一与差异等关系型题目时，不能只站一边表态。高分答案通常会先承认一方价值，再补另一方边界，最后提出平衡思路。",
+      tags: ["综合分析", "辩证", "效率", "公平", "平衡"]
+    },
+    {
       id: "shenlun-essay-wuhongmin",
       product: "shenlun",
       scenario: "essay",
@@ -513,6 +642,22 @@ function seedKnowledgeSnippets(db) {
       title: "贯彻执行题格式要求",
       content: "贯彻执行题先看文种格式，再看对象意识、任务目标和措施安排。格式一错，哪怕内容还行，也很难拿高分。",
       tags: ["贯彻执行", "文种", "格式", "对象意识"]
+    },
+    {
+      id: "shenlun-official-scene-language",
+      product: "shenlun",
+      scenario: "official",
+      title: "贯彻执行题场景语言",
+      content: "贯彻执行题除了格式对，还要像这个场景里真的会发出的文稿。写给群众就要通俗、可理解、可执行；写给下级单位就要任务清晰、分工明确、节点明确，不能整篇都像大作文议论文。",
+      tags: ["贯彻执行", "场景语言", "群众", "下级单位", "任务分工"]
+    },
+    {
+      id: "shenlun-official-task-arrangement",
+      product: "shenlun",
+      scenario: "official",
+      title: "贯彻执行题安排感",
+      content: "贯彻执行题高分常见于“像真文”。正文里最好出现目标、步骤、责任、时间、参与方式或注意事项中的若干项，这样才能体现任务安排，而不是只有原则口号。",
+      tags: ["贯彻执行", "目标", "步骤", "责任", "时间安排"]
     },
     {
       id: "shenlun-interview-natural",
@@ -611,7 +756,16 @@ function seedKnowledgeSnippets(db) {
       tags: ["英语", "北京卷", "得体", "准确", "沟通"]
     }
   ];
-  const stmt = db.prepare("INSERT OR IGNORE INTO knowledge_snippets (id, product, scenario, title, content, tags_json) VALUES (?, ?, ?, ?, ?, ?)");
+  const stmt = db.prepare(`
+    INSERT INTO knowledge_snippets (id, product, scenario, title, content, tags_json)
+    VALUES (?, ?, ?, ?, ?, ?)
+    ON CONFLICT(id) DO UPDATE SET
+      product = excluded.product,
+      scenario = excluded.scenario,
+      title = excluded.title,
+      content = excluded.content,
+      tags_json = excluded.tags_json
+  `);
   snippets.forEach((item) => {
     stmt.run(item.id, item.product, item.scenario, item.title, item.content, JSON.stringify(item.tags));
   });
@@ -746,6 +900,350 @@ function parseBody(req) {
       }
     });
   });
+}
+
+function slugify(value) {
+  return String(value || "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "") || "item";
+}
+
+function saveDataUrlAsset(dataUrl, prefix) {
+  const match = String(dataUrl || "").match(/^data:(image\/[a-zA-Z0-9.+-]+);base64,(.+)$/);
+  if (!match) {
+    throw new Error("INVALID_IMAGE_DATA");
+  }
+  const mime = match[1].toLowerCase();
+  const ext = mime.includes("png") ? ".png" : mime.includes("webp") ? ".webp" : ".jpg";
+  const fileName = `${slugify(prefix)}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}${ext}`;
+  const absolutePath = path.join(UPLOAD_DIR, fileName);
+  fs.writeFileSync(absolutePath, Buffer.from(match[2], "base64"));
+  return `/data/uploads/${fileName}`;
+}
+
+function createMockAiAnalysis(question, index = 0) {
+  const variants = [
+    {
+      step_reached: 2,
+      main_error_type: "方法问题",
+      secondary_error_type: "计算错误",
+      weak_knowledge_points: ["导数求解", "单调区间判断"],
+      weak_ability_points: ["解不等式", "规范书写"],
+      teacher_feedback: "该生掌握基本求导方法，但在令 f'(x) > 0 解不等式时方向判断有误，建议重点讲解。",
+      student_feedback: "你已经会求导了，下一步重点练习解不等式的方向判断。",
+      next_practice_focus: "导数单调性判断专项练习",
+      confidence: "中"
+    },
+    {
+      step_reached: 1,
+      main_error_type: "步骤问题",
+      secondary_error_type: "审题偏差",
+      weak_knowledge_points: ["函数性质", "图像识别"],
+      weak_ability_points: ["条件提取", "题型识别"],
+      teacher_feedback: "该生在识别题目切入点时就出现偏差，建议先带着学生判断题型，再进入公式计算。",
+      student_feedback: "这题问题不在公式，而在第一步没有判断清楚题型，先练审题和切入点。",
+      next_practice_focus: "函数图像与性质识别题",
+      confidence: "中"
+    },
+    {
+      step_reached: 3,
+      main_error_type: "习惯问题",
+      secondary_error_type: "规范书写",
+      weak_knowledge_points: [question.knowledgePoint || "解析几何"],
+      weak_ability_points: ["过程表达", "结果回扣"],
+      teacher_feedback: "该生思路基本正确，但过程表达不完整，导致步骤分损失明显。",
+      student_feedback: "你方向是对的，但步骤写得不完整，下一步重点练规范书写。",
+      next_practice_focus: "中档题书写规范训练",
+      confidence: "中"
+    }
+  ];
+  return variants[index % variants.length];
+}
+
+function buildDefaultQuestions(examId, count = 8) {
+  const templates = [
+    ["1", 12, "函数与导数", "选择题", "基础", "函数定义域与单调性", "识别题型 -> 提取定义域 -> 判断单调性 -> 回扣选项"],
+    ["2", 12, "三角函数", "选择题", "基础", "三角恒等变换", "识别结构 -> 选择公式 -> 完成变形 -> 检查范围"],
+    ["3", 12, "数列", "填空题", "中档", "等差等比数列", "提取条件 -> 建立通项/递推 -> 求目标量"],
+    ["4", 12, "概率统计", "填空题", "中档", "概率与统计计算", "明确样本空间 -> 计算事件概率 -> 检查条件"],
+    ["5", 18, "立体几何", "解答题", "中档", "空间线面关系", "画图 -> 设量 -> 证明关系 -> 计算结果"],
+    ["6", 18, "解析几何", "解答题", "中高", "直线与圆锥曲线", "建系 -> 列方程 -> 消元 -> 回扣几何意义"],
+    ["7", 18, "导数", "解答题", "中高", "单调性与极值", "求导 -> 解不等式 -> 分区间讨论 -> 写结论"],
+    ["8", 16, "压轴综合", "解答题", "高", "函数综合", "识别模型 -> 设中间量 -> 分类讨论 -> 检验边界"]
+  ].slice(0, count);
+  const stmt = db.prepare(`
+    INSERT INTO questions (
+      id, exam_id, question_no, score, knowledge_point, question_type, difficulty, standard_answer, standard_steps
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `);
+  templates.forEach((item) => {
+    stmt.run(
+      randomUUID(),
+      examId,
+      item[0],
+      item[1],
+      item[2],
+      item[3],
+      item[4],
+      item[5],
+      item[6]
+    );
+  });
+}
+
+function ensureStudentRecord(name, className, studentNo) {
+  const normalizedName = String(name || "").trim() || "未命名学生";
+  const normalizedClass = String(className || "").trim() || "未分班";
+  const normalizedNo = String(studentNo || "").trim() || `TEMP-${Math.random().toString(36).slice(2, 8).toUpperCase()}`;
+  const existing = db.prepare("SELECT * FROM students WHERE student_no = ? AND class_name = ?").get(normalizedNo, normalizedClass)
+    || db.prepare("SELECT * FROM students WHERE name = ? AND class_name = ?").get(normalizedName, normalizedClass);
+  if (existing) return existing;
+  const row = {
+    id: randomUUID(),
+    name: normalizedName,
+    class_name: normalizedClass,
+    student_no: normalizedNo
+  };
+  db.prepare("INSERT INTO students (id, name, class_name, student_no) VALUES (?, ?, ?, ?)").run(
+    row.id,
+    row.name,
+    row.class_name,
+    row.student_no
+  );
+  return row;
+}
+
+function listExamsWithSummary() {
+  const exams = db.prepare(`
+    SELECT
+      e.*,
+      COUNT(DISTINCT ss.student_id) AS student_count,
+      COALESCE(ROUND(AVG(ss.total_score), 1), 0) AS average_score
+    FROM exams e
+    LEFT JOIN student_scores ss ON ss.exam_id = e.id
+    GROUP BY e.id
+    ORDER BY e.date DESC, e.created_at DESC
+  `).all();
+  return exams.map((row) => ({
+    id: row.id,
+    name: row.name,
+    date: row.date,
+    subject: row.subject,
+    className: row.class_name,
+    createdAt: row.created_at,
+    studentCount: row.student_count,
+    averageScore: row.average_score
+  }));
+}
+
+function buildExamAnalysis(examId) {
+  const exam = db.prepare("SELECT * FROM exams WHERE id = ?").get(examId);
+  if (!exam) throw new Error("EXAM_NOT_FOUND");
+  const questions = db.prepare("SELECT * FROM questions WHERE exam_id = ? ORDER BY CAST(question_no AS INTEGER), question_no").all(examId);
+  const studentRows = db.prepare(`
+    SELECT
+      s.id,
+      s.name,
+      s.class_name,
+      s.student_no,
+      ss.total_score
+    FROM student_scores ss
+    JOIN students s ON s.id = ss.student_id
+    WHERE ss.exam_id = ?
+    ORDER BY ss.total_score ASC, s.name ASC
+  `).all(examId);
+  const averageScore = studentRows.length
+    ? Number((studentRows.reduce((sum, item) => sum + Number(item.total_score || 0), 0) / studentRows.length).toFixed(1))
+    : 0;
+
+  const questionStats = questions.map((question) => {
+    const rows = db.prepare("SELECT score_got, ai_analysis FROM question_scores WHERE exam_id = ? AND question_id = ?").all(examId, question.id);
+    const wrongCount = rows.filter((row) => Number(row.score_got) < Number(question.score)).length;
+    const errorRate = rows.length ? Math.round((wrongCount / rows.length) * 100) : 0;
+    const reasonCounter = new Map();
+    rows.forEach((row) => {
+      const parsed = safeJsonParse(row.ai_analysis || "{}");
+      const label = parsed.main_error_type || "未分类";
+      reasonCounter.set(label, (reasonCounter.get(label) || 0) + 1);
+    });
+    const topReason = [...reasonCounter.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] || "方法问题";
+    return {
+      questionId: question.id,
+      questionNo: question.question_no,
+      score: question.score,
+      knowledgePoint: question.knowledge_point,
+      questionType: question.question_type,
+      difficulty: question.difficulty,
+      errorRate,
+      topReason,
+      standardSteps: question.standard_steps
+    };
+  });
+
+  const issueCounter = new Map();
+  db.prepare("SELECT ai_analysis FROM question_scores WHERE exam_id = ?").all(examId).forEach((row) => {
+    const parsed = safeJsonParse(row.ai_analysis || "{}");
+    [parsed.main_error_type, parsed.secondary_error_type].filter(Boolean).forEach((label) => {
+      issueCounter.set(label, (issueCounter.get(label) || 0) + 1);
+    });
+  });
+
+  const highRiskStudents = studentRows.slice(0, 5).map((student) => ({
+    id: student.id,
+    name: student.name,
+    totalScore: student.total_score,
+    tag: Number(student.total_score) < averageScore ? "重点跟进" : "观察"
+  }));
+
+  return {
+    exam: {
+      id: exam.id,
+      name: exam.name,
+      date: exam.date,
+      subject: exam.subject,
+      className: exam.class_name
+    },
+    studentCount: studentRows.length,
+    averageScore,
+    questionStats,
+    topIssues: [...issueCounter.entries()]
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 5)
+      .map(([label, count]) => ({ label, count })),
+    lectureSuggestions: [
+      "先讲错误率最高的 2 道题，再补 1 道中档综合题，避免整节课只讲难题。",
+      "先区分知识问题和步骤问题，讲评时重点示范第一步切入方式。",
+      "对重点学生优先布置 3 道同类题，第二天回收订正。"
+    ],
+    highRiskStudents
+  };
+}
+
+function buildStudentReport(studentId, examId) {
+  const student = db.prepare("SELECT * FROM students WHERE id = ?").get(studentId);
+  if (!student) throw new Error("STUDENT_NOT_FOUND");
+  const chosenExamId = examId || db.prepare("SELECT exam_id FROM student_scores WHERE student_id = ? ORDER BY created_at DESC LIMIT 1").get(studentId)?.exam_id;
+  if (!chosenExamId) {
+    return {
+      student: {
+        id: student.id,
+        name: student.name,
+        className: student.class_name,
+        studentNo: student.student_no
+      },
+      latestExam: null,
+      weakPoints: [],
+      actionList: [],
+      focusTasks: [],
+      trend: []
+    };
+  }
+  const exam = db.prepare("SELECT * FROM exams WHERE id = ?").get(chosenExamId);
+  const totalScore = db.prepare("SELECT total_score FROM student_scores WHERE exam_id = ? AND student_id = ?").get(chosenExamId, studentId)?.total_score || 0;
+  const questionRows = db.prepare(`
+    SELECT q.question_no, q.knowledge_point, q.question_type, q.score, qs.score_got, qs.ai_analysis
+    FROM question_scores qs
+    JOIN questions q ON q.id = qs.question_id
+    WHERE qs.exam_id = ? AND qs.student_id = ?
+    ORDER BY CAST(q.question_no AS INTEGER), q.question_no
+  `).all(chosenExamId, studentId);
+  const weakCounter = new Map();
+  const abilityCounter = new Map();
+  const wrongDetails = questionRows
+    .filter((row) => Number(row.score_got) < Number(row.score))
+    .map((row) => {
+      const parsed = safeJsonParse(row.ai_analysis || "{}");
+      (parsed.weak_knowledge_points || []).forEach((item) => weakCounter.set(item, (weakCounter.get(item) || 0) + 1));
+      (parsed.weak_ability_points || []).forEach((item) => abilityCounter.set(item, (abilityCounter.get(item) || 0) + 1));
+      return {
+        questionNo: row.question_no,
+        knowledgePoint: row.knowledge_point,
+        mainErrorType: parsed.main_error_type,
+        teacherFeedback: parsed.teacher_feedback
+      };
+    });
+  const reportRow = db.prepare(`
+    SELECT report_json, created_at FROM ai_reports
+    WHERE exam_id = ? AND student_id = ?
+    ORDER BY created_at DESC
+    LIMIT 1
+  `).get(chosenExamId, studentId);
+  const report = reportRow ? safeJsonParse(reportRow.report_json) : {};
+  const trend = db.prepare(`
+    SELECT e.name, e.date, ss.total_score
+    FROM student_scores ss
+    JOIN exams e ON e.id = ss.exam_id
+    WHERE ss.student_id = ?
+    ORDER BY e.date ASC, ss.created_at ASC
+    LIMIT 5
+  `).all(studentId).map((row) => ({
+    examName: row.name,
+    date: row.date,
+    totalScore: row.total_score
+  }));
+
+  return {
+    student: {
+      id: student.id,
+      name: student.name,
+      className: student.class_name,
+      studentNo: student.student_no
+    },
+    latestExam: {
+      id: exam.id,
+      name: exam.name,
+      date: exam.date,
+      totalScore
+    },
+    weakPoints: [...weakCounter.entries()].sort((a, b) => b[1] - a[1]).slice(0, 3).map(([label]) => label),
+    weakAbilities: [...abilityCounter.entries()].sort((a, b) => b[1] - a[1]).slice(0, 3).map(([label]) => label),
+    wrongDetails,
+    actionList: report.actionList || [
+      "先补 3 道同类基础题，再回做原题。",
+      "把最近一次失分最多的题型整理成错因卡片。",
+      "下一次考试重点盯住第一步切入是否正确。"
+    ],
+    focusTasks: report.focusTasks || [
+      "导数单调性专项 3 题",
+      "函数图像识别 2 题",
+      "规范书写回测 1 次"
+    ],
+    trackingSummary: report.trackingSummary || "该生当前更需要先稳住中档题和步骤分，再逐步提升压轴前两问得分。",
+    trend
+  };
+}
+
+function createStudentMockReport(student, exam, totalScore, questionRows) {
+  const weakPoints = [];
+  const focusTasks = [];
+  questionRows.forEach((row) => {
+    const parsed = safeJsonParse(row.ai_analysis || "{}");
+    (parsed.weak_knowledge_points || []).forEach((item) => weakPoints.push(item));
+    if (parsed.next_practice_focus) focusTasks.push(parsed.next_practice_focus);
+  });
+  const uniqueWeakPoints = Array.from(new Set(weakPoints)).slice(0, 3);
+  const uniqueTasks = Array.from(new Set(focusTasks)).slice(0, 3);
+  return {
+    headline: `${student.name} 本次更需要先稳住中档题步骤分`,
+    summary: `${student.name} 在 ${exam.name} 中主要失分集中在方法选择和规范书写，建议先补 ${uniqueWeakPoints.join("、") || "导数与函数综合"}。`,
+    actionList: [
+      `本周先补 ${uniqueWeakPoints[0] || "导数单调性"} 相关题型。`,
+      "先完成 3 道同类题，再做 1 道回测题。",
+      "订正时必须写出完整步骤，不只改最终答案。"
+    ],
+    focusTasks: uniqueTasks.length ? uniqueTasks : ["导数单调性判断专项练习", "函数图像识别专项", "中档题规范书写训练"],
+    trackingSummary: totalScore >= 90
+      ? "该生基础较稳，建议把跟踪重点放在中高档题的稳定性。"
+      : "该生更适合先抓基础分和中档题步骤分，避免继续大面积失分。"
+  };
+}
+
+function mockAnalyzeAnswer(body = {}) {
+  const question = {
+    knowledgePoint: body.knowledgePoint || "导数与函数"
+  };
+  return createMockAiAnalysis(question, Number(body.variant || 0));
 }
 
 function getWords(text) {
@@ -4531,6 +5029,130 @@ const server = http.createServer(async (req, res) => {
       return;
     }
 
+    if (req.method === "GET" && url.pathname === "/api/exams/list") {
+      json(res, 200, { exams: listExamsWithSummary() });
+      return;
+    }
+
+    if (req.method === "POST" && url.pathname === "/api/exams/create") {
+      const body = await parseBody(req);
+      const exam = {
+        id: randomUUID(),
+        name: String(body.name || "").trim() || "未命名考试",
+        date: String(body.date || "").trim() || new Date().toISOString().slice(0, 10),
+        subject: String(body.subject || "").trim() || "高二数学",
+        className: String(body.className || "").trim() || "高二 1 班",
+        createdAt: new Date().toISOString()
+      };
+      db.prepare(`
+        INSERT INTO exams (id, name, date, subject, class_name, created_at, answer_assets_json)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+      `).run(exam.id, exam.name, exam.date, exam.subject, exam.className, exam.createdAt, "[]");
+      buildDefaultQuestions(exam.id, Number(body.questionCount || 8));
+      json(res, 200, { exam });
+      return;
+    }
+
+    if (req.method === "POST" && url.pathname === "/api/exams/upload-answer") {
+      const body = await parseBody(req);
+      const exam = db.prepare("SELECT * FROM exams WHERE id = ?").get(body.examId);
+      if (!exam) {
+        json(res, 404, { error: "考试不存在" });
+        return;
+      }
+      const assets = (body.images || [])
+        .filter((item) => item?.dataUrl)
+        .map((item, index) => ({
+          name: item.name || `参考答案 ${index + 1}`,
+          path: saveDataUrlAsset(item.dataUrl, `exam-${exam.id}-answer-${index + 1}`)
+        }));
+      db.prepare("UPDATE exams SET answer_assets_json = ? WHERE id = ?").run(JSON.stringify(assets), exam.id);
+      json(res, 200, { uploaded: assets.length, assets });
+      return;
+    }
+
+    if (req.method === "POST" && url.pathname === "/api/exams/upload-cards") {
+      const body = await parseBody(req);
+      const exam = db.prepare("SELECT * FROM exams WHERE id = ?").get(body.examId);
+      if (!exam) {
+        json(res, 404, { error: "考试不存在" });
+        return;
+      }
+      const questions = db.prepare("SELECT * FROM questions WHERE exam_id = ? ORDER BY CAST(question_no AS INTEGER), question_no").all(exam.id);
+      const cards = Array.isArray(body.cards) ? body.cards : [];
+      const processed = [];
+      cards.forEach((card, cardIndex) => {
+        const student = ensureStudentRecord(card.studentName, exam.class_name, card.studentNo);
+        if (card.imageDataUrl) {
+          saveDataUrlAsset(card.imageDataUrl, `exam-${exam.id}-student-${student.id}`);
+        }
+        db.prepare("DELETE FROM question_scores WHERE exam_id = ? AND student_id = ?").run(exam.id, student.id);
+        db.prepare("DELETE FROM ai_reports WHERE exam_id = ? AND student_id = ?").run(exam.id, student.id);
+        db.prepare("DELETE FROM student_scores WHERE exam_id = ? AND student_id = ?").run(exam.id, student.id);
+
+        let totalScore = 0;
+        const insertQuestionScore = db.prepare(`
+          INSERT INTO question_scores (id, exam_id, student_id, question_id, score_got, ai_analysis)
+          VALUES (?, ?, ?, ?, ?, ?)
+        `);
+        const scoredRows = questions.map((question, questionIndex) => {
+          const maxScore = Number(question.score);
+          const ratio = [1, 0.75, 0.5, 0.25][(cardIndex + questionIndex) % 4];
+          const scoreGot = Number(Math.max(0, Math.round(maxScore * ratio * 10) / 10));
+          totalScore += scoreGot;
+          const analysis = createMockAiAnalysis({
+            knowledgePoint: question.knowledge_point
+          }, cardIndex + questionIndex);
+          insertQuestionScore.run(
+            randomUUID(),
+            exam.id,
+            student.id,
+            question.id,
+            scoreGot,
+            JSON.stringify(analysis)
+          );
+          return { ...question, scoreGot, ai_analysis: JSON.stringify(analysis) };
+        });
+
+        db.prepare(`
+          INSERT INTO student_scores (id, exam_id, student_id, total_score, created_at)
+          VALUES (?, ?, ?, ?, ?)
+        `).run(randomUUID(), exam.id, student.id, Number(totalScore.toFixed(1)), new Date().toISOString());
+
+        const report = createStudentMockReport(student, exam, totalScore, scoredRows);
+        db.prepare(`
+          INSERT INTO ai_reports (id, exam_id, student_id, report_json, created_at)
+          VALUES (?, ?, ?, ?, ?)
+        `).run(randomUUID(), exam.id, student.id, JSON.stringify(report), new Date().toISOString());
+
+        processed.push({
+          studentId: student.id,
+          studentName: student.name,
+          totalScore: Number(totalScore.toFixed(1))
+        });
+      });
+      json(res, 200, { uploaded: processed.length, students: processed });
+      return;
+    }
+
+    if (req.method === "POST" && url.pathname === "/api/ai/analyze") {
+      const body = await parseBody(req);
+      json(res, 200, mockAnalyzeAnswer(body));
+      return;
+    }
+
+    if (req.method === "GET" && /^\/api\/exams\/[^/]+\/analysis$/.test(url.pathname)) {
+      const examId = url.pathname.split("/")[3];
+      json(res, 200, buildExamAnalysis(examId));
+      return;
+    }
+
+    if (req.method === "GET" && /^\/api\/students\/[^/]+\/report$/.test(url.pathname)) {
+      const studentId = url.pathname.split("/")[3];
+      json(res, 200, buildStudentReport(studentId, url.searchParams.get("examId")));
+      return;
+    }
+
     if (req.method === "GET" && url.pathname === "/api/shenlun/bootstrap") {
       const user = getOrCreateUser(url.searchParams.get("userId"));
       json(res, 200, {
@@ -4809,13 +5431,15 @@ const server = http.createServer(async (req, res) => {
   }
 });
 
-server.listen(PORT, HOST, () => {
-  console.log(`WriteMate AI server running at http://${HOST}:${PORT}`);
-  const providerLabel = textProvider() === "deepseek"
-    ? `DeepSeek (${DEEPSEEK_MODEL})`
-    : textProvider() === "openai"
-      ? `OpenAI (${OPENAI_MODEL})`
-      : "demo fallback";
-  console.log(`Provider mode: ${providerLabel}`);
-  console.log(`Storage mode: SQLite at ${SQLITE_DB_PATH}`);
-});
+if (process.env.NO_LISTEN !== "1") {
+  server.listen(PORT, HOST, () => {
+    console.log(`WriteMate AI server running at http://${HOST}:${PORT}`);
+    const providerLabel = textProvider() === "deepseek"
+      ? `DeepSeek (${DEEPSEEK_MODEL})`
+      : textProvider() === "openai"
+        ? `OpenAI (${OPENAI_MODEL})`
+        : "demo fallback";
+    console.log(`Provider mode: ${providerLabel}`);
+    console.log(`Storage mode: SQLite at ${SQLITE_DB_PATH}`);
+  });
+}

@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>高考宝 | 新建考试</title>
+  <link rel="stylesheet" href="mvp.css">
+</head>
+<body data-page="exam-new">
+  <div class="page-shell">
+    <header class="topbar">
+      <div>
+        <p class="brand-title">高考宝</p>
+        <p class="brand-subtitle">老师工作台 / 当前位置：新建考试</p>
+      </div>
+      <nav class="nav">
+        <a data-nav-page="teacher-dashboard" href="/gaokao/teacher-dashboard.html">工作台</a>
+        <a data-nav-page="exam-new" href="/gaokao/exam-new.html">新建考试</a>
+        <a data-nav-page="exam-upload" href="/gaokao/exam-upload.html">上传答题卡</a>
+        <a data-nav-page="exam-analysis" href="/gaokao/exam-analysis.html">考试分析</a>
+      </nav>
+    </header>
+
+    <section class="section">
+      <div class="section-header">
+        <h1 class="section-title">新建考试</h1>
+        <p class="section-note">第一阶段只要求把考试信息、参考答案图片和基础题目骨架建起来。</p>
+      </div>
+      <form class="card grid cols-2" id="examCreateForm">
+        <label class="field">
+          <span>考试名称</span>
+          <input name="name" type="text" value="高二数学月考" required>
+        </label>
+        <label class="field">
+          <span>考试日期</span>
+          <input name="date" type="date" required>
+        </label>
+        <label class="field">
+          <span>学科</span>
+          <input name="subject" type="text" value="高二数学" required>
+        </label>
+        <label class="field">
+          <span>班级</span>
+          <input name="className" type="text" value="高二 1 班" required>
+        </label>
+        <label class="field">
+          <span>默认题目数</span>
+          <input name="questionCount" type="number" value="8" min="1" max="20">
+        </label>
+        <label class="field">
+          <span>参考答案图片</span>
+          <input id="answerImages" type="file" accept="image/*" multiple>
+        </label>
+        <div class="actions-row">
+          <button class="button" type="submit">创建考试并上传答案</button>
+          <a class="button-ghost" href="/gaokao/teacher-dashboard.html">返回工作台</a>
+        </div>
+      </form>
+      <p class="status-box" id="createStatus" data-status>填写完考试信息后即可创建。</p>
+    </section>
+  </div>
+  <script src="mvp.js"></script>
+</body>
+</html>

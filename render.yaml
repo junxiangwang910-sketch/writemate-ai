@@ -1,5 +1,29 @@
 services:
   - type: web
+    name: gaokaobao-ai
+    runtime: docker
+    branch: main
+    dockerContext: .
+    dockerfilePath: ./Dockerfile
+    autoDeployTrigger: commit
+    plan: free
+    healthCheckPath: /health
+    envVars:
+      - key: HOST
+        value: 0.0.0.0
+      - key: PORT
+        value: 3000
+      - key: SITE_VARIANT
+        value: gaokao
+      - key: AI_PROVIDER
+        value: openai
+      - key: OPENAI_MODEL
+        value: gpt-5-mini
+      - key: ACTIVATION_CODES
+        value: GAOKAO-TEST-001,GAOKAO-TEST-002,GAOKAO-TEST-003
+      - key: OPENAI_API_KEY
+        sync: false
+  - type: web
     name: studypath-ai
     runtime: node
     branch: main
