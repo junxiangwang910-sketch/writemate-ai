@@ -120,6 +120,30 @@ const GAOKAO_MVP = (() => {
     return query("examId") || window.localStorage.getItem(currentExamKey) || "";
   }
 
+  // 压缩图片到最长边2000px，JPEG质量82%，防止超过服务器8MB限制
+  function compressImage(file, maxSide = 2000, quality = 0.82) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const img = new Image();
+        img.onload = () => {
+          const scale = Math.min(1, maxSide / Math.max(img.width, img.height));
+          const w = Math.round(img.width * scale);
+          const h = Math.round(img.height * scale);
+          const canvas = document.createElement("canvas");
+          canvas.width = w;
+          canvas.height = h;
+          canvas.getContext("2d").drawImage(img, 0, 0, w, h);
+          resolve(canvas.toDataURL("image/jpeg", quality));
+        };
+        img.onerror = () => reject(new Error("图片加载失败"));
+        img.src = e.target.result;
+      };
+      reader.onerror = () => reject(new Error("文件读取失败"));
+      reader.readAsDataURL(file);
+    });
+  }
+
   function dataUrlFromFile(file) {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
@@ -453,7 +477,7 @@ const GAOKAO_MVP = (() => {
       const cards = await Promise.all(files.map(async (file, index) => ({
         studentName: fileStem(file.name) || `学生 ${index + 1}`,
         studentNo: `AUTO-${index + 1}`,
-        imageDataUrl: await dataUrlFromFile(file)
+        imageDataUrl: await compressImage(file)
       })));
       const payload = await api("/api/exams/upload-cards", {
         method: "POST",
@@ -553,7 +577,7 @@ const GAOKAO_MVP = (() => {
       const noteEl = document.querySelector("#scoreDistNote");
       if (noteEl) noteEl.textContent = payload.scoreDistNote || "";
     }
-    status.textContent = "考试分析已生成。当前页面可在无真实数据时展示 mock 演示内容。";
+    status.textContent = "";
   }
 
   async function loadStudentReport() {
