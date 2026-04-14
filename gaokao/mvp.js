@@ -1,10 +1,53 @@
 const GAOKAO_MVP = (() => {
   const currentExamKey = "gaokaobao-current-exam";
   const mockExams = [
-    { id: "mock-exam-1", name: "2026年4月月考", date: "2026-04-10", subject: "高二数学", className: "高二(3)班", studentCount: 28, averageScore: 87.5 },
-    { id: "mock-exam-2", name: "2026年3月周测", date: "2026-03-28", subject: "高二数学", className: "高二(3)班", studentCount: 28, averageScore: 82.3 },
-    { id: "mock-exam-3", name: "2026年3月联考", date: "2026-03-15", subject: "高二数学", className: "高二(3)班", studentCount: 28, averageScore: 79.8 }
+    { id: "mock-exam-1", name: "2026年4月月考", date: "2026-04-10", subject: "高二数学", className: "高二(3)班", studentCount: 28, averageScore: 87.5, hotspot: "导数应用" },
+    { id: "mock-exam-2", name: "2026年3月周测", date: "2026-03-28", subject: "高二数学", className: "高二(3)班", studentCount: 28, averageScore: 82.3, hotspot: "三角函数" },
+    { id: "mock-exam-3", name: "2026年3月联考", date: "2026-03-15", subject: "高二数学", className: "高二(3)班", studentCount: 28, averageScore: 79.8, hotspot: "数列求和" }
   ];
+  const mockStudentReport = {
+    student: { id: "mock-student-1", name: "李同学", className: "高二(3)班", studentNo: "20260318" },
+    latestExam: { id: "mock-exam-1", name: "2026年4月月考", date: "2026-04-10", totalScore: 81 },
+    weakPoints: ["导数单调性", "三角函数变形", "数列求和"],
+    weakAbilities: ["条件转化", "规范书写", "分类讨论"],
+    wrongDetails: [
+      { questionNo: "7", knowledgePoint: "导数应用", mainErrorType: "方法问题", teacherFeedback: "导函数求出后不会继续做区间讨论。" },
+      { questionNo: "3", knowledgePoint: "三角函数", mainErrorType: "步骤问题", teacherFeedback: "公式方向选错，导致后续变形中断。" }
+    ],
+    actionList: ["先补导数单调性 3 题。", "三角函数变形专项 2 题。", "每次订正必须写完整步骤。"],
+    focusTasks: ["导数单调性判断专项", "三角函数公式选择专项", "中档题规范书写回测"],
+    trackingSummary: "该生连续两次在导数和三角函数模块失分较多，建议本周优先跟进。",
+    trend: [
+      { examName: "2026年3月联考", date: "2026-03-15", totalScore: 88 },
+      { examName: "2026年3月周测", date: "2026-03-28", totalScore: 84 },
+      { examName: "2026年4月月考", date: "2026-04-10", totalScore: 81 }
+    ]
+  };
+  const mockExamAnalysis = {
+    exam: { id: "mock-exam-1", name: "2026年4月月考", date: "2026-04-10", subject: "高二数学", className: "高二(3)班" },
+    studentCount: 28,
+    averageScore: 87.5,
+    topIssues: [
+      { label: "方法问题", count: 12 },
+      { label: "计算错误", count: 9 },
+      { label: "规范书写", count: 7 }
+    ],
+    lectureSuggestions: [
+      "先讲导数应用题第一步的切入方式，再讲第二问分类讨论。",
+      "把三角函数公式选择错误当作班级共性问题单独讲 10 分钟。",
+      "对重点学生布置 3 道导数应用回测题，第二天收订正。"
+    ],
+    questionStats: [
+      { questionId: "q7", questionNo: "7", score: 18, knowledgePoint: "导数应用", questionType: "解答题", difficulty: "中高", errorRate: 68, topReason: "方法问题", standardSteps: "求导 -> 解不等式 -> 分区间讨论 -> 写结论" },
+      { questionId: "q2", questionNo: "2", score: 12, knowledgePoint: "三角函数", questionType: "选择题", difficulty: "基础", errorRate: 54, topReason: "步骤问题", standardSteps: "识别结构 -> 选择公式 -> 完成变形 -> 检查范围" },
+      { questionId: "q4", questionNo: "4", score: 12, knowledgePoint: "数列求和", questionType: "填空题", difficulty: "中档", errorRate: 46, topReason: "计算错误", standardSteps: "提取条件 -> 建立公式 -> 代入求和 -> 检查结果" }
+    ],
+    highRiskStudents: [
+      { id: "mock-student-1", name: "李同学", totalScore: 81, tag: "重点跟进" },
+      { id: "mock-student-2", name: "张同学", totalScore: 79, tag: "重点跟进" },
+      { id: "mock-student-3", name: "王同学", totalScore: 77, tag: "重点跟进" }
+    ]
+  };
 
   async function api(url, options = {}) {
     const response = await fetch(url, {
@@ -82,6 +125,7 @@ const GAOKAO_MVP = (() => {
         <div class="pill-row">
           <span class="pill">学生 ${exam.studentCount} 人</span>
           <span class="pill">均分 ${exam.averageScore}</span>
+          <span class="pill warn">⚠️ ${exam.hotspot || "导数应用"}</span>
         </div>
         <div class="actions-row">
           <a class="button-ghost" href="/gaokao/exam-analysis.html?examId=${exam.id}">查看分析</a>
@@ -187,12 +231,15 @@ const GAOKAO_MVP = (() => {
     navify("exam-analysis");
     const examId = getCurrentExamId();
     const status = document.querySelector("#analysisStatus");
-    if (!examId) {
-      status.textContent = "请先创建考试并上传学生答题卡。";
-      return;
+    let payload = mockExamAnalysis;
+    if (examId && !String(examId).startsWith("mock-")) {
+      setCurrentExamId(examId);
+      try {
+        payload = await api(`/api/exams/${examId}/analysis`);
+      } catch (_error) {
+        payload = mockExamAnalysis;
+      }
     }
-    setCurrentExamId(examId);
-    const payload = await api(`/api/exams/${examId}/analysis`);
     document.querySelector("#analysisTitle").textContent = `${payload.exam.name} · ${payload.exam.className}`;
     document.querySelector("#analysisMeta").textContent = `${payload.exam.subject} · ${payload.exam.date}`;
     document.querySelector("#analysisAverage").textContent = String(payload.averageScore);
@@ -230,14 +277,18 @@ const GAOKAO_MVP = (() => {
         </div>
       </article>
     `).join("");
-    status.textContent = "考试分析已生成，当前为 mock AI 数据。";
+    status.textContent = "考试分析已生成。当前页面可在无真实数据时展示 mock 演示内容。";
   }
 
   async function loadStudentReport() {
     const studentId = query("studentId");
     const examId = query("examId") || getCurrentExamId();
-    if (!studentId) throw new Error("缺少 studentId");
-    return api(`/api/students/${studentId}/report?examId=${encodeURIComponent(examId || "")}`);
+    if (!studentId || String(studentId).startsWith("mock-")) return mockStudentReport;
+    try {
+      return await api(`/api/students/${studentId}/report?examId=${encodeURIComponent(examId || "")}`);
+    } catch (_error) {
+      return mockStudentReport;
+    }
   }
 
   async function initStudentReport() {

@@ -104,6 +104,18 @@ a {
   margin-top: 24px;
 }
 
+.alert-banner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 18px;
+  border: 1px solid #f5d27a;
+  border-radius: 8px;
+  background: #fff8db;
+  color: #8a5a00;
+  font-weight: 700;
+}
+
 .section-header {
   margin-bottom: 14px;
 }
@@ -145,6 +157,11 @@ a {
   font-size: 36px;
   font-weight: 800;
   color: var(--brand);
+}
+
+.stat-card.alert strong,
+.stat-card.alert .stat-value {
+  color: #dc2626;
 }
 
 .card-title {
@@ -287,6 +304,11 @@ button {
   color: var(--brand);
   font-size: 13px;
   font-weight: 700;
+}
+
+.pill.warn {
+  background: #fff1df;
+  color: #b45309;
 }
 
 .student-layout {
