@@ -944,43 +944,165 @@ function generateTeachFocus(knowledgePoint, errorType) {
   return "重点讲关键步骤的选择逻辑，而不是直接展示答案。";
 }
 
-function createMockAiAnalysis(question, index = 0) {
-  const variants = [
-    {
-      step_reached: 2,
-      main_error_type: "方法问题",
-      secondary_error_type: "计算错误",
-      weak_knowledge_points: ["导数求解", "单调区间判断"],
-      weak_ability_points: ["解不等式", "规范书写"],
-      teacher_feedback: "该生掌握基本求导方法，但在令 f'(x) > 0 解不等式时方向判断有误，建议重点讲解。",
-      student_feedback: "你已经会求导了，下一步重点练习解不等式的方向判断。",
-      next_practice_focus: "导数单调性判断专项练习",
-      confidence: "中"
-    },
-    {
-      step_reached: 1,
-      main_error_type: "步骤问题",
-      secondary_error_type: "审题偏差",
-      weak_knowledge_points: ["函数性质", "图像识别"],
-      weak_ability_points: ["条件提取", "题型识别"],
-      teacher_feedback: "该生在识别题目切入点时就出现偏差，建议先带着学生判断题型，再进入公式计算。",
-      student_feedback: "这题问题不在公式，而在第一步没有判断清楚题型，先练审题和切入点。",
-      next_practice_focus: "函数图像与性质识别题",
-      confidence: "中"
-    },
-    {
-      step_reached: 3,
-      main_error_type: "习惯问题",
-      secondary_error_type: "规范书写",
-      weak_knowledge_points: [question.knowledgePoint || "解析几何"],
-      weak_ability_points: ["过程表达", "结果回扣"],
-      teacher_feedback: "该生思路基本正确，但过程表达不完整，导致步骤分损失明显。",
-      student_feedback: "你方向是对的，但步骤写得不完整，下一步重点练规范书写。",
-      next_practice_focus: "中档题书写规范训练",
-      confidence: "中"
-    }
-  ];
-  return variants[index % variants.length];
+function createMockAiAnalysis(question, scoreLevel = 0) {
+  // scoreLevel: 0 = 中等失分(50-95%), 1 = 严重失分(<50%), 2 = 接近满分(>95%,小问题)
+  const kp = String(question.knowledgePoint || question.knowledge_point || "");
+
+  const profiles = {
+    "导数": [
+      { step_reached: 2, main_error_type: "方法问题", secondary_error_type: "条件转化失败",
+        weak_knowledge_points: ["导函数符号判断", "单调区间建立"],
+        weak_ability_points: ["条件转化", "不等式解法"],
+        teacher_feedback: "该生能正确求出导函数，但令f'(x)>0后不会建立区间不等式，卡在第2步。讲评时重点示范\"求完导之后怎么判断正负号和区间\"。",
+        student_feedback: "你已经会求导了！问题在求完导之后——要把f'(x)>0变成一个关于x的不等式再去解，这周专练这一步。",
+        next_practice_focus: "导函数符号判断与区间建立专项3题" },
+      { step_reached: 1, main_error_type: "步骤问题", secondary_error_type: "审题偏差",
+        weak_knowledge_points: ["导数应用题型识别", "求导规则"],
+        weak_ability_points: ["题型判断", "切入点选择"],
+        teacher_feedback: "该生看到导数题就开始求导，但没有先判断题目问的是单调性还是极值还是最值，方向从一开始就偏了。建议先训练\"读完题先问自己题目让我干什么\"。",
+        student_feedback: "这题你第一步方向就错了，不是求导的问题。先读题：题目让你求的是什么？单调区间还是极值？方向对了再下手。",
+        next_practice_focus: "导数应用题型识别与切入点判断专项" },
+      { step_reached: 3, main_error_type: "习惯问题", secondary_error_type: "结论不完整",
+        weak_knowledge_points: ["结论规范表达"],
+        weak_ability_points: ["书写完整性"],
+        teacher_feedback: "该生思路和计算完全正确，失分在最后结论没有写成\"综上，f(x)在(a,b)上单调递增\"的规范格式，提醒按格式写结论。",
+        student_feedback: "你方向和计算都对！最后结论按格式写：'综上，f(x)在...上单调递增'，这样就能拿满分。",
+        next_practice_focus: "导数解答题结论规范书写训练" }
+    ],
+    "三角": [
+      { step_reached: 2, main_error_type: "方法问题", secondary_error_type: "公式选择错误",
+        weak_knowledge_points: ["二倍角公式", "辅助角公式", "和差化积"],
+        weak_ability_points: ["公式变形方向判断", "同角转化"],
+        teacher_feedback: "该生知道要用三角公式，但选择了错误的变形方向，导致式子越来越复杂。讲评时不要只讲答案，先带学生判断\"看到asinx+bcosx要想到辅助角，看到sin2x要想到二倍角\"。",
+        student_feedback: "你知道要变形，但方向选错了。记住：看到sin和cos的和就想辅助角公式，看到2倍角就想降次。专练公式选择的判断。",
+        next_practice_focus: "三角公式选择方向专项训练" },
+      { step_reached: 1, main_error_type: "步骤问题", secondary_error_type: "题型识别失败",
+        weak_knowledge_points: ["三角函数题型分类", "化简与求值的区别"],
+        weak_ability_points: ["题型识别", "解题路径规划"],
+        teacher_feedback: "该生看到三角式就直接套公式，没有先判断题型是\"化简\"还是\"求值\"，导致变形路径完全错误。建议从题型分类开始训练。",
+        student_feedback: "先想：这道题让你化简还是求值？这两种题的方向完全不同。搞清楚再动笔。",
+        next_practice_focus: "三角函数题型识别与路径选择专项" },
+      { step_reached: 3, main_error_type: "习惯问题", secondary_error_type: "范围遗漏",
+        weak_knowledge_points: ["角的范围核查", "定义域约束"],
+        weak_ability_points: ["结果验证", "范围意识"],
+        teacher_feedback: "该生变形过程完全正确，但最后忘记检查角的范围，导致答案不完整或有增根。提醒每次最后一步都要核查范围。",
+        student_feedback: "算完之后要检查一步：你的角x在题目限定的范围内吗？三角函数很容易漏掉这个检查。",
+        next_practice_focus: "三角函数范围核查与结果验证训练" }
+    ],
+    "数列": [
+      { step_reached: 2, main_error_type: "方法问题", secondary_error_type: "求和方法选错",
+        weak_knowledge_points: ["错位相减法", "裂项求和", "等差等比求和"],
+        weak_ability_points: ["求和方法匹配", "分类意识"],
+        teacher_feedback: "该生能正确写出通项公式，但在求和时方法选错（比如对n·qⁿ型用了普通等比求和），导致过程卡死。讲评时重点训练\"看到什么形式的通项选什么求和方法\"。",
+        student_feedback: "通项你建对了！求和的时候要先判断是什么类型：纯等差/等比用公式，有n乘q^n的用错位相减法，记住这个分类就够了。",
+        next_practice_focus: "数列求和方法识别与匹配专项" },
+      { step_reached: 1, main_error_type: "步骤问题", secondary_error_type: "数列类型判断失误",
+        weak_knowledge_points: ["等差数列识别", "等比数列识别", "递推关系"],
+        weak_ability_points: ["条件提取", "数列类型判断"],
+        teacher_feedback: "该生从已知条件无法判断是等差还是等比数列，导致公式用错。建议专练从条件特征识别数列类型。",
+        student_feedback: "先看：相邻两项之差固定→等差；之比固定→等比；有递推关系→先找规律。判断对了再套公式。",
+        next_practice_focus: "数列类型识别与条件分析专项" },
+      { step_reached: 3, main_error_type: "习惯问题", secondary_error_type: "计算粗心",
+        weak_knowledge_points: ["代入计算准确性"],
+        weak_ability_points: ["运算规范", "结果检验"],
+        teacher_feedback: "该生方法和路径完全正确，失分在代入计算环节粗心出错。要求写出每步计算过程，不跳步。",
+        student_feedback: "方法全对！计算时把每步都写出来，不要跳步，写完验算一遍就能拿满分。",
+        next_practice_focus: "数列计算规范与检验训练" }
+    ],
+    "解析几何": [
+      { step_reached: 2, main_error_type: "方法问题", secondary_error_type: "消元策略失误",
+        weak_knowledge_points: ["联立方程消元", "韦达定理应用", "判别式"],
+        weak_ability_points: ["消元策略选择", "代数化简"],
+        teacher_feedback: "该生能正确建立方程组，但消元时代入方向选错或漏考虑判别式，导致计算量暴增或漏根。讲评时重点演练消元顺序的选择。",
+        student_feedback: "方程列对了！消元时先想：从哪个方程代入计算量最小？还有，联立方程一定要考虑判别式是否大于0。",
+        next_practice_focus: "解析几何联立消元策略专项" },
+      { step_reached: 1, main_error_type: "步骤问题", secondary_error_type: "建模转化失败",
+        weak_knowledge_points: ["几何条件代数化", "坐标系选择", "曲线方程建立"],
+        weak_ability_points: ["几何直觉", "代数建模"],
+        teacher_feedback: "该生看到图形无法把几何条件转化为代数方程，卡在第一步。建议专练\"把已知几何关系翻译成坐标方程\"。",
+        student_feedback: "解析几何的核心是：把所有已知条件翻译成含x和y的方程。先把题目的每句话都写成方程，再联立。",
+        next_practice_focus: "几何条件代数化翻译专项训练" },
+      { step_reached: 3, main_error_type: "习惯问题", secondary_error_type: "增根未验证",
+        weak_knowledge_points: ["结果代回验证", "排除增根"],
+        weak_ability_points: ["结果合理性检验"],
+        teacher_feedback: "该生计算结果正确，但没有代回原方程检验是否满足几何条件（常见增根：直线斜率不存在的情况）。",
+        student_feedback: "算完记得把结果代回去验证一遍——解析几何特别容易出增根，比如斜率不存在的情况。",
+        next_practice_focus: "解析几何结果验证与增根排查专项" }
+    ],
+    "立体几何": [
+      { step_reached: 2, main_error_type: "方法问题", secondary_error_type: "证明步骤跳跃",
+        weak_knowledge_points: ["线面平行证明", "线面垂直证明", "二面角计算"],
+        weak_ability_points: ["推理链完整性", "引理使用规范"],
+        teacher_feedback: "该生空间关系判断正确，但证明过程跳过关键引理，导致步骤不完整失分。讲评时让学生自己补充缺少的步骤。",
+        student_feedback: "你空间感是对的！但证明时每一步都要写清楚用了哪条定理，不能直接跳到结论。",
+        next_practice_focus: "立体几何证明完整步骤规范训练" },
+      { step_reached: 1, main_error_type: "步骤问题", secondary_error_type: "空间关系判断失误",
+        weak_knowledge_points: ["空间线面位置关系", "空间想象能力"],
+        weak_ability_points: ["空间可视化", "图形分析"],
+        teacher_feedback: "该生空间想象能力弱，在图形中无法正确判断线面关系，导致证明方向错误。建议多画截面图辅助分析。",
+        student_feedback: "碰到立体几何先画图，把所有条件标在图上，在图上找关系，比凭空想要清楚很多。",
+        next_practice_focus: "立体几何空间关系识别与画图专项" },
+      { step_reached: 3, main_error_type: "习惯问题", secondary_error_type: "计算粗心",
+        weak_knowledge_points: ["三角计算", "空间距离公式"],
+        weak_ability_points: ["计算准确性"],
+        teacher_feedback: "该生证明部分完全正确，最后数值计算粗心失分。提醒写出完整计算过程不跳步。",
+        student_feedback: "证明做得很好！最后计算别着急，把过程写完整，细心一点就能拿满分。",
+        next_practice_focus: "立体几何计算规范训练" }
+    ],
+    "概率": [
+      { step_reached: 2, main_error_type: "方法问题", secondary_error_type: "事件遗漏",
+        weak_knowledge_points: ["古典概型列举", "条件概率", "独立事件"],
+        weak_ability_points: ["事件分类完整性", "概率计算"],
+        teacher_feedback: "该生确定了样本空间，但在列举目标事件时遗漏了部分情况，导致概率值偏小。讲评时用树形图或列表帮助系统列举。",
+        student_feedback: "求概率时，把所有可能的情况画成树形图，一个都不能漏。",
+        next_practice_focus: "概率事件系统列举与树形图专项" },
+      { step_reached: 1, main_error_type: "步骤问题", secondary_error_type: "模型判断失误",
+        weak_knowledge_points: ["概率模型识别", "样本空间确定"],
+        weak_ability_points: ["问题建模", "随机变量理解"],
+        teacher_feedback: "该生无法判断题目属于古典概型还是条件概率，从第一步就走错路。建议从概率模型分类开始训练。",
+        student_feedback: "先判断：题目是等可能的古典概型，还是有条件限制的条件概率？判断对了再解题。",
+        next_practice_focus: "概率模型识别与分类专项训练" },
+      { step_reached: 3, main_error_type: "习惯问题", secondary_error_type: "化简出错",
+        weak_knowledge_points: ["分数化简", "数值计算"],
+        weak_ability_points: ["计算准确性"],
+        teacher_feedback: "该生概率计算过程正确，最后分数化简出错。提醒约分要仔细。",
+        student_feedback: "思路完全正确！最后约分的时候检查一下，别在最后一步丢分。",
+        next_practice_focus: "概率计算与化简规范训练" }
+    ]
+  };
+
+  // 匹配知识点profile
+  let levels = null;
+  for (const [key, val] of Object.entries(profiles)) {
+    if (kp.includes(key)) { levels = val; break; }
+  }
+
+  // 通用兜底
+  if (!levels) {
+    levels = [
+      { step_reached: 2, main_error_type: "方法问题", secondary_error_type: "步骤断裂",
+        weak_knowledge_points: [kp || "核心方法"],
+        weak_ability_points: ["条件转化", "方法选择"],
+        teacher_feedback: `该生在${kp}题上方向正确但关键步骤断裂，建议示范关键步骤的推导过程。`,
+        student_feedback: "思路方向对了，关键步骤再专项练一练。",
+        next_practice_focus: `${kp}关键步骤专项练习` },
+      { step_reached: 1, main_error_type: "步骤问题", secondary_error_type: "审题偏差",
+        weak_knowledge_points: [kp || "基础概念"],
+        weak_ability_points: ["题型识别", "切入点判断"],
+        teacher_feedback: `该生在${kp}题上从切入点就出现偏差，建议从题型识别开始训练。`,
+        student_feedback: "先读题搞清楚让你干什么，方向对了再动笔。",
+        next_practice_focus: `${kp}题型识别专项` },
+      { step_reached: 3, main_error_type: "习惯问题", secondary_error_type: "规范书写",
+        weak_knowledge_points: ["书写规范"],
+        weak_ability_points: ["表达完整性"],
+        teacher_feedback: "该生思路正确，步骤书写不够完整导致步骤分损失。",
+        student_feedback: "方向是对的，把步骤写完整就能多拿分。",
+        next_practice_focus: "规范书写专项训练" }
+    ];
+  }
+
+  const level = Math.max(0, Math.min(2, scoreLevel));
+  return { ...levels[level], confidence: level === 1 ? "高" : "中" };
 }
 
 function buildDefaultQuestions(examId, count = 8) {
