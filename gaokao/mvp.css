@@ -438,6 +438,52 @@ button {
   font-size: 14px;
 }
 
+.dist-chart {
+  display: flex;
+  align-items: flex-end;
+  gap: 12px;
+  height: 120px;
+  margin-top: 16px;
+  padding-bottom: 28px;
+  position: relative;
+}
+
+.dist-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  flex: 1;
+}
+
+.dist-bar {
+  width: 100%;
+  border-radius: 6px 6px 0 0;
+  background: var(--brand);
+  transition: height 0.6s ease;
+  min-height: 4px;
+}
+
+.dist-bar.highlight {
+  background: #15803d;
+}
+
+.dist-bar.warn {
+  background: #dc2626;
+}
+
+.dist-label {
+  font-size: 12px;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.dist-count {
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--ink);
+}
+
 .section-divider {
   margin: 18px 0 10px;
   padding-top: 16px;

@@ -1,9 +1,9 @@
 const GAOKAO_MVP = (() => {
   const currentExamKey = "gaokaobao-current-exam";
   const mockExams = [
-    { id: "mock-exam-1", name: "2026年4月月考", date: "2026-04-10", subject: "高二数学", className: "高二(3)班", studentCount: 28, averageScore: 87.5, hotspot: "导数应用" },
-    { id: "mock-exam-2", name: "2026年3月周测", date: "2026-03-28", subject: "高二数学", className: "高二(3)班", studentCount: 28, averageScore: 82.3, hotspot: "三角函数" },
-    { id: "mock-exam-3", name: "2026年3月联考", date: "2026-03-15", subject: "高二数学", className: "高二(3)班", studentCount: 28, averageScore: 79.8, hotspot: "数列求和" }
+    { id: "mock-exam-1", name: "2026年4月月考", date: "2026-04-10", subject: "高二数学", className: "高二(3)班", studentCount: 28, averageScore: 87.5, scoreChange: "-4.2", changeTrend: "down", hotspot: "导数应用" },
+    { id: "mock-exam-2", name: "2026年3月周测", date: "2026-03-28", subject: "高二数学", className: "高二(3)班", studentCount: 28, averageScore: 82.3, scoreChange: "+2.5", changeTrend: "up", hotspot: "三角函数" },
+    { id: "mock-exam-3", name: "2026年3月联考", date: "2026-03-15", subject: "高二数学", className: "高二(3)班", studentCount: 28, averageScore: 79.8, scoreChange: "-3.1", changeTrend: "down", hotspot: "数列求和" }
   ];
   const mockDashboardFocus = [
     { rank: 1, level: "warn", title: "高二(3)班平均分下滑 4.2 分", copy: "主因集中在解析几何和导数应用，建议先看考试分析页的讲评优先级。" },
@@ -18,7 +18,7 @@ const GAOKAO_MVP = (() => {
   const mockStudentReport = {
     student: { id: "mock-student-1", name: "李同学", className: "高二(3)班", studentNo: "20260318" },
     latestExam: { id: "mock-exam-1", name: "2026年4月月考", date: "2026-04-10", totalScore: 81 },
-    stepReached: "第 2 步",
+    stepReached: "第 3 步",
     repeatStatus: "重复出现",
     pathSummary: "这次真正拉低分数的不是“不会求导”，而是在导数应用题里，做完求导后不会继续把条件转成区间判断，所以总卡在第二步。",
     weakPoints: ["导数单调性", "三角函数变形", "数列求和"],
@@ -84,7 +84,15 @@ const GAOKAO_MVP = (() => {
       { id: "mock-student-3", name: "王同学", totalScore: 77, tag: "重点跟进 · 解析几何建模步骤断裂" },
       { id: "mock-student-4", name: "赵同学", totalScore: 74, tag: "高风险 · 连续三次下滑" },
       { id: "mock-student-5", name: "刘同学", totalScore: 91, tag: "改善中 · 数列模块已明显提升" }
-    ]
+    ],
+    scoreDistribution: [
+      { range: "60分以下", count: 1, type: "warn" },
+      { range: "60-70", count: 2, type: "warn" },
+      { range: "70-80", count: 5, type: "" },
+      { range: "80-90", count: 12, type: "" },
+      { range: "90-100", count: 8, type: "highlight" }
+    ],
+    scoreDistNote: "全班28人中，90分以上8人（28.6%），80-90分12人（42.9%），70分以下3人需重点跟进。"
   };
 
   async function api(url, options = {}) {
@@ -158,7 +166,10 @@ const GAOKAO_MVP = (() => {
             <h3 class="item-title">${exam.name}</h3>
             <p class="item-meta">${exam.subject} · ${exam.className} · ${exam.date}</p>
           </div>
-          <strong>${exam.averageScore}</strong>
+          <div style="text-align:right">
+            <strong>${exam.averageScore}</strong>
+            ${exam.scoreChange ? `<div class="compare-change ${exam.changeTrend}" style="font-size:13px">${exam.scoreChange}</div>` : ""}
+          </div>
         </div>
         <div class="pill-row">
           <span class="pill">学生 ${exam.studentCount} 人</span>
@@ -355,6 +366,21 @@ const GAOKAO_MVP = (() => {
       </article>
     `;
     }).join("");
+    const distData = payload.scoreDistribution || [];
+    if (distData.length) {
+      const maxDistCount = Math.max(...distData.map((d) => d.count));
+      const chartH = 88;
+      document.querySelector("#scoreDistChart").innerHTML = distData.map((item) => {
+        const barH = Math.max(4, Math.round((item.count / maxDistCount) * chartH));
+        return `<div class="dist-col">
+          <span class="dist-count">${item.count}人</span>
+          <div class="dist-bar ${item.type}" style="height:${barH}px"></div>
+          <span class="dist-label">${item.range}</span>
+        </div>`;
+      }).join("");
+      const noteEl = document.querySelector("#scoreDistNote");
+      if (noteEl) noteEl.textContent = payload.scoreDistNote || "";
+    }
     status.textContent = "考试分析已生成。当前页面可在无真实数据时展示 mock 演示内容。";
   }
 
