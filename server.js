@@ -5467,6 +5467,9 @@ const server = http.createServer(async (req, res) => {
           INSERT INTO question_scores (id, exam_id, student_id, question_id, score_got, ai_analysis)
           VALUES (?, ?, ?, ?, ?, ?)
         `);
+        const aiTargetQuestion = questions.reduce((best, q) =>
+          Number(q.score) > Number(best.score) ? q : best, questions[0]
+        );
         const scoredRows = [];
         for (let questionIndex = 0; questionIndex < questions.length; questionIndex++) {
           const question = questions[questionIndex];
@@ -5474,7 +5477,7 @@ const server = http.createServer(async (req, res) => {
           let analysis = null;
           let scoreGot = 0;
 
-          if (card.imageDataUrl && (OPENAI_API_KEY || DEEPSEEK_API_KEY)) {
+          if (card.imageDataUrl && question.id === aiTargetQuestion.id && (OPENAI_API_KEY || DEEPSEEK_API_KEY)) {
             analysis = await analyzeStudentAnswer(card.imageDataUrl, question);
           }
 
