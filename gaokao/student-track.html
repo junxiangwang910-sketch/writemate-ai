@@ -10,8 +10,8 @@
   <div class="page-shell">
     <header class="topbar">
       <div>
-        <p class="brand-title">高考宝</p>
-        <p class="brand-subtitle">老师工作台 / 当前位置：一对一跟踪</p>
+        <p class="brand-title">高考宝 · 楚汉高中</p>
+        <p class="brand-subtitle">高二数学 · 2025-2026学年第二学期 / 当前位置：学生跟踪</p>
       </div>
       <nav class="nav">
         <a data-nav-page="teacher-dashboard" href="/gaokao/teacher-dashboard.html">工作台</a>
@@ -35,6 +35,7 @@
       <div class="grid cols-2">
         <article class="card">
           <h2 class="card-title">近几次成绩变化</h2>
+          <canvas id="trendChart" width="400" height="120" style="width:100%;max-width:400px;display:block;margin-bottom:16px;"></canvas>
           <div class="student-list" id="trendList"></div>
         </article>
         <article class="card">

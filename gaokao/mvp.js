@@ -79,9 +79,11 @@ const GAOKAO_MVP = (() => {
       { questionId: "q4", questionNo: "4", score: 12, knowledgePoint: "数列求和", questionType: "填空题", difficulty: "中档", errorRate: 46, topReason: "计算错误", standardSteps: "提取条件 -> 建立公式 -> 代入求和 -> 检查结果", whyWrong: "多数学生到最后一步才错，属于公式会用但结果不稳。", teachFocus: "讲评时带着学生复盘最后两步的计算与检查。", priority: "中" }
     ],
     highRiskStudents: [
-      { id: "mock-student-1", name: "李同学", totalScore: 81, tag: "重点跟进" },
-      { id: "mock-student-2", name: "张同学", totalScore: 79, tag: "重点跟进" },
-      { id: "mock-student-3", name: "王同学", totalScore: 77, tag: "重点跟进" }
+      { id: "mock-student-1", name: "李同学", totalScore: 81, tag: "重点跟进 · 导数应用连续失分" },
+      { id: "mock-student-2", name: "张同学", totalScore: 79, tag: "重点跟进 · 三角函数方向判断反复出错" },
+      { id: "mock-student-3", name: "王同学", totalScore: 77, tag: "重点跟进 · 解析几何建模步骤断裂" },
+      { id: "mock-student-4", name: "赵同学", totalScore: 74, tag: "高风险 · 连续三次下滑" },
+      { id: "mock-student-5", name: "刘同学", totalScore: 91, tag: "改善中 · 数列模块已明显提升" }
     ]
   };
 
@@ -300,7 +302,18 @@ const GAOKAO_MVP = (() => {
     document.querySelector("#analysisAverage").textContent = String(payload.averageScore);
     document.querySelector("#analysisStudents").textContent = String(payload.studentCount);
     renderPriorityList(document.querySelector("#lecturePriorityList"), payload.lecturePriority || []);
-    document.querySelector("#errorDistribution").innerHTML = (payload.errorDistribution || []).map((item) => `<li>${item.label} · ${item.count} 人次</li>`).join("");
+    const maxCount = Math.max(...(payload.errorDistribution || []).map((i) => i.count), 1);
+    document.querySelector("#errorDistribution").innerHTML = `<div class="bar-chart">${
+      (payload.errorDistribution || []).map((item) => {
+        const pct = Math.round((item.count / maxCount) * 100);
+        const isDanger = item.label.includes("断裂") || item.label.includes("审题");
+        return `<div class="bar-row">
+          <span>${item.label}</span>
+          <div class="bar-track"><div class="bar-fill ${isDanger ? "danger" : ""}" style="width:${pct}%"></div></div>
+          <span class="bar-count">${item.count}人</span>
+        </div>`;
+      }).join("")
+    }</div>`;
     document.querySelector("#errorDistributionNote").textContent = payload.errorDistributionNote || "";
     document.querySelector("#issueList").innerHTML = payload.topIssues.map((item) => `<li>${item.label} · ${item.count} 次</li>`).join("");
     document.querySelector("#lectureSuggestions").innerHTML = payload.lectureSuggestions.map((item) => `<li>${item}</li>`).join("");
@@ -324,8 +337,10 @@ const GAOKAO_MVP = (() => {
         <p class="item-meta"><strong>讲评重点：</strong>${item.teachFocus || ""}</p>
       </article>
     `).join("");
-    document.querySelector("#highRiskStudents").innerHTML = payload.highRiskStudents.map((item) => `
-      <article class="item">
+    document.querySelector("#highRiskStudents").innerHTML = payload.highRiskStudents.map((item) => {
+      const isImproving = item.tag.includes("改善中");
+      return `
+      <article class="item ${isImproving ? "improving" : ""}">
         <div class="item-head">
           <div>
             <h3 class="item-title">${item.name}</h3>
@@ -338,7 +353,8 @@ const GAOKAO_MVP = (() => {
           <a class="button-ghost" href="/gaokao/student-track.html?studentId=${item.id}&examId=${payload.exam.id}">查看跟踪</a>
         </div>
       </article>
-    `).join("");
+    `;
+    }).join("");
     status.textContent = "考试分析已生成。当前页面可在无真实数据时展示 mock 演示内容。";
   }
 
@@ -362,9 +378,14 @@ const GAOKAO_MVP = (() => {
     document.querySelector("#stepReached").textContent = payload.stepReached || "--";
     document.querySelector("#repeatStatus").textContent = payload.repeatStatus || "--";
     document.querySelector("#pathSummary").textContent = payload.pathSummary || "";
-    document.querySelector("#stepPath").innerHTML = (payload.stepPath || []).map((item, index) => `
-      <span class="step-chip ${index === 2 ? "current" : ""}">${item}</span>
-    `).join("");
+    document.querySelector("#stepPath").innerHTML = (payload.stepPath || []).map((item, index) => {
+      // stepReached 格式是"第 N 步"，提取 N 得到 1-based 步骤序号，转换成 0-based index
+      const reachedStr = payload.stepReached || "";
+      const reachedNum = parseInt(reachedStr.replace(/[^\d]/g, ""), 10);
+      const stuckAt = isNaN(reachedNum) ? 2 : reachedNum - 1; // 转成0-based
+      const cls = index < stuckAt ? "done" : index === stuckAt ? "current" : "blocked";
+      return `<span class="step-chip ${cls}">${item}</span>`;
+    }).join("");
     document.querySelector("#weakPoints").innerHTML = (payload.weakPoints || []).map((item) => `<li>${item}</li>`).join("");
     document.querySelector("#weakAbilities").innerHTML = (payload.weakAbilities || []).map((item) => `<li>${item}</li>`).join("");
     document.querySelector("#actionList").innerHTML = (payload.actionList || []).map((item) => `<li>${item}</li>`).join("");
@@ -434,6 +455,52 @@ const GAOKAO_MVP = (() => {
         <div class="trend-badge ${item.trend}">${item.trend === "up" ? "改善中" : "需继续跟进"}</div>
       </div>
     `).join("");
+
+    const canvas = document.querySelector("#trendChart");
+    if (canvas && payload.trend?.length) {
+      const ctx = canvas.getContext("2d");
+      const scores = payload.trend.map((t) => t.totalScore);
+      const min = Math.min(...scores) - 5;
+      const max = Math.max(...scores) + 5;
+      const W = canvas.width;
+      const H = canvas.height;
+      const pad = { l: 30, r: 20, t: 16, b: 24 };
+      const toX = (i) => pad.l + i * (W - pad.l - pad.r) / Math.max(scores.length - 1, 1);
+      const toY = (v) => pad.t + (1 - (v - min) / Math.max(max - min, 1)) * (H - pad.t - pad.b);
+      ctx.clearRect(0, 0, W, H);
+      ctx.strokeStyle = "#e0e7ef";
+      ctx.lineWidth = 1;
+      [0.25, 0.5, 0.75, 1].forEach((r) => {
+        const y = pad.t + r * (H - pad.t - pad.b);
+        ctx.beginPath();
+        ctx.moveTo(pad.l, y);
+        ctx.lineTo(W - pad.r, y);
+        ctx.stroke();
+      });
+      ctx.strokeStyle = "#2563eb";
+      ctx.lineWidth = 2.5;
+      ctx.lineJoin = "round";
+      ctx.beginPath();
+      scores.forEach((s, i) => i === 0 ? ctx.moveTo(toX(i), toY(s)) : ctx.lineTo(toX(i), toY(s)));
+      ctx.stroke();
+      scores.forEach((s, i) => {
+        const isDown = i > 0 && s < scores[i - 1];
+        ctx.beginPath();
+        ctx.arc(toX(i), toY(s), 5, 0, Math.PI * 2);
+        ctx.fillStyle = isDown ? "#dc2626" : "#2563eb";
+        ctx.fill();
+        ctx.fillStyle = "#17324d";
+        ctx.font = "bold 12px sans-serif";
+        ctx.textAlign = "center";
+        ctx.fillText(s, toX(i), toY(s) - 10);
+      });
+      payload.trend.forEach((t, i) => {
+        ctx.fillStyle = "#6b7280";
+        ctx.font = "11px sans-serif";
+        ctx.textAlign = "center";
+        ctx.fillText(t.examName.replace("2026年", ""), toX(i), H - 6);
+      });
+    }
   }
 
   async function initStudentHome() {
