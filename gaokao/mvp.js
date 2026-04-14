@@ -449,7 +449,7 @@ const GAOKAO_MVP = (() => {
         status.textContent = "请先选择学生答题卡图片。";
         return;
       }
-      status.textContent = "正在上传并生成 mock 分析...";
+      status.textContent = "正在上传并AI分析中，请稍候（约20-30秒）...";
       const cards = await Promise.all(files.map(async (file, index) => ({
         studentName: fileStem(file.name) || `学生 ${index + 1}`,
         studentNo: `AUTO-${index + 1}`,

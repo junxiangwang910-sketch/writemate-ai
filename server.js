@@ -947,13 +947,13 @@ function generateTeachFocus(knowledgePoint, errorType) {
 function buildAnalysisPrompt(question) {
   return `你是高中数学阅卷专家。请仔细看这名学生的作答图片。
 
-题目知识点：${question.knowledge_point}
-题目类型：${question.question_type}
-满分：${question.score}分
+请找到并分析【第${question.question_no}题】（${question.knowledge_point}，${question.question_type}，满分${question.score}分）的作答内容。
+如果图片中有多道题，请只看第${question.question_no}题的作答区域。
+
 标准步骤：${question.standard_steps}
 标准答案要点：${question.standard_answer}
 
-请逐步对比学生作答和标准步骤，判断：
+请逐步对比该题的学生作答和标准步骤，判断：
 1. step_reached：学生完整写出了标准步骤中的第几步（数字，从1开始，如果完全没写或方向全错填1）
 2. main_error_type：主要错误类型，从"方法问题/步骤问题/计算错误/习惯问题"选一个
 3. secondary_error_type：次要错误简述
