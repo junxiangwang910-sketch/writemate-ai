@@ -460,6 +460,10 @@ const GAOKAO_MVP = (() => {
         body: JSON.stringify({ examId, cards })
       });
       status.innerHTML = `已处理 ${payload.uploaded} 份答题卡。<a href="/gaokao/exam-analysis.html?examId=${examId}">查看考试分析</a>`;
+      const firstStudent = payload.students?.[0];
+      if (firstStudent) {
+        status.innerHTML += ` <a href="/gaokao/student-report.html?studentId=${firstStudent.studentId}&examId=${examId}" style="margin-left:12px;font-weight:800">▶ 查看AI诊断报告</a>`;
+      }
     });
   }
 
@@ -571,6 +575,13 @@ const GAOKAO_MVP = (() => {
     document.querySelector("#studentScore").textContent = payload.latestExam?.totalScore ?? "--";
     document.querySelector("#stepReached").textContent = payload.stepReached || "--";
     document.querySelector("#repeatStatus").textContent = payload.repeatStatus || "--";
+    const badge = document.querySelector("#aiSourceBadge");
+    if (badge) {
+      const src = payload.aiSource || "";
+      badge.textContent = src === "openai_vision"
+        ? "🤖 以下诊断由 AI 读取学生作答图片后生成"
+        : "📋 以下诊断基于录入分数与知识点规则生成";
+    }
     document.querySelector("#pathSummary").textContent = payload.pathSummary || "";
     document.querySelector("#stepPath").innerHTML = (payload.stepPath || []).map((item, index) => {
       // stepReached 格式是"第 N 步"，提取 N 得到 1-based 步骤序号，转换成 0-based index

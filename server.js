@@ -1552,6 +1552,7 @@ function buildStudentReport(studentId, examId) {
       date: exam.date,
       totalScore
     },
+    aiSource: worstAnalysis._source || "",
     stepReached,
     stepPath,
     pathSummary,
@@ -5087,6 +5088,149 @@ async function extractGaokaoImage({ imageDataUrl, subject }) {
   };
 }
 
+async function extractGenericOcr({ images, mode, hint }) {
+  const normalizedImages = Array.isArray(images)
+    ? images
+      .map((item) => String(item || "").trim())
+      .filter((item) => /^data:image\/[a-zA-Z0-9.+-]+;base64,/.test(item))
+      .slice(0, 4)
+    : [];
+
+  if (!normalizedImages.length) {
+    throw new Error("OCR_IMAGE_REQUIRED");
+  }
+
+  const provider = imageOcrProvider();
+  if (provider === "baidu") {
+    const parsed = await baiduOcrGenericImage({ imageDataUrl: normalizedImages[0], mode });
+    return {
+      ...parsed,
+      provider: "baidu"
+    };
+  }
+
+  if (!OPENAI_API_KEY) {
+    return {
+      title: "",
+      text: "",
+      lines: [],
+      confidence: "low",
+      provider: "none",
+      notes: "当前环境还没有配置 OCR 服务密钥。补上 OpenAI 或百度 OCR 配置后，这个通用 OCR 页面就能直接使用。"
+    };
+  }
+
+  const schema = {
+    type: "object",
+    additionalProperties: false,
+    required: ["title", "text", "lines", "confidence", "notes"],
+    properties: {
+      title: { type: "string" },
+      text: { type: "string" },
+      lines: {
+        type: "array",
+        items: { type: "string" }
+      },
+      confidence: {
+        type: "string",
+        enum: ["high", "medium", "low"]
+      },
+      notes: { type: "string" }
+    }
+  };
+
+  const modeLabel = mode === "handwriting"
+    ? "手写稿"
+    : mode === "mixed"
+      ? "图文混排"
+      : mode === "table"
+        ? "表格/清单"
+        : "文档/截图";
+
+  const content = [
+    {
+      type: "input_text",
+      text: [
+        `识别模式：${modeLabel}`,
+        hint ? `补充提示：${String(hint).trim().slice(0, 200)}` : "",
+        "请综合多张同源图片版本进行 OCR，这些图片可能分别是原图、灰度增强图、高对比图。",
+        "任务目标：尽可能准确识别中文为主的图片文字，同时保留合理换行。",
+        "如果不同版本冲突，优先采用最清晰、最连贯、最符合上下文的字符。",
+        "不要编造缺失内容；不确定时宁可保守。",
+        "若是表格或清单，也请按自上而下顺序转成可读文本。",
+        "输出 JSON 字段：",
+        "title：如果能判断标题就填写，否则留空。",
+        "text：完整正文，尽量保留段落和换行。",
+        "lines：按行拆分的重要文本数组。",
+        "confidence：high/medium/low。",
+        "notes：简短说明识别难点，例如模糊、倾斜、遮挡、手写潦草。"
+      ].filter(Boolean).join("\n")
+    }
+  ];
+
+  normalizedImages.forEach((imageUrl, index) => {
+    content.push({
+      type: "input_text",
+      text: index === 0
+        ? "第 1 张是原图或主图，请以它为主。"
+        : `第 ${index + 1} 张是增强版本，请用于校对字形和断行。`
+    });
+    content.push({
+      type: "input_image",
+      image_url: imageUrl
+    });
+  });
+
+  const response = await fetch("https://api.openai.com/v1/responses", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${OPENAI_API_KEY}`
+    },
+    body: JSON.stringify({
+      model: OPENAI_MODEL,
+      input: [
+        {
+          role: "developer",
+          content: [
+            {
+              type: "input_text",
+              text: [
+                "你是一个高精度中文 OCR 校对助手。",
+                "你不是普通转写器，而是要比较多张同源图像，做交叉纠错。",
+                "重点处理：中文印刷体、手机截图、作业/试卷、轻度手写、对比度不均、阴影、倾斜。",
+                "遇到明显错误字符时，请结合上下文纠正；遇到完全看不清的内容，不要猜测太多。",
+                "只输出符合 schema 的 JSON。"
+              ].join("\n")
+            }
+          ]
+        },
+        {
+          role: "user",
+          content
+        }
+      ],
+      text: {
+        format: {
+          type: "json_schema",
+          name: "generic_ocr",
+          strict: true,
+          schema
+        }
+      }
+    })
+  });
+
+  const payload = await response.json();
+  if (!response.ok) {
+    throw new Error(payload?.error?.message || "OpenAI OCR request failed");
+  }
+  return {
+    ...JSON.parse(payload.output_text),
+    provider: "openai"
+  };
+}
+
 function stripDataUrlPrefix(imageDataUrl) {
   return String(imageDataUrl || "").replace(/^data:image\/[a-zA-Z0-9.+-]+;base64,/, "");
 }
@@ -5322,6 +5466,43 @@ async function baiduOcrGaokaoImage({ imageDataUrl, subject }) {
   return {
     ...parsed,
     notes: `${parsed.notes} 百度 OCR 已完成底层识别，请重点检查作文起始位置是否准确。`
+  };
+}
+
+async function baiduOcrGenericImage({ imageDataUrl, mode }) {
+  if (!BAIDU_OCR_API_KEY || !BAIDU_OCR_SECRET_KEY) {
+    throw new Error("BAIDU_OCR_REQUIRES_KEYS");
+  }
+
+  const accessToken = await getBaiduAccessToken();
+  const endpoint = String(BAIDU_OCR_ENDPOINT || "general_basic").replace(/[^a-z_]/g, "") || "general_basic";
+  const ocrUrl = new URL(`https://aip.baidubce.com/rest/2.0/ocr/v1/${endpoint}`);
+  ocrUrl.searchParams.set("access_token", accessToken);
+
+  const body = new URLSearchParams();
+  body.set("image", stripDataUrlPrefix(imageDataUrl));
+  body.set("paragraph", "true");
+
+  const response = await fetch(ocrUrl, {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body
+  });
+  const payload = await response.json();
+  if (!response.ok || payload.error_code) {
+    throw new Error(payload?.error_msg || "BAIDU_OCR_REQUEST_FAILED");
+  }
+
+  const lines = (payload.words_result || []).map((item) => String(item.words || "").trim()).filter(Boolean);
+  const text = lines.join("\n");
+  return {
+    title: lines[0] && lines[0].length <= 30 ? lines[0] : "",
+    text,
+    lines,
+    confidence: lines.length >= 12 ? "medium" : "low",
+    notes: text
+      ? `已使用百度 OCR 完成${mode === "handwriting" ? "手写" : "基础"}识别，建议人工校对易混字和段落断行。`
+      : "百度 OCR 没有识别到明显文字，请换一张更清晰的图片。"
   };
 }
 
@@ -5880,6 +6061,17 @@ const server = http.createServer(async (req, res) => {
       const result = await extractGaokaoImage({
         imageDataUrl: body.imageDataUrl || "",
         subject: body.subject || "chinese"
+      });
+      json(res, 200, result);
+      return;
+    }
+
+    if (req.method === "POST" && url.pathname === "/api/ocr/extract") {
+      const body = await parseBody(req);
+      const result = await extractGenericOcr({
+        images: body.images || [],
+        mode: body.mode || "document",
+        hint: body.hint || ""
       });
       json(res, 200, result);
       return;
