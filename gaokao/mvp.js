@@ -5,22 +5,46 @@ const GAOKAO_MVP = (() => {
     { id: "mock-exam-2", name: "2026年3月周测", date: "2026-03-28", subject: "高二数学", className: "高二(3)班", studentCount: 28, averageScore: 82.3, hotspot: "三角函数" },
     { id: "mock-exam-3", name: "2026年3月联考", date: "2026-03-15", subject: "高二数学", className: "高二(3)班", studentCount: 28, averageScore: 79.8, hotspot: "数列求和" }
   ];
+  const mockDashboardFocus = [
+    { rank: 1, level: "warn", title: "高二(3)班平均分下滑 4.2 分", copy: "主因集中在解析几何和导数应用，建议先看考试分析页的讲评优先级。" },
+    { rank: 2, title: "6 名学生连续两次成绩下滑", copy: "这批学生的问题不是知识点散乱，而是同一个步骤反复出错，优先进入学生跟踪页。" },
+    { rank: 3, title: "导数应用已成为本月最高频失分模块", copy: "建议本周统一做一次导数应用专题讲评，再配 3 道回测题。" }
+  ];
+  const mockClassCompare = [
+    { className: "高二(1)班", averageScore: 90.8, change: "+2.1", trend: "up" },
+    { className: "高二(2)班", averageScore: 88.9, change: "+0.7", trend: "up" },
+    { className: "高二(3)班", averageScore: 87.5, change: "-4.2", trend: "down" }
+  ];
   const mockStudentReport = {
     student: { id: "mock-student-1", name: "李同学", className: "高二(3)班", studentNo: "20260318" },
     latestExam: { id: "mock-exam-1", name: "2026年4月月考", date: "2026-04-10", totalScore: 81 },
+    stepReached: "第 2 步",
+    repeatStatus: "重复出现",
+    pathSummary: "这次真正拉低分数的不是“不会求导”，而是在导数应用题里，做完求导后不会继续把条件转成区间判断，所以总卡在第二步。",
     weakPoints: ["导数单调性", "三角函数变形", "数列求和"],
     weakAbilities: ["条件转化", "规范书写", "分类讨论"],
     wrongDetails: [
       { questionNo: "7", knowledgePoint: "导数应用", mainErrorType: "方法问题", teacherFeedback: "导函数求出后不会继续做区间讨论。" },
       { questionNo: "3", knowledgePoint: "三角函数", mainErrorType: "步骤问题", teacherFeedback: "公式方向选错，导致后续变形中断。" }
     ],
-    actionList: ["先补导数单调性 3 题。", "三角函数变形专项 2 题。", "每次订正必须写完整步骤。"],
-    focusTasks: ["导数单调性判断专项", "三角函数公式选择专项", "中档题规范书写回测"],
+    actionList: ["今天先做 3 道导数单调性专项题，只练“列出区间并判断符号”这一步。", "明天做 2 道三角函数变形题，重点练公式入口判断。", "周五回做原卷第 7 题，订正时必须写完整步骤。"],
+    focusTasks: ["导数单调性判断专项 3 题：只练区间讨论", "三角函数公式选择专项 2 题：只练变形入口", "中档题规范书写回测 1 次：按步骤分写完整"],
     trackingSummary: "该生连续两次在导数和三角函数模块失分较多，建议本周优先跟进。",
     trend: [
       { examName: "2026年3月联考", date: "2026-03-15", totalScore: 88 },
       { examName: "2026年3月周测", date: "2026-03-28", totalScore: 84 },
       { examName: "2026年4月月考", date: "2026-04-10", totalScore: 81 }
+    ],
+    conclusion: [
+      "这个问题上次考试已经出现过，这次仍然没有完全改善。",
+      "建议老师不要再泛泛讲“导数”，而是只盯“区间讨论这一步”。",
+      "如果本周 3 道专项题仍错 2 道以上，下周要单独面批。"
+    ],
+    stepPath: ["识别题型", "求导", "区间讨论", "写结论"],
+    progress: [
+      { label: "导数应用", status: "连续 2 次出现", trend: "down" },
+      { label: "规范书写", status: "比上次略有改善", trend: "up" },
+      { label: "三角函数变形", status: "仍需继续跟进", trend: "down" }
     ]
   };
   const mockExamAnalysis = {
@@ -37,10 +61,22 @@ const GAOKAO_MVP = (() => {
       "把三角函数公式选择错误当作班级共性问题单独讲 10 分钟。",
       "对重点学生布置 3 道导数应用回测题，第二天收订正。"
     ],
+    lecturePriority: [
+      { rank: 1, level: "warn", title: "第 7 题导数应用", copy: "错误率最高，而且大多数学生不是不会求导，而是不会把条件继续转成区间判断。讲评时先示范第二步。" },
+      { rank: 2, title: "第 2 题三角函数", copy: "班级主要问题不是公式背错，而是看不出题目该先化简还是先求性质，建议从题型识别切入。" },
+      { rank: 3, title: "第 4 题数列求和", copy: "这题错误主要集中在公式代入后的计算粗心，讲评时间不必太长，重点提醒易错点。" }
+    ],
+    errorDistribution: [
+      { label: "审题偏差", count: 6 },
+      { label: "建模步骤断裂", count: 11 },
+      { label: "计算错误", count: 9 },
+      { label: "规范书写失分", count: 7 }
+    ],
+    errorDistributionNote: "本次月考的主矛盾不是单纯知识点不会，而是建模步骤断裂和计算粗心同时存在。",
     questionStats: [
-      { questionId: "q7", questionNo: "7", score: 18, knowledgePoint: "导数应用", questionType: "解答题", difficulty: "中高", errorRate: 68, topReason: "方法问题", standardSteps: "求导 -> 解不等式 -> 分区间讨论 -> 写结论" },
-      { questionId: "q2", questionNo: "2", score: 12, knowledgePoint: "三角函数", questionType: "选择题", difficulty: "基础", errorRate: 54, topReason: "步骤问题", standardSteps: "识别结构 -> 选择公式 -> 完成变形 -> 检查范围" },
-      { questionId: "q4", questionNo: "4", score: 12, knowledgePoint: "数列求和", questionType: "填空题", difficulty: "中档", errorRate: 46, topReason: "计算错误", standardSteps: "提取条件 -> 建立公式 -> 代入求和 -> 检查结果" }
+      { questionId: "q7", questionNo: "7", score: 18, knowledgePoint: "导数应用", questionType: "解答题", difficulty: "中高", errorRate: 68, topReason: "方法问题", standardSteps: "求导 -> 解不等式 -> 分区间讨论 -> 写结论", whyWrong: "大多数学生会求导，但不会把题目条件继续转成区间判断。", teachFocus: "课堂上重点示范“求导之后怎么判断符号”这一步。", priority: "高" },
+      { questionId: "q2", questionNo: "2", score: 12, knowledgePoint: "三角函数", questionType: "选择题", difficulty: "基础", errorRate: 54, topReason: "步骤问题", standardSteps: "识别结构 -> 选择公式 -> 完成变形 -> 检查范围", whyWrong: "学生看不出这是先化简再求性质的题，第一步方向错。", teachFocus: "先讲题型识别，再讲公式入口，不要只讲答案。", priority: "中" },
+      { questionId: "q4", questionNo: "4", score: 12, knowledgePoint: "数列求和", questionType: "填空题", difficulty: "中档", errorRate: 46, topReason: "计算错误", standardSteps: "提取条件 -> 建立公式 -> 代入求和 -> 检查结果", whyWrong: "多数学生到最后一步才错，属于公式会用但结果不稳。", teachFocus: "讲评时带着学生复盘最后两步的计算与检查。", priority: "中" }
     ],
     highRiskStudents: [
       { id: "mock-student-1", name: "李同学", totalScore: 81, tag: "重点跟进" },
@@ -135,10 +171,29 @@ const GAOKAO_MVP = (() => {
     `).join("");
   }
 
+  function renderPriorityList(container, items = []) {
+    if (!container) return;
+    container.innerHTML = items.map((item) => `
+      <article class="priority-item ${item.level || ""}">
+        <span class="priority-rank">${item.rank}</span>
+        <h3 class="priority-title">${item.title}</h3>
+        <p class="priority-copy">${item.copy}</p>
+      </article>
+    `).join("");
+  }
+
   async function initTeacherDashboard() {
     navify("teacher-dashboard");
     const exams = await loadExams();
     renderExamList(document.querySelector("#examList"), exams);
+    renderPriorityList(document.querySelector("#principalFocusList"), mockDashboardFocus);
+    document.querySelector("#classCompareList").innerHTML = mockClassCompare.map((item) => `
+      <div class="compare-row">
+        <strong>${item.className}</strong>
+        <span>${item.averageScore}</span>
+        <span class="compare-change ${item.trend}">${item.change}</span>
+      </div>
+    `).join("");
     const stats = exams === mockExams ? {
       exams: 3,
       students: 28,
@@ -244,6 +299,9 @@ const GAOKAO_MVP = (() => {
     document.querySelector("#analysisMeta").textContent = `${payload.exam.subject} · ${payload.exam.date}`;
     document.querySelector("#analysisAverage").textContent = String(payload.averageScore);
     document.querySelector("#analysisStudents").textContent = String(payload.studentCount);
+    renderPriorityList(document.querySelector("#lecturePriorityList"), payload.lecturePriority || []);
+    document.querySelector("#errorDistribution").innerHTML = (payload.errorDistribution || []).map((item) => `<li>${item.label} · ${item.count} 人次</li>`).join("");
+    document.querySelector("#errorDistributionNote").textContent = payload.errorDistributionNote || "";
     document.querySelector("#issueList").innerHTML = payload.topIssues.map((item) => `<li>${item.label} · ${item.count} 次</li>`).join("");
     document.querySelector("#lectureSuggestions").innerHTML = payload.lectureSuggestions.map((item) => `<li>${item}</li>`).join("");
     document.querySelector("#questionStats").innerHTML = payload.questionStats.map((item) => `
@@ -258,8 +316,12 @@ const GAOKAO_MVP = (() => {
         <div class="pill-row">
           <span class="pill">高频错因 ${item.topReason}</span>
           <span class="pill">分值 ${item.score}</span>
+          <span class="pill ${item.priority === "高" ? "danger" : ""}">讲评优先级 ${item.priority || "中"}</span>
         </div>
         <p class="item-meta">标准步骤：${item.standardSteps}</p>
+        <div class="section-divider"></div>
+        <p class="item-meta"><strong>为什么全班会错：</strong>${item.whyWrong || ""}</p>
+        <p class="item-meta"><strong>讲评重点：</strong>${item.teachFocus || ""}</p>
       </article>
     `).join("");
     document.querySelector("#highRiskStudents").innerHTML = payload.highRiskStudents.map((item) => `
@@ -297,10 +359,36 @@ const GAOKAO_MVP = (() => {
     document.querySelector("#studentTitle").textContent = `${payload.student.name} · 个人报告`;
     document.querySelector("#studentMeta").textContent = `${payload.student.className} · ${payload.latestExam?.name || "暂无考试"}`;
     document.querySelector("#studentScore").textContent = payload.latestExam?.totalScore ?? "--";
+    document.querySelector("#stepReached").textContent = payload.stepReached || "--";
+    document.querySelector("#repeatStatus").textContent = payload.repeatStatus || "--";
+    document.querySelector("#pathSummary").textContent = payload.pathSummary || "";
+    document.querySelector("#stepPath").innerHTML = (payload.stepPath || []).map((item, index) => `
+      <span class="step-chip ${index === 2 ? "current" : ""}">${item}</span>
+    `).join("");
     document.querySelector("#weakPoints").innerHTML = (payload.weakPoints || []).map((item) => `<li>${item}</li>`).join("");
     document.querySelector("#weakAbilities").innerHTML = (payload.weakAbilities || []).map((item) => `<li>${item}</li>`).join("");
     document.querySelector("#actionList").innerHTML = (payload.actionList || []).map((item) => `<li>${item}</li>`).join("");
     document.querySelector("#focusTasks").innerHTML = (payload.focusTasks || []).map((item) => `<li>${item}</li>`).join("");
+    document.querySelector("#studentTrendList").innerHTML = (payload.trend || []).map((item, index, arr) => {
+      const prev = arr[index - 1]?.totalScore;
+      const trendClass = prev == null ? "up" : item.totalScore >= prev ? "up" : "down";
+      const trendLabel = prev == null ? "起点" : item.totalScore >= prev ? "有改善" : "仍在下滑";
+      return `
+        <article class="item">
+          <div class="item-head">
+            <div>
+              <h3 class="item-title">${item.examName}</h3>
+              <p class="item-meta">${item.date}</p>
+            </div>
+            <div>
+              <strong>${item.totalScore}</strong>
+              <div class="trend-badge ${trendClass}">${trendLabel}</div>
+            </div>
+          </div>
+        </article>
+      `;
+    }).join("");
+    document.querySelector("#reportConclusion").innerHTML = (payload.conclusion || []).map((item) => `<div class="guide-item">${item}</div>`).join("");
     document.querySelector("#wrongDetails").innerHTML = (payload.wrongDetails || []).map((item) => `
       <div class="row">
         <strong>第 ${item.questionNo} 题</strong>
@@ -318,19 +406,34 @@ const GAOKAO_MVP = (() => {
     const payload = await loadStudentReport();
     document.querySelector("#trackTitle").textContent = `${payload.student.name} · 一对一跟踪`;
     document.querySelector("#trackSummary").textContent = payload.trackingSummary || "暂无跟踪结论。";
-    document.querySelector("#trendList").innerHTML = (payload.trend || []).map((item) => `
+    document.querySelector("#trendList").innerHTML = (payload.trend || []).map((item, index, arr) => {
+      const prev = arr[index - 1]?.totalScore;
+      const trendClass = prev == null ? "up" : item.totalScore >= prev ? "up" : "down";
+      const trendLabel = prev == null ? "起点" : item.totalScore >= prev ? "改善" : "下滑";
+      return `
       <article class="item">
         <div class="item-head">
           <div>
             <h3 class="item-title">${item.examName}</h3>
             <p class="item-meta">${item.date}</p>
           </div>
-          <strong>${item.totalScore}</strong>
+          <div>
+            <strong>${item.totalScore}</strong>
+            <div class="trend-badge ${trendClass}">${trendLabel}</div>
+          </div>
         </div>
       </article>
-    `).join("");
+    `;
+    }).join("");
     document.querySelector("#trackWeakPoints").innerHTML = (payload.weakPoints || []).map((item) => `<li>${item}</li>`).join("");
     document.querySelector("#trackTasks").innerHTML = (payload.focusTasks || []).map((item) => `<li>${item}</li>`).join("");
+    document.querySelector("#trackProgress").innerHTML = (payload.progress || []).map((item) => `
+      <div class="guide-item">
+        <strong>${item.label}</strong>
+        <div class="mini-note">${item.status}</div>
+        <div class="trend-badge ${item.trend}">${item.trend === "up" ? "改善中" : "需继续跟进"}</div>
+      </div>
+    `).join("");
   }
 
   async function initStudentHome() {

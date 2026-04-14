@@ -142,6 +142,10 @@ a {
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
+.grid.cols-3 {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
 .card {
   padding: 18px;
   border: 1px solid rgba(217, 225, 234, 0.9);
@@ -166,6 +170,12 @@ a {
 
 .card-title {
   font-size: 18px;
+  font-weight: 800;
+}
+
+.sub-title {
+  margin: 0 0 10px;
+  font-size: 16px;
   font-weight: 800;
 }
 
@@ -257,6 +267,75 @@ button {
   margin-top: 8px;
 }
 
+.priority-list {
+  display: grid;
+  gap: 12px;
+}
+
+.priority-item {
+  padding: 14px;
+  border-radius: 8px;
+  border: 1px solid var(--line);
+  background: #fff;
+}
+
+.priority-rank {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 999px;
+  background: var(--brand);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.priority-item.warn .priority-rank {
+  background: #dc2626;
+}
+
+.priority-title {
+  margin: 10px 0 6px;
+  font-size: 17px;
+  font-weight: 800;
+}
+
+.priority-copy {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+.compare-grid {
+  display: grid;
+  gap: 12px;
+}
+
+.compare-row {
+  display: grid;
+  grid-template-columns: 1.1fr 120px 120px;
+  gap: 12px;
+  align-items: center;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.compare-row:last-child {
+  border-bottom: 0;
+}
+
+.compare-change.up {
+  color: #15803d;
+  font-weight: 800;
+}
+
+.compare-change.down {
+  color: #dc2626;
+  font-weight: 800;
+}
+
 .exam-list,
 .student-list {
   display: grid;
@@ -287,6 +366,7 @@ button {
   margin-top: 6px;
   color: var(--muted);
   font-size: 14px;
+  line-height: 1.6;
 }
 
 .pill-row {
@@ -309,6 +389,75 @@ button {
 .pill.warn {
   background: #fff1df;
   color: #b45309;
+}
+
+.pill.danger {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+.section-divider {
+  margin: 18px 0 10px;
+  padding-top: 16px;
+  border-top: 1px solid var(--line);
+}
+
+.mini-note {
+  margin: 8px 0 0;
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.step-strip {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 12px;
+}
+
+.step-chip {
+  padding: 8px 10px;
+  border-radius: 999px;
+  background: #eff6ff;
+  color: var(--brand);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.step-chip.current {
+  background: #dbeafe;
+  border: 1px solid #93c5fd;
+}
+
+.guide-grid {
+  display: grid;
+  gap: 12px;
+}
+
+.guide-item {
+  padding: 12px 14px;
+  border-radius: 8px;
+  background: #f8fafc;
+  border: 1px solid var(--line);
+}
+
+.trend-badge {
+  display: inline-flex;
+  padding: 7px 10px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.trend-badge.down {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+.trend-badge.up {
+  background: #dcfce7;
+  color: #15803d;
 }
 
 .student-layout {

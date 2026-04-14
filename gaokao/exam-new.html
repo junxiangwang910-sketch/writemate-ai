@@ -27,36 +27,48 @@
         <h1 class="section-title">新建考试</h1>
         <p class="section-note">第一阶段只要求把考试信息、参考答案图片和基础题目骨架建起来。</p>
       </div>
-      <form class="card grid cols-2" id="examCreateForm">
-        <label class="field">
-          <span>考试名称</span>
-          <input name="name" type="text" value="高二数学月考" required>
-        </label>
-        <label class="field">
-          <span>考试日期</span>
-          <input name="date" type="date" required>
-        </label>
-        <label class="field">
-          <span>学科</span>
-          <input name="subject" type="text" value="高二数学" required>
-        </label>
-        <label class="field">
-          <span>班级</span>
-          <input name="className" type="text" value="高二 1 班" required>
-        </label>
-        <label class="field">
-          <span>默认题目数</span>
-          <input name="questionCount" type="number" value="8" min="1" max="20">
-        </label>
-        <label class="field">
-          <span>参考答案图片</span>
-          <input id="answerImages" type="file" accept="image/*" multiple>
-        </label>
-        <div class="actions-row">
-          <button class="button" type="submit">创建考试并上传答案</button>
-          <a class="button-ghost" href="/gaokao/teacher-dashboard.html">返回工作台</a>
-        </div>
-      </form>
+      <div class="grid cols-2">
+        <form class="card grid cols-2" id="examCreateForm">
+          <label class="field">
+            <span>考试名称</span>
+            <input name="name" type="text" value="高二数学月考" required>
+          </label>
+          <label class="field">
+            <span>考试日期</span>
+            <input name="date" type="date" required>
+          </label>
+          <label class="field">
+            <span>学科</span>
+            <input name="subject" type="text" value="高二数学" required>
+          </label>
+          <label class="field">
+            <span>班级</span>
+            <input name="className" type="text" value="高二 1 班" required>
+          </label>
+          <label class="field">
+            <span>默认题目数</span>
+            <input name="questionCount" type="number" value="8" min="1" max="20">
+          </label>
+          <label class="field">
+            <span>参考答案图片</span>
+            <input id="answerImages" type="file" accept="image/*" multiple>
+          </label>
+          <div class="actions-row">
+            <button class="button" type="submit">创建考试并上传答案</button>
+            <a class="button-ghost" href="/gaokao/teacher-dashboard.html">返回工作台</a>
+          </div>
+        </form>
+        <article class="card">
+          <h2 class="card-title">题目结构化录入框架</h2>
+          <p class="mini-note">这里是后续 AI 分析的基础。即使第一阶段先手动录，也要把字段框架先固定住。</p>
+          <div class="guide-grid">
+            <div class="guide-item"><strong>题目字段 1</strong><br>题号、分值、题型、难度等级</div>
+            <div class="guide-item"><strong>题目字段 2</strong><br>一级知识点、二级知识点、高频错因</div>
+            <div class="guide-item"><strong>题目字段 3</strong><br>标准答案、标准步骤拆解、可得步骤分</div>
+            <div class="guide-item"><strong>当前建议</strong><br>先把导数、三角函数、数列、解析几何四类题目的模板建好。</div>
+          </div>
+        </article>
+      </div>
       <p class="status-box" id="createStatus" data-status>填写完考试信息后即可创建。</p>
     </section>
   </div>

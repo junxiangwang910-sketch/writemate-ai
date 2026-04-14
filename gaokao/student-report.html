@@ -26,9 +26,27 @@
         <h1 class="section-title" id="studentTitle">学生个人报告</h1>
         <p class="section-note" id="studentMeta">学生画像与补弱建议（无参数时展示模拟数据）</p>
       </div>
+      <div class="grid cols-3">
+        <article class="card">
+          <p class="stat-label">本次成绩</p>
+          <strong class="stat-value" id="studentScore">--</strong>
+        </article>
+        <article class="card">
+          <p class="stat-label">当前卡在第几步</p>
+          <strong class="stat-value" id="stepReached">--</strong>
+        </article>
+        <article class="card">
+          <p class="stat-label">问题状态</p>
+          <strong class="stat-value" id="repeatStatus">--</strong>
+        </article>
+      </div>
+    </section>
+
+    <section class="section">
       <article class="card">
-        <p class="stat-label">本次成绩</p>
-        <strong class="stat-value" id="studentScore">--</strong>
+        <h2 class="card-title">提分路径判断</h2>
+        <p class="mini-note" id="pathSummary"></p>
+        <div class="step-strip" id="stepPath"></div>
       </article>
     </section>
 
@@ -48,12 +66,25 @@
     <section class="section">
       <div class="grid cols-2">
         <article class="card">
-          <h2 class="card-title">建议优先补的 3 个点</h2>
+          <h2 class="card-title">这周必须先做的 3 件事</h2>
           <ul class="list" id="actionList"></ul>
         </article>
         <article class="card">
-          <h2 class="card-title">推荐训练任务</h2>
+          <h2 class="card-title">具体训练安排</h2>
           <ul class="list" id="focusTasks"></ul>
+        </article>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="grid cols-2">
+        <article class="card">
+          <h2 class="card-title">最近三次问题变化</h2>
+          <div class="student-list" id="studentTrendList"></div>
+        </article>
+        <article class="card">
+          <h2 class="card-title">本次诊断结论</h2>
+          <div class="guide-grid" id="reportConclusion"></div>
         </article>
       </div>
     </section>
