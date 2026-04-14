@@ -944,10 +944,8 @@ function generateTeachFocus(knowledgePoint, errorType) {
   return "重点讲关键步骤的选择逻辑，而不是直接展示答案。";
 }
 
-async function analyzeWithDeepSeek(imageDataUrl, question) {
-  if (!DEEPSEEK_API_KEY) return null;
-
-  const prompt = `你是高中数学阅卷专家。请分析这名学生的作答图片。
+function buildAnalysisPrompt(question) {
+  return `你是高中数学阅卷专家。请仔细看这名学生的作答图片。
 
 题目知识点：${question.knowledge_point}
 题目类型：${question.question_type}
@@ -955,19 +953,67 @@ async function analyzeWithDeepSeek(imageDataUrl, question) {
 标准步骤：${question.standard_steps}
 标准答案要点：${question.standard_answer}
 
-请判断：
-1. 学生写到了标准步骤的第几步（step_reached，填数字，从1开始）
-2. 主要错误类型（main_error_type）：从"方法问题/步骤问题/计算错误/习惯问题"中选一个
-3. 次要错误类型（secondary_error_type）：简短描述
-4. 薄弱知识点（weak_knowledge_points）：列出1-2个，JSON数组
-5. 薄弱能力点（weak_ability_points）：列出1-2个，JSON数组
-6. 给老师的建议（teacher_feedback）：一句话，说明哪步出错、建议怎么讲
-7. 给学生的建议（student_feedback）：一句话，鼓励性语气指出问题
-8. 下步练习重点（next_practice_focus）：一句话
+请逐步对比学生作答和标准步骤，判断：
+1. step_reached：学生完整写出了标准步骤中的第几步（数字，从1开始，如果完全没写或方向全错填1）
+2. main_error_type：主要错误类型，从"方法问题/步骤问题/计算错误/习惯问题"选一个
+3. secondary_error_type：次要错误简述
+4. weak_knowledge_points：薄弱知识点，JSON数组，1-2个
+5. weak_ability_points：薄弱能力点，JSON数组，1-2个
+6. teacher_feedback：给老师的建议，一句话，具体说明哪步出错该怎么讲
+7. student_feedback：给学生的鼓励性建议，一句话
+8. next_practice_focus：下一步练习重点，一句话
+9. confidence：分析置信度，"高"/"中"/"低"
 
-仅输出JSON，不要其他内容。格式：
-{"step_reached":2,"main_error_type":"方法问题","secondary_error_type":"...","weak_knowledge_points":["..."],"weak_ability_points":["..."],"teacher_feedback":"...","student_feedback":"...","next_practice_focus":"...","confidence":"中"}`;
+只输出JSON，不要其他文字。`;
+}
 
+async function analyzeWithOpenAIVision(imageDataUrl, question) {
+  const prompt = buildAnalysisPrompt(question);
+  try {
+    const response = await fetch("https://api.openai.com/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${OPENAI_API_KEY}`
+      },
+      body: JSON.stringify({
+        model: "gpt-4o-mini",
+        messages: [{
+          role: "user",
+          content: [
+            { type: "image_url", image_url: { url: imageDataUrl, detail: "high" } },
+            { type: "text", text: prompt }
+          ]
+        }],
+        max_tokens: 800,
+        temperature: 0.1
+      })
+    });
+    if (!response.ok) {
+      const err = await response.text();
+      console.error("OpenAI vision error:", response.status, err.slice(0, 200));
+      return null;
+    }
+    const data = await response.json();
+    const text = data.choices?.[0]?.message?.content || "";
+    const result = safeJsonParse(text);
+    if (result) result._source = "openai_vision";
+    return result;
+  } catch (err) {
+    console.error("OpenAI vision exception:", err.message);
+    return null;
+  }
+}
+
+async function analyzeWithDeepSeekText(question) {
+  const prompt = `你是高中数学教师。根据以下题目信息，生成一个学生常见失分的典型诊断（假设该学生得了部分分）。
+
+题目知识点：${question.knowledge_point}
+题目类型：${question.question_type}
+标准步骤：${question.standard_steps}
+
+输出JSON，字段：step_reached(数字2), main_error_type, secondary_error_type, weak_knowledge_points(数组), weak_ability_points(数组), teacher_feedback(一句话), student_feedback(一句话), next_practice_focus(一句话), confidence("低")
+仅输出JSON。`;
   try {
     const response = await fetch("https://api.deepseek.com/chat/completions", {
       method: "POST",
@@ -977,26 +1023,31 @@ async function analyzeWithDeepSeek(imageDataUrl, question) {
       },
       body: JSON.stringify({
         model: DEEPSEEK_MODEL || "deepseek-chat",
-        messages: [{
-          role: "user",
-          content: [
-            { type: "image_url", image_url: { url: imageDataUrl } },
-            { type: "text", text: prompt }
-          ]
-        }],
-        max_tokens: 800,
+        messages: [{ role: "user", content: prompt }],
+        max_tokens: 600,
         temperature: 0.1
       })
     });
-
     if (!response.ok) return null;
     const data = await response.json();
     const text = data.choices?.[0]?.message?.content || "";
-    return safeJsonParse(text);
+    const result = safeJsonParse(text);
+    if (result) result._source = "deepseek_text";
+    return result;
   } catch (err) {
-    console.error("DeepSeek vision error:", err.message);
+    console.error("DeepSeek text error:", err.message);
     return null;
   }
+}
+
+async function analyzeStudentAnswer(imageDataUrl, question) {
+  if (OPENAI_API_KEY) {
+    return await analyzeWithOpenAIVision(imageDataUrl, question);
+  }
+  if (DEEPSEEK_API_KEY) {
+    return await analyzeWithDeepSeekText(question);
+  }
+  return null;
 }
 
 function createMockAiAnalysis(question, scoreLevel = 0) {
@@ -5345,6 +5396,15 @@ const server = http.createServer(async (req, res) => {
       return;
     }
 
+    if (req.method === "GET" && url.pathname === "/api/ai-status") {
+      json(res, 200, {
+        visionReady: !!OPENAI_API_KEY,
+        textReady: !!(DEEPSEEK_API_KEY || OPENAI_API_KEY),
+        provider: OPENAI_API_KEY ? "OpenAI gpt-4o-mini" : (DEEPSEEK_API_KEY ? "DeepSeek（仅文字）" : "无")
+      });
+      return;
+    }
+
     if (req.method === "POST" && url.pathname === "/api/exams/create") {
       const body = await parseBody(req);
       const exam = {
@@ -5414,8 +5474,8 @@ const server = http.createServer(async (req, res) => {
           let analysis = null;
           let scoreGot = 0;
 
-          if (card.imageDataUrl && DEEPSEEK_API_KEY) {
-            analysis = await analyzeWithDeepSeek(card.imageDataUrl, question);
+          if (card.imageDataUrl && (OPENAI_API_KEY || DEEPSEEK_API_KEY)) {
+            analysis = await analyzeStudentAnswer(card.imageDataUrl, question);
           }
 
           if (analysis && typeof analysis.step_reached === "number") {

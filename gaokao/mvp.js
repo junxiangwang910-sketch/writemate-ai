@@ -417,6 +417,22 @@ const GAOKAO_MVP = (() => {
     navify("exam-upload");
     const select = document.querySelector("#examSelect");
     const status = document.querySelector("#uploadStatus");
+    try {
+      const statusRes = await api("/api/ai-status");
+      const banner = document.querySelector("#aiStatusBanner");
+      if (banner && statusRes) {
+        banner.style.display = "block";
+        if (statusRes.visionReady) {
+          banner.style.background = "#dcfce7";
+          banner.style.color = "#15803d";
+          banner.textContent = `✅ 真实AI视觉分析已启用（${statusRes.provider}）— 上传图片后将真正读取学生作答内容`;
+        } else {
+          banner.style.background = "#fff8db";
+          banner.style.color = "#8a5a00";
+          banner.textContent = "⚠️ 当前使用规则库分析（未配置AI Key）— 建议配置 OPENAI_API_KEY 启用真实视觉分析";
+        }
+      }
+    } catch (_error) {}
     await loadExams(select);
     const currentExamId = getCurrentExamId();
     if (currentExamId) select.value = currentExamId;
