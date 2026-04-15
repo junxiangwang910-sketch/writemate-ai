@@ -128,8 +128,8 @@ const GAOKAO_MVP = (() => {
     return query("examId") || window.localStorage.getItem(currentExamKey) || "";
   }
 
-  // 压缩图片到最长边2000px，JPEG质量82%，防止超过服务器8MB限制
-  function compressImage(file, maxSide = 2000, quality = 0.82) {
+  // 压缩图片到最长边1400px，JPEG质量82%，减少AI分析的token用量
+  function compressImage(file, maxSide = 1400, quality = 0.82) {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
       reader.onload = (e) => {

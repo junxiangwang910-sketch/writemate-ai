@@ -37,6 +37,9 @@ const OPENAI_API_KEY = process.env.OPENAI_API_KEY || "";
 const OPENAI_MODEL = process.env.OPENAI_MODEL || "gpt-5-mini";
 const DEEPSEEK_API_KEY = process.env.DEEPSEEK_API_KEY || "";
 const DEEPSEEK_MODEL = process.env.DEEPSEEK_MODEL || "deepseek-chat";
+// Qwen-VL via SiliconFlow（比OpenAI便宜3-5倍，中文数学识别能力强）
+const QWEN_API_KEY = process.env.QWEN_API_KEY || "";
+const QWEN_MODEL = process.env.QWEN_MODEL || "Qwen/Qwen2.5-VL-7B-Instruct";
 const OCR_PROVIDER = (process.env.OCR_PROVIDER || "auto").toLowerCase();
 const BAIDU_OCR_API_KEY = process.env.BAIDU_OCR_API_KEY || "";
 const BAIDU_OCR_SECRET_KEY = process.env.BAIDU_OCR_SECRET_KEY || "";
@@ -995,6 +998,9 @@ async function analyzeWithOpenAIVision(imageDataUrl, question) {
       return null;
     }
     const data = await response.json();
+    // 记录真实token用量，解决"到底多少钱"的争议
+    const usage = data.usage || {};
+    console.log(`[OpenAI cost] prompt_tokens=${usage.prompt_tokens} completion_tokens=${usage.completion_tokens} total=${usage.total_tokens} est_cost_rmb=¥${((usage.prompt_tokens||0)*0.15/1e6*7.2 + (usage.completion_tokens||0)*0.6/1e6*7.2).toFixed(5)}`);
     const text = data.choices?.[0]?.message?.content || "";
     const result = safeJsonParse(text);
     if (result) result._source = "openai_vision";
@@ -1040,7 +1046,57 @@ async function analyzeWithDeepSeekText(question) {
   }
 }
 
+// Qwen-VL通过SiliconFlow调用（OpenAI兼容接口）
+// 申请方法：https://siliconflow.cn 注册，免费额度够测试用
+async function analyzeWithQwenVL(imageDataUrl, question) {
+  if (!QWEN_API_KEY) return null;
+  const prompt = buildAnalysisPrompt(question);
+  try {
+    const response = await fetch("https://api.siliconflow.cn/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${QWEN_API_KEY}`
+      },
+      body: JSON.stringify({
+        model: QWEN_MODEL,
+        messages: [{
+          role: "user",
+          content: [
+            { type: "image_url", image_url: { url: imageDataUrl } },
+            { type: "text", text: prompt }
+          ]
+        }],
+        max_tokens: 800,
+        temperature: 0.1
+      })
+    });
+    if (!response.ok) {
+      const err = await response.text();
+      console.error("Qwen-VL error:", response.status, err.slice(0, 200));
+      return null;
+    }
+    const data = await response.json();
+    // 记录token用量，方便核算真实成本
+    const usage = data.usage || {};
+    console.log(`[Qwen-VL cost] prompt_tokens=${usage.prompt_tokens} completion_tokens=${usage.completion_tokens} total=${usage.total_tokens}`);
+    const text = data.choices?.[0]?.message?.content || "";
+    const result = safeJsonParse(text);
+    if (result) result._source = "qwen_vision";
+    return result;
+  } catch (err) {
+    console.error("Qwen-VL exception:", err.message);
+    return null;
+  }
+}
+
 async function analyzeStudentAnswer(imageDataUrl, question) {
+  // 优先用Qwen-VL（便宜3-5倍），没有则用OpenAI，再没有用DeepSeek纯文字
+  if (QWEN_API_KEY) {
+    const result = await analyzeWithQwenVL(imageDataUrl, question);
+    if (result) return result;
+    // Qwen失败则降级到OpenAI
+  }
   if (OPENAI_API_KEY) {
     return await analyzeWithOpenAIVision(imageDataUrl, question);
   }
@@ -5578,11 +5634,12 @@ const server = http.createServer(async (req, res) => {
     }
 
     if (req.method === "GET" && url.pathname === "/api/ai-status") {
-      json(res, 200, {
-        visionReady: !!OPENAI_API_KEY,
-        textReady: !!(DEEPSEEK_API_KEY || OPENAI_API_KEY),
-        provider: OPENAI_API_KEY ? "OpenAI gpt-4o-mini" : (DEEPSEEK_API_KEY ? "DeepSeek（仅文字）" : "无")
-      });
+      const visionReady = !!(QWEN_API_KEY || OPENAI_API_KEY);
+      let provider = "未配置";
+      if (QWEN_API_KEY) provider = `Qwen-VL（${QWEN_MODEL}）`;
+      else if (OPENAI_API_KEY) provider = "OpenAI gpt-4o-mini";
+      else if (DEEPSEEK_API_KEY) provider = "DeepSeek（仅文字，无视觉）";
+      json(res, 200, { visionReady, provider });
       return;
     }
 
