@@ -454,29 +454,45 @@
           <p class=”section-note”>点任意一个进去看看，里面都有示例数据，不用自己录。</p>
         </div>
       </div>
-      <div style=”display:grid;grid-template-columns:repeat(4,1fr);gap:14px”>
-        <a href=”/gaokao/teacher-dashboard.html” style=”text-decoration:none”>
-          <div style=”background:#ffffff;border:1px solid #d9e1ea;border-radius:16px;padding:20px;border-top:4px solid #2563eb;box-shadow:0 2px 12px rgba(0,0,0,0.06)”>
-            <div style=”font-size:20px;font-weight:800;margin-bottom:8px;color:#17324d”>① 工作台</div>
-            <div style=”color:#6b7280;font-size:14px;line-height:1.6”>看本次月考最需要关注的3件事、班级对比、待跟进学生名单。</div>
+      <div style=”display:grid;grid-template-columns:repeat(2,1fr);gap:16px”>
+        <a href=”/gaokao/teacher-dashboard.html” style=”text-decoration:none;display:block”>
+          <div style=”background:#ffffff;border:1px solid #d9e1ea;border-radius:16px;padding:24px 24px 20px;box-shadow:0 2px 12px rgba(0,0,0,0.07);height:100%;box-sizing:border-box”>
+            <div style=”display:flex;align-items:center;justify-content:space-between;margin-bottom:10px”>
+              <span style=”font-size:13px;font-weight:800;color:#2563eb;background:#eff6ff;padding:4px 10px;border-radius:999px”>① 工作台</span>
+              <span style=”color:#2563eb;font-size:18px;font-weight:700”>→</span>
+            </div>
+            <div style=”font-size:16px;font-weight:800;color:#17324d;margin-bottom:8px”>考完试先看这里</div>
+            <div style=”color:#6b7280;font-size:14px;line-height:1.65”>本次月考最需要关注的3件事、班级均分对比、哪些学生需要跟进。</div>
           </div>
         </a>
-        <a href=”/gaokao/exam-analysis.html?examId=mock-exam-1” style=”text-decoration:none”>
-          <div style=”background:#ffffff;border:1px solid #d9e1ea;border-radius:16px;padding:20px;border-top:4px solid #2563eb;box-shadow:0 2px 12px rgba(0,0,0,0.06)”>
-            <div style=”font-size:20px;font-weight:800;margin-bottom:8px;color:#17324d”>② 考试分析</div>
-            <div style=”color:#6b7280;font-size:14px;line-height:1.6”>讲评优先级推荐、错因分布图、每道题为什么全班会错、该怎么讲。</div>
+        <a href=”/gaokao/exam-analysis.html?examId=mock-exam-1” style=”text-decoration:none;display:block”>
+          <div style=”background:#ffffff;border:1px solid #d9e1ea;border-radius:16px;padding:24px 24px 20px;box-shadow:0 2px 12px rgba(0,0,0,0.07);height:100%;box-sizing:border-box”>
+            <div style=”display:flex;align-items:center;justify-content:space-between;margin-bottom:10px”>
+              <span style=”font-size:13px;font-weight:800;color:#2563eb;background:#eff6ff;padding:4px 10px;border-radius:999px”>② 考试分析</span>
+              <span style=”color:#2563eb;font-size:18px;font-weight:700”>→</span>
+            </div>
+            <div style=”font-size:16px;font-weight:800;color:#17324d;margin-bottom:8px”>备课前先看讲评建议</div>
+            <div style=”color:#6b7280;font-size:14px;line-height:1.65”>哪道题最值得讲、为什么全班都错、该从哪个步骤切入，直接给出建议。</div>
           </div>
         </a>
-        <a href=”/gaokao/student-report.html?studentId=mock-student-1&examId=mock-exam-1” style=”text-decoration:none”>
-          <div style=”background:#ffffff;border:2px solid #2563eb;border-radius:16px;padding:20px;border-top:4px solid #dc2626;box-shadow:0 4px 16px rgba(37,99,235,0.15)”>
-            <div style=”font-size:20px;font-weight:800;margin-bottom:8px;color:#17324d”>③ 学生报告 ⭐</div>
-            <div style=”color:#6b7280;font-size:14px;line-height:1.6”>最关键的页面。步骤诊断图显示学生卡在哪一步，给出本周3个具体训练任务。</div>
+        <a href=”/gaokao/student-report.html?studentId=mock-student-1&examId=mock-exam-1” style=”text-decoration:none;display:block”>
+          <div style=”background:#fff7f7;border:2px solid #dc2626;border-radius:16px;padding:24px 24px 20px;box-shadow:0 4px 16px rgba(220,38,38,0.1);height:100%;box-sizing:border-box”>
+            <div style=”display:flex;align-items:center;justify-content:space-between;margin-bottom:10px”>
+              <span style=”font-size:13px;font-weight:800;color:#dc2626;background:#fee2e2;padding:4px 10px;border-radius:999px”>③ 学生报告 ⭐ 最重要</span>
+              <span style=”color:#dc2626;font-size:18px;font-weight:700”>→</span>
+            </div>
+            <div style=”font-size:16px;font-weight:800;color:#17324d;margin-bottom:8px”>看每个学生卡在哪一步</div>
+            <div style=”color:#6b7280;font-size:14px;line-height:1.65”>步骤诊断图直接显示”求导✓ 区间讨论⚠️”，给出这周该做什么、只练哪一步。</div>
           </div>
         </a>
-        <a href=”/gaokao/student-track.html?studentId=mock-student-1” style=”text-decoration:none”>
-          <div style=”background:#ffffff;border:1px solid #d9e1ea;border-radius:16px;padding:20px;border-top:4px solid #15803d;box-shadow:0 2px 12px rgba(0,0,0,0.06)”>
-            <div style=”font-size:20px;font-weight:800;margin-bottom:8px;color:#17324d”>④ 跟踪记录</div>
-            <div style=”color:#6b7280;font-size:14px;line-height:1.6”>近三次成绩折线图、哪些薄弱点在改善、哪些反复出现。</div>
+        <a href=”/gaokao/student-track.html?studentId=mock-student-1” style=”text-decoration:none;display:block”>
+          <div style=”background:#ffffff;border:1px solid #d9e1ea;border-radius:16px;padding:24px 24px 20px;box-shadow:0 2px 12px rgba(0,0,0,0.07);height:100%;box-sizing:border-box”>
+            <div style=”display:flex;align-items:center;justify-content:space-between;margin-bottom:10px”>
+              <span style=”font-size:13px;font-weight:800;color:#15803d;background:#dcfce7;padding:4px 10px;border-radius:999px”>④ 跟踪记录</span>
+              <span style=”color:#15803d;font-size:18px;font-weight:700”>→</span>
+            </div>
+            <div style=”font-size:16px;font-weight:800;color:#17324d;margin-bottom:8px”>看重点学生有没有改善</div>
+            <div style=”color:#6b7280;font-size:14px;line-height:1.65”>近三次成绩折线图，哪个薄弱点还在反复出现，哪个已经有改善。</div>
           </div>
         </a>
       </div>
@@ -554,13 +570,13 @@
 
         <article class=”pricing-card”>
           <h2 class=”section-title”>试点合作方案</h2>
-          <div class=”price” style=”font-size:32px”>试点服务费</div>
-          <p class=”pricing-note” style=”margin-top:6px;font-size:22px;font-weight:800;color:#17324d”>3000 – 10000 元</p>
-          <p class=”pricing-note”>这个费用包含系统搭建、数据导入、全程陪跑和试点期间的技术支持。正式合作价格另议，试点阶段以低成本先把效果跑出来为主。</p>
+          <div class="price" style="font-size:32px">试点服务费</div>
+          <p class="pricing-note" style="margin-top:6px;font-size:22px;font-weight:800;color:#17324d">1万元</p>
+          <p class="pricing-note">这个费用包含系统搭建、数据导入、全程陪跑和试点期间的技术支持，先把试点效果跑出来。</p>
           <div class=”pricing-points”>
             <div>试点范围建议从一个班、一个学科开始，跑完一次月考的完整流程，看看老师的实际使用感受。</div>
             <div>我们会亲自到校陪你跑第一次，不是远程甩给你一套系统自己摸索。</div>
-            <div>试点期间随时联系，当天响应。如果系统没能帮到老师，费用可以商量。</div>
+            <div>试点期间随时联系，当天响应。</div>
           </div>
           <div class=”contact-card”>
             📱 电话 / 微信：18062269088<br>
