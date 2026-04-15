@@ -420,6 +420,40 @@
     }
     .nav-card-cta.red-cta { color: #dc2626; }
 
+    .float-contact {
+      position: fixed;
+      bottom: 28px;
+      right: 24px;
+      z-index: 999;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 10px;
+    }
+    .float-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 12px 18px;
+      border-radius: 999px;
+      font-weight: 800;
+      font-size: 15px;
+      text-decoration: none;
+      box-shadow: 0 4px 18px rgba(0,0,0,0.18);
+      white-space: nowrap;
+    }
+    .float-btn-primary {
+      background: #2563eb;
+      color: #fff;
+    }
+    .float-btn-secondary {
+      background: #fff;
+      color: #17324d;
+      border: 1px solid #d9e1ea;
+      font-size: 14px;
+      padding: 10px 16px;
+    }
+
     @media (max-width: 980px) {
       .hero,
       .compare-grid,
@@ -539,6 +573,31 @@
     </section>
 
     <section>
+      <div style=”background:#f8fafc;border-radius:20px;padding:32px 36px”>
+        <h2 style=”margin:0 0 6px;font-size:22px;font-weight:900;color:#17324d”>校长最关心的问题，高考宝直接解决</h2>
+        <p style=”margin:0 0 24px;color:#6b7280;font-size:15px”>不是说功能有多强，而是说这几件每天让你头疼的事，有了解法。</p>
+        <div style=”display:grid;grid-template-columns:repeat(2,1fr);gap:14px”>
+          <div style=”background:#fff;border-radius:14px;padding:20px;border-left:4px solid #2563eb”>
+            <div style=”font-weight:800;color:#17324d;margin-bottom:6px”>讲评课讲了一遍，学生下次还是错同样的地方</div>
+            <div style=”color:#6b7280;font-size:14px;line-height:1.65”>高考宝告诉老师：全班在<strong>哪一步</strong>断掉，讲评时只讲那一步，10分钟比讲一节课有效。</div>
+          </div>
+          <div style=”background:#fff;border-radius:14px;padding:20px;border-left:4px solid #2563eb”>
+            <div style=”font-weight:800;color:#17324d;margin-bottom:6px”>批完卷老师精疲力竭，没精力再逐个分析学生</div>
+            <div style=”color:#6b7280;font-size:14px;line-height:1.65”>上传答卷图片，<strong>30分钟</strong>出全班报告，每个学生的薄弱步骤和本周任务自动生成。</div>
+          </div>
+          <div style=”background:#fff;border-radius:14px;padding:20px;border-left:4px solid #15803d”>
+            <div style=”font-weight:800;color:#17324d;margin-bottom:6px”>家长问”孩子哪里不会”，老师答不上来具体的</div>
+            <div style=”color:#6b7280;font-size:14px;line-height:1.65”>每个学生有可打印的个人报告：错在哪一步、本周做三件什么事，家长开会直接发。</div>
+          </div>
+          <div style=”background:#fff;border-radius:14px;padding:20px;border-left:4px solid #15803d”>
+            <div style=”font-weight:800;color:#17324d;margin-bottom:6px”>已经在用智学网了，再换一套有什么意义</div>
+            <div style=”color:#6b7280;font-size:14px;line-height:1.65”>智学网告诉你”函数知识点掌握度44%”，高考宝告诉你”这个学生卡在求导后的<strong>第3步</strong>”。粒度不一样。</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section>
       <div style=”background:#eff6ff;border:2px solid #bfdbfe;border-radius:20px;padding:32px”>
         <div style=”display:flex;align-items:flex-start;justify-content:space-between;gap:24px;flex-wrap:wrap”>
           <div style=”flex:1;min-width:260px”>
@@ -566,20 +625,23 @@
         </div>
       </div>
       <div class=”compare-grid”>
-        <article class="compare-card left">
-          <span class="compare-label">传统统计平台</span>
-          <div class="compare-list">
-            <div class="compare-item">告诉老师：函数与导数模块得分率 44%。</div>
-            <div class="compare-item">告诉学生：这个知识点薄弱，需要多练。</div>
-            <div class="compare-item">老师仍然需要自己判断：到底是不会审题、不会建模，还是步骤断了。</div>
+        <article class=”compare-card left” style=”opacity:0.85”>
+          <span class=”compare-label”>智学网 / 同类平台</span>
+          <p style=”margin:14px 0 10px;font-size:13px;color:#64748b;font-style:italic”>同一个学生，同一道导数题，这些平台告诉老师：</p>
+          <div class=”compare-list”>
+            <div class=”compare-item” style=”color:#64748b”>📊 函数与导数模块，得分率 44%，知识点掌握度不足。</div>
+            <div class=”compare-item” style=”color:#64748b”>📋 该知识点推荐练习：导数相关题目 ×12 道。</div>
+            <div class=”compare-item” style=”color:#64748b;font-style:italic”>老师看完，仍然不知道这个学生到底是哪里卡住了，下节课还是从头讲一遍。</div>
           </div>
         </article>
-        <article class="compare-card right">
-          <span class="compare-label">高考宝</span>
-          <div class="compare-list">
-            <div class="compare-item">告诉老师：这道导数应用题，学生会求导，但卡在“建立区间不等式”这一步。</div>
-            <div class="compare-item">告诉学生：本周只练 3 道“导函数符号判断”专项题，不做综合题。</div>
-            <div class="compare-item">告诉班主任/校长：这类失分是重复出现的顽固薄弱点，值得重点跟进。</div>
+        <article class=”compare-card right”>
+          <span class=”compare-label”>高考宝</span>
+          <p style=”margin:14px 0 10px;font-size:13px;color:#1e40af;font-style:italic”>同一个学生，同一道题，高考宝告诉老师：</p>
+          <div class=”compare-list”>
+            <div class=”compare-item”><strong>✓ 他求导做对了</strong>——问题不是不会导数。</div>
+            <div class=”compare-item”><strong>⚠️ 卡在第3步</strong>：求完导之后，不会把条件转化为区间不等式。这一步断掉，后面全丢分。</div>
+            <div class=”compare-item”><strong>📌 本周只做一件事</strong>：3道”导函数区间判断”专项题，只练这一步，不做综合题。</div>
+            <div class=”compare-item”><strong>🔄 这个问题上次考试也出现了</strong>，是反复出错的顽固薄弱点，建议老师课后单独跟进5分钟。</div>
           </div>
         </article>
       </div>
@@ -612,9 +674,9 @@
 
         <article class=”pricing-card”>
           <h2 class=”section-title”>试点合作方案</h2>
-          <div class="price" style="font-size:32px">试点服务费</div>
-          <p class="pricing-note" style="margin-top:6px;font-size:22px;font-weight:800;color:#17324d">1万元</p>
-          <p class="pricing-note">这个费用包含系统搭建、数据导入、全程陪跑和试点期间的技术支持，先把试点效果跑出来。</p>
+          <div class="price" style="font-size:32px">首期试点合作费</div>
+          <p class="pricing-note" style="margin-top:6px;font-size:36px;font-weight:900;color:#17324d">5000 元</p>
+          <p class="pricing-note">包含系统搭建、数据导入、到校陪跑第一次月考全流程、以及试点期间的全程技术支持。跑完一次月考再决定要不要继续。</p>
           <div class=”pricing-points”>
             <div>试点范围建议从一个班、一个学科开始，跑完一次月考的完整流程，看看老师的实际使用感受。</div>
             <div>我们会亲自到校陪你跑第一次，不是远程甩给你一套系统自己摸索。</div>
@@ -627,6 +689,11 @@
         </article>
       </div>
     </section>
+
+    <div class="float-contact">
+      <a href="tel:18062269088" class="float-btn float-btn-primary">📞 立即联系</a>
+      <a href="/gaokao/student-report.html?studentId=mock-student-1&examId=mock-exam-1" class="float-btn float-btn-secondary">看报告示例</a>
+    </div>
 
     <div class="footer">
       高考宝 · 面向高中学校的考后提分与步骤诊断系统 · 2026
