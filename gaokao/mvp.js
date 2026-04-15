@@ -16,7 +16,7 @@ const GAOKAO_MVP = (() => {
     { className: "高二(3)班", averageScore: 87.5, change: "-4.2", trend: "down" }
   ];
   const mockStudentReport = {
-    student: { id: "mock-student-1", name: "李同学", className: "高二(3)班", studentNo: "20260318" },
+    student: { id: "mock-student-1", name: "李明远（示例）", className: "高二(3)班", studentNo: "20260318" },
     latestExam: { id: "mock-exam-1", name: "2026年4月月考", date: "2026-04-10", totalScore: 81 },
     stepReached: "第 3 步",
     repeatStatus: "重复出现",
@@ -79,11 +79,11 @@ const GAOKAO_MVP = (() => {
       { questionId: "q4", questionNo: "4", score: 12, knowledgePoint: "数列求和", questionType: "填空题", difficulty: "中档", errorRate: 46, topReason: "计算错误", standardSteps: "提取条件 -> 建立公式 -> 代入求和 -> 检查结果", whyWrong: "多数学生到最后一步才错，属于公式会用但结果不稳。", teachFocus: "讲评时带着学生复盘最后两步的计算与检查。", priority: "中" }
     ],
     highRiskStudents: [
-      { id: "mock-student-1", name: "李同学", totalScore: 81, tag: "重点跟进 · 导数应用连续失分" },
-      { id: "mock-student-2", name: "张同学", totalScore: 79, tag: "重点跟进 · 三角函数方向判断反复出错" },
-      { id: "mock-student-3", name: "王同学", totalScore: 77, tag: "重点跟进 · 解析几何建模步骤断裂" },
-      { id: "mock-student-4", name: "赵同学", totalScore: 74, tag: "高风险 · 连续三次下滑" },
-      { id: "mock-student-5", name: "刘同学", totalScore: 91, tag: "改善中 · 数列模块已明显提升" }
+      { id: "mock-student-1", name: "李明远（示例）", totalScore: 81, tag: "重点跟进 · 导数应用连续失分" },
+      { id: "mock-student-2", name: "张晓燕（示例）", totalScore: 79, tag: "重点跟进 · 三角函数方向判断反复出错" },
+      { id: "mock-student-3", name: "王浩然（示例）", totalScore: 77, tag: "重点跟进 · 解析几何建模步骤断裂" },
+      { id: "mock-student-4", name: "陈雨欣（示例）", totalScore: 74, tag: "高风险 · 连续三次下滑" },
+      { id: "mock-student-5", name: "刘子轩（示例）", totalScore: 91, tag: "改善中 · 数列模块已明显提升" }
     ],
     scoreDistribution: [
       { range: "60分以下", count: 1, type: "warn" },
@@ -594,6 +594,11 @@ const GAOKAO_MVP = (() => {
   async function initStudentReport() {
     navify("student-report");
     const payload = await loadStudentReport();
+    // 如果是演示数据，显示提示横幅
+    const demoBanner = document.querySelector("#demoBanner");
+    if (demoBanner && String(payload.student.id).startsWith("mock-")) {
+      demoBanner.style.display = "block";
+    }
     document.querySelector("#studentTitle").textContent = `${payload.student.name} · 个人报告`;
     document.querySelector("#studentMeta").textContent = `${payload.student.className} · ${payload.latestExam?.name || "暂无考试"}`;
     document.querySelector("#studentScore").textContent = payload.latestExam?.totalScore ?? "--";
