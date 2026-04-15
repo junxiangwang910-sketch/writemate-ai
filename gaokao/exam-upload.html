@@ -29,17 +29,42 @@
         <h1 class="section-title">批量上传学生答题卡</h1>
         <p class="section-note">上传学生作答图片，AI将自动识别手写内容并生成步骤诊断报告。</p>
       </div>
-      <form class="card grid cols-2" id="uploadForm">
-        <label class="field">
-          <span>选择考试</span>
-          <select id="examSelect"></select>
-        </label>
-        <label class="field">
-          <span>学生答题卡图片 <span style="color:#6b7280;font-weight:400">（把文件名改成学生姓名，如：李明轩.jpg）</span></span>
-          <input id="cardImages" type="file" accept="image/*" capture="environment" multiple>
-        </label>
+      <form class="card" id="uploadForm" style="display:grid;gap:16px">
+        <div class="grid cols-2">
+          <label class="field">
+            <span>选择考试</span>
+            <select id="examSelect"></select>
+          </label>
+          <label class="field">
+            <span>学生答题卡图片 <span style="color:#6b7280;font-weight:400">（文件名即学生姓名，如：李明轩.jpg）</span></span>
+            <input id="cardImages" type="file" accept="image/*" capture="environment" multiple>
+          </label>
+        </div>
+
+        <div style="border-top:1px solid var(--line);padding-top:16px">
+          <p style="margin:0 0 12px;font-weight:800;font-size:15px">题目信息 <span style="font-weight:400;color:#6b7280;font-size:13px">（填写后AI分析更精准，强烈建议填写）</span></p>
+          <div class="grid cols-2">
+            <label class="field">
+              <span>知识点 / 题型</span>
+              <input id="questionKnowledge" type="text" placeholder="如：导数应用、三角函数、数列求和">
+            </label>
+            <label class="field">
+              <span>本题满分</span>
+              <input id="questionScore" type="number" placeholder="如：18" min="1" max="30" value="18">
+            </label>
+          </div>
+          <label class="field">
+            <span>题目原文 <span style="color:#6b7280;font-weight:400">（粘贴或手动输入题目）</span></span>
+            <textarea id="questionText" style="min-height:80px" placeholder="在这里粘贴题目原文。例如：已知函数f(x)=x³-3x，求f(x)的单调区间，并求极值。"></textarea>
+          </label>
+          <label class="field">
+            <span>标准解题步骤 <span style="color:#6b7280;font-weight:400">（用"→"分隔每个步骤）</span></span>
+            <input id="standardSteps" type="text" placeholder="如：求导f'(x) → 令f'(x)=0解方程 → 列区间表判断正负 → 写出单调区间和极值">
+          </label>
+        </div>
+
         <div class="actions-row">
-          <button class="button" type="submit">开始上传并生成分析</button>
+          <button class="button" type="submit">开始上传并生成AI分析</button>
           <a class="button-ghost" href="/gaokao/exam-analysis.html">直接去分析页</a>
         </div>
       </form>

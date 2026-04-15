@@ -474,6 +474,11 @@ const GAOKAO_MVP = (() => {
         return;
       }
       status.textContent = "正在上传并AI分析中，请稍候（约20-30秒）...";
+      const questionText = document.querySelector("#questionText")?.value?.trim() || "";
+      const standardSteps = document.querySelector("#standardSteps")?.value?.trim() || "";
+      const questionKnowledge = document.querySelector("#questionKnowledge")?.value?.trim() || "";
+      const questionScore = Number(document.querySelector("#questionScore")?.value) || 18;
+
       const cards = await Promise.all(files.map(async (file, index) => ({
         studentName: fileStem(file.name) || `学生 ${index + 1}`,
         studentNo: `AUTO-${index + 1}`,
@@ -481,7 +486,16 @@ const GAOKAO_MVP = (() => {
       })));
       const payload = await api("/api/exams/upload-cards", {
         method: "POST",
-        body: JSON.stringify({ examId, cards })
+        body: JSON.stringify({
+          examId,
+          cards,
+          questionOverride: questionText ? {
+            question_text: questionText,
+            standard_steps: standardSteps,
+            knowledge_point: questionKnowledge,
+            score: questionScore
+          } : null
+        })
       });
       status.innerHTML = `已处理 ${payload.uploaded} 份答题卡。<a href="/gaokao/exam-analysis.html?examId=${examId}">查看考试分析</a>`;
       const firstStudent = payload.students?.[0];

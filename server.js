@@ -5632,6 +5632,8 @@ const server = http.createServer(async (req, res) => {
       }
       const questions = db.prepare("SELECT * FROM questions WHERE exam_id = ? ORDER BY CAST(question_no AS INTEGER), question_no").all(exam.id);
       const cards = Array.isArray(body.cards) ? body.cards : [];
+      // 老师手动填写的题目信息（覆盖默认模板）
+      const questionOverride = body.questionOverride || null;
       const processed = [];
       for (let cardIndex = 0; cardIndex < cards.length; cardIndex++) {
         const card = cards[cardIndex];
@@ -5659,7 +5661,16 @@ const server = http.createServer(async (req, res) => {
           let scoreGot = 0;
 
           if (card.imageDataUrl && question.id === aiTargetQuestion.id && (OPENAI_API_KEY || DEEPSEEK_API_KEY)) {
-            analysis = await analyzeStudentAnswer(card.imageDataUrl, question);
+            // 如果老师填写了题目信息，用真实题目覆盖默认模板
+            const questionForAnalysis = questionOverride ? {
+              ...question,
+              knowledge_point: questionOverride.knowledge_point || question.knowledge_point,
+              standard_steps: questionOverride.standard_steps || question.standard_steps,
+              standard_answer: questionOverride.question_text || question.standard_answer,
+              score: questionOverride.score || question.score,
+              question_no: question.question_no
+            } : question;
+            analysis = await analyzeStudentAnswer(card.imageDataUrl, questionForAnalysis);
           }
 
           if (analysis && typeof analysis.step_reached === "number") {
