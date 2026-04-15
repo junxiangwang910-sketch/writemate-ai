@@ -378,6 +378,16 @@
         align-items: start;
       }
     }
+    @media (max-width: 700px) {
+      /* 四步导览在手机上变2列 */
+      section > div[style*="repeat(4"] {
+        grid-template-columns: repeat(2, 1fr) !important;
+      }
+      /* 快速上传横幅在手机上变单列 */
+      section > div[style*="grid-template-columns:1fr auto"] {
+        grid-template-columns: 1fr !important;
+      }
+    }
   </style>
 </head>
 <body>
@@ -400,8 +410,8 @@
           它把“错了什么”继续往下挖，变成“为什么错、错在什么步骤、下节课该讲什么、这周该练哪几题”。
         </p>
         <div class="hero-actions">
-          <a class="button" href="/gaokao/teacher-dashboard.html">开始演示</a>
-          <a class="button-ghost" href="/gaokao/exam-analysis.html">查看核心页面</a>
+          <a class="button" href="/gaokao/student-report.html?studentId=mock-student-1&examId=mock-exam-1">👁 直接看学生报告示例</a>
+          <a class="button-ghost" href="/gaokao/teacher-dashboard.html">进入完整演示</a>
         </div>
         <div class=”hero-points”>
           <div><span>⏱</span><span>一次月考，30人班级，从上传到出报告约 <strong>30分钟</strong>。传统方式需要老师花半天。</span></div>
@@ -465,6 +475,52 @@
             <div class="compare-item">告诉班主任/校长：这类失分是重复出现的顽固薄弱点，值得重点跟进。</div>
           </div>
         </article>
+      </div>
+    </section>
+
+    <section>
+      <div class="section-head">
+        <div>
+          <h2 class="section-title">校长按这个顺序看，5分钟看完</h2>
+          <p class="section-note">每个链接直接进入对应页面，全部是真实可点击的系统界面。</p>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px">
+        <a href="/gaokao/teacher-dashboard.html" style="text-decoration:none">
+          <div style="background:#fff;border:1px solid #d9e1ea;border-radius:16px;padding:20px;border-top:4px solid #2563eb">
+            <div style="font-size:22px;margin-bottom:8px">① 工作台</div>
+            <div style="color:#6b7280;font-size:14px;line-height:1.6">看本次月考最需要关注的3件事、班级对比、待跟进学生名单。</div>
+          </div>
+        </a>
+        <a href="/gaokao/exam-analysis.html?examId=mock-exam-1" style="text-decoration:none">
+          <div style="background:#fff;border:1px solid #d9e1ea;border-radius:16px;padding:20px;border-top:4px solid #2563eb">
+            <div style="font-size:22px;margin-bottom:8px">② 考试分析</div>
+            <div style="color:#6b7280;font-size:14px;line-height:1.6">讲评优先级推荐、错因分布图、每道题为什么全班会错、该怎么讲。</div>
+          </div>
+        </a>
+        <a href="/gaokao/student-report.html?studentId=mock-student-1&examId=mock-exam-1" style="text-decoration:none">
+          <div style="background:#fff;border:2px solid #2563eb;border-radius:16px;padding:20px;border-top:4px solid #dc2626">
+            <div style="font-size:22px;margin-bottom:8px">③ 学生报告 ⭐</div>
+            <div style="color:#6b7280;font-size:14px;line-height:1.6">最关键的页面。步骤诊断图显示学生卡在哪一步，给出本周3个具体训练任务。</div>
+          </div>
+        </a>
+        <a href="/gaokao/student-track.html?studentId=mock-student-1" style="text-decoration:none">
+          <div style="background:#fff;border:1px solid #d9e1ea;border-radius:16px;padding:20px;border-top:4px solid #15803d">
+            <div style="font-size:22px;margin-bottom:8px">④ 跟踪记录</div>
+            <div style="color:#6b7280;font-size:14px;line-height:1.6">近三次成绩折线图、哪些薄弱点在改善、哪些反复出现。</div>
+          </div>
+        </a>
+      </div>
+    </section>
+
+    <section>
+      <div style="background:linear-gradient(135deg,#1f5eff,#12335f);border-radius:20px;padding:32px;color:#fff;display:grid;grid-template-columns:1fr auto;gap:24px;align-items:center">
+        <div>
+          <h2 style="margin:0 0 10px;font-size:24px;font-weight:900">想用自己的答题卡试一下？</h2>
+          <p style="margin:0;opacity:0.88;line-height:1.7">拍一张学生的数学解答题作答，上传进来，AI 会真正读取手写内容，判断学生做到哪一步、错在哪里、下一步练什么。</p>
+          <p style="margin:10px 0 0;opacity:0.7;font-size:14px">提示：把图片文件名改成学生姓名（如：李明轩.jpg），报告就会显示正确姓名。支持 JPG / PNG，手机拍照直接上传。</p>
+        </div>
+        <a href="/gaokao/exam-upload.html" style="display:inline-flex;align-items:center;justify-content:center;min-height:52px;padding:0 28px;background:#fff;color:#12335f;border-radius:12px;font-weight:900;font-size:16px;text-decoration:none;white-space:nowrap;flex-shrink:0">上传答题卡 →</a>
       </div>
     </section>
 

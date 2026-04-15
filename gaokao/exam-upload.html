@@ -35,15 +35,15 @@
           <select id="examSelect"></select>
         </label>
         <label class="field">
-          <span>学生答题卡图片</span>
-          <input id="cardImages" type="file" accept="image/*" multiple>
+          <span>学生答题卡图片 <span style="color:#6b7280;font-weight:400">（把文件名改成学生姓名，如：李明轩.jpg）</span></span>
+          <input id="cardImages" type="file" accept="image/*" capture="environment" multiple>
         </label>
         <div class="actions-row">
           <button class="button" type="submit">开始上传并生成分析</button>
           <a class="button-ghost" href="/gaokao/exam-analysis.html">直接去分析页</a>
         </div>
       </form>
-      <p class="status-box" id="uploadStatus" data-status>建议一次先上传一个班的答题卡图片。</p>
+      <p class="status-box" id="uploadStatus" data-status>支持手机直接拍照上传，也可以从相册选取。上传后约 20-30 秒出分析报告。</p>
     </section>
   </div>
   <script src="/gaokao/mvp.js"></script>
