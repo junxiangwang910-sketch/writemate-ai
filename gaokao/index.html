@@ -2,11 +2,573 @@
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8">
-  <meta http-equiv="refresh" content="0; url=/gaokao/teacher-dashboard.html">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>高考宝</title>
+  <title>高考宝 | 高中考后提分系统</title>
+  <style>
+    :root {
+      --bg: #f5f7fa;
+      --surface: #ffffff;
+      --ink: #17324d;
+      --muted: #6b7280;
+      --line: #d9e1ea;
+      --brand: #1f5eff;
+      --brand-deep: #12335f;
+      --accent: #f59e0b;
+      --good: #15803d;
+      --shadow: 0 18px 44px rgba(23, 50, 77, 0.12);
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at top left, rgba(31, 94, 255, 0.12), transparent 28%),
+        radial-gradient(circle at top right, rgba(245, 158, 11, 0.14), transparent 22%),
+        var(--bg);
+    }
+
+    a { color: inherit; text-decoration: none; }
+    .shell { width: min(1180px, calc(100% - 32px)); margin: 0 auto; }
+    .topbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 20px;
+      padding: 24px 0 10px;
+    }
+    .brand {
+      font-size: 22px;
+      font-weight: 900;
+      color: var(--brand-deep);
+      letter-spacing: 0.02em;
+    }
+    .toplinks {
+      display: flex;
+      gap: 18px;
+      flex-wrap: wrap;
+      color: var(--muted);
+      font-size: 14px;
+      font-weight: 700;
+    }
+    .hero {
+      display: grid;
+      grid-template-columns: 1.15fr 0.85fr;
+      gap: 24px;
+      align-items: stretch;
+      padding: 18px 0 40px;
+    }
+    .hero-card,
+    .panel,
+    .feature-card,
+    .compare-card,
+    .team-card,
+    .pricing-card {
+      background: var(--surface);
+      border: 1px solid rgba(217, 225, 234, 0.9);
+      border-radius: 20px;
+      box-shadow: var(--shadow);
+    }
+    .hero-card {
+      padding: 34px;
+      background:
+        linear-gradient(135deg, rgba(31, 94, 255, 0.98), rgba(18, 51, 95, 0.98));
+      color: #fff;
+      overflow: hidden;
+      position: relative;
+    }
+    .hero-card::after {
+      content: "";
+      position: absolute;
+      inset: auto -60px -80px auto;
+      width: 240px;
+      height: 240px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.09);
+    }
+    .eyebrow {
+      display: inline-flex;
+      padding: 8px 14px;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.14);
+      font-size: 13px;
+      font-weight: 800;
+      letter-spacing: 0.02em;
+    }
+    h1 {
+      margin: 18px 0 14px;
+      font-size: clamp(34px, 6vw, 54px);
+      line-height: 1.08;
+      letter-spacing: -0.03em;
+    }
+    .hero-copy {
+      margin: 0;
+      max-width: 720px;
+      color: rgba(255,255,255,0.92);
+      font-size: 18px;
+      line-height: 1.7;
+    }
+    .hero-actions {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-top: 28px;
+    }
+    .button,
+    .button-ghost {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 48px;
+      padding: 0 22px;
+      border-radius: 10px;
+      font-weight: 800;
+      font-size: 15px;
+    }
+    .button {
+      background: #fff;
+      color: var(--brand-deep);
+    }
+    .button-ghost {
+      border: 1px solid rgba(255,255,255,0.28);
+      color: #fff;
+      background: rgba(255,255,255,0.08);
+    }
+    .hero-points {
+      display: grid;
+      gap: 10px;
+      margin-top: 28px;
+      font-size: 15px;
+    }
+    .hero-points div { display: flex; gap: 10px; align-items: start; }
+    .hero-side {
+      display: grid;
+      gap: 18px;
+    }
+    .panel {
+      padding: 24px;
+    }
+    .panel-title,
+    .section-title,
+    .card-title {
+      margin: 0 0 10px;
+      font-size: 20px;
+      font-weight: 900;
+    }
+    .panel-note,
+    .section-note,
+    .card-note {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.7;
+    }
+    .metric-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+      margin-top: 18px;
+    }
+    .metric {
+      padding: 18px;
+      border-radius: 14px;
+      background: #f8fbff;
+      border: 1px solid var(--line);
+    }
+    .metric strong {
+      display: block;
+      margin-top: 6px;
+      font-size: 30px;
+      color: var(--brand);
+    }
+    .metric span {
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 700;
+    }
+    section { padding: 22px 0; }
+    .section-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: end;
+      gap: 18px;
+      margin-bottom: 18px;
+    }
+    .compare-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 18px;
+    }
+    .compare-card {
+      padding: 24px;
+    }
+    .compare-card.left { border-top: 5px solid #94a3b8; }
+    .compare-card.right { border-top: 5px solid var(--brand); }
+    .compare-label {
+      display: inline-flex;
+      padding: 7px 12px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 900;
+      letter-spacing: 0.02em;
+    }
+    .left .compare-label {
+      background: #eef2f7;
+      color: #475569;
+    }
+    .right .compare-label {
+      background: #dbeafe;
+      color: var(--brand);
+    }
+    .compare-list {
+      display: grid;
+      gap: 12px;
+      margin-top: 18px;
+    }
+    .compare-item {
+      padding: 14px 16px;
+      border-radius: 12px;
+      background: #f8fafc;
+      border: 1px solid var(--line);
+      line-height: 1.65;
+    }
+    .features {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 18px;
+    }
+    .feature-card {
+      padding: 20px;
+    }
+    .shot {
+      height: 180px;
+      border-radius: 16px;
+      border: 1px solid var(--line);
+      background:
+        linear-gradient(180deg, #f8fbff 0%, #eef4ff 100%);
+      padding: 14px;
+      display: grid;
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+    .shot-bar {
+      height: 12px;
+      border-radius: 999px;
+      background: linear-gradient(90deg, var(--brand), #7aa2ff);
+    }
+    .shot-bar.warn {
+      background: linear-gradient(90deg, #dc2626, #f59e0b);
+      width: 78%;
+    }
+    .shot-card {
+      flex: 1;
+      border-radius: 12px;
+      background: #fff;
+      border: 1px solid #d7e3f6;
+      padding: 10px 12px;
+      display: grid;
+      gap: 8px;
+    }
+    .shot-chip {
+      display: inline-flex;
+      padding: 5px 10px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 800;
+      background: #dbeafe;
+      color: var(--brand);
+      width: fit-content;
+    }
+    .shot-step {
+      height: 16px;
+      border-radius: 999px;
+      background: #e0e7ef;
+      position: relative;
+      overflow: hidden;
+    }
+    .shot-step::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      width: 62%;
+      background: linear-gradient(90deg, #16a34a, #2563eb, #dc2626);
+    }
+    .team-grid,
+    .pricing-grid {
+      display: grid;
+      grid-template-columns: 1.1fr 0.9fr;
+      gap: 18px;
+    }
+    .team-card,
+    .pricing-card {
+      padding: 24px;
+    }
+    .team-badges,
+    .pricing-points,
+    .doc-links {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 16px;
+    }
+    .badge,
+    .doc-link {
+      display: inline-flex;
+      padding: 8px 12px;
+      border-radius: 999px;
+      background: #eef4ff;
+      color: var(--brand-deep);
+      font-size: 13px;
+      font-weight: 800;
+    }
+    .doc-link {
+      background: #f8fafc;
+      border: 1px solid var(--line);
+    }
+    .price {
+      font-size: 42px;
+      font-weight: 900;
+      color: var(--brand-deep);
+      letter-spacing: -0.04em;
+    }
+    .pricing-note {
+      color: var(--muted);
+      line-height: 1.7;
+      margin: 10px 0 0;
+    }
+    .pricing-points {
+      display: grid;
+      gap: 10px;
+      margin-top: 18px;
+    }
+    .pricing-points div {
+      padding: 12px 14px;
+      border-radius: 12px;
+      background: #f8fafc;
+      border: 1px solid var(--line);
+      line-height: 1.65;
+    }
+    .contact-card {
+      margin-top: 18px;
+      padding: 16px 18px;
+      border-radius: 14px;
+      background: #fff8db;
+      border: 1px solid #f5d27a;
+      color: #8a5a00;
+      font-weight: 700;
+      line-height: 1.7;
+    }
+    .footer {
+      padding: 20px 0 38px;
+      color: var(--muted);
+      font-size: 13px;
+      text-align: center;
+    }
+    @media (max-width: 980px) {
+      .hero,
+      .compare-grid,
+      .features,
+      .team-grid,
+      .pricing-grid {
+        grid-template-columns: 1fr;
+      }
+      .topbar,
+      .section-head {
+        flex-direction: column;
+        align-items: start;
+      }
+    }
+  </style>
 </head>
 <body>
-  <p>正在进入高考宝老师工作台：<a href="/gaokao/teacher-dashboard.html">点击继续</a></p>
+  <div class="shell">
+    <header class="topbar">
+      <div class="brand">高考宝 · Chu Han Demo</div>
+      <div class="toplinks">
+        <a href="/gaokao/teacher-dashboard.html">老师演示入口</a>
+        <a href="/gaokao/exam-analysis.html">考试分析</a>
+        <a href="/gaokao/student-report.html">学生报告</a>
+      </div>
+    </header>
+
+    <section class="hero">
+      <article class="hero-card">
+        <span class="eyebrow">面向高中学校的考后提分系统</span>
+        <h1>不是只看分数，<br>而是告诉老师学生究竟错在第几步。</h1>
+        <p class="hero-copy">
+          高考宝是一套帮助学校做考后分析、精准补弱、班级讲评和重点学生一对一跟踪的智能教学辅助系统。
+          它把“错了什么”继续往下挖，变成“为什么错、错在什么步骤、下节课该讲什么、这周该练哪几题”。
+        </p>
+        <div class="hero-actions">
+          <a class="button" href="/gaokao/teacher-dashboard.html">开始演示</a>
+          <a class="button-ghost" href="/gaokao/exam-analysis.html">查看核心页面</a>
+        </div>
+        <div class="hero-points">
+          <div><span>1.</span><span>考试结束后自动生成班级讲评重点、学生个人报告和后续训练任务。</span></div>
+          <div><span>2.</span><span>重点不是“知识点掌握度”，而是“学生卡在第几步、下步怎么补”。</span></div>
+          <div><span>3.</span><span>适合先从一个年级、一个学科、一个班级做低风险试点。</span></div>
+        </div>
+      </article>
+
+      <div class="hero-side">
+        <article class="panel">
+          <h2 class="panel-title">一句话定位</h2>
+          <p class="panel-note">把每一次考试真正转化为提分动作，而不是停留在分数统计和知识点标签。</p>
+          <div class="metric-grid">
+            <div class="metric">
+              <span>老师最关心</span>
+              <strong>讲什么</strong>
+            </div>
+            <div class="metric">
+              <span>学生最需要</span>
+              <strong>补哪步</strong>
+            </div>
+            <div class="metric">
+              <span>校长最关注</span>
+              <strong>能提分</strong>
+            </div>
+            <div class="metric">
+              <span>家长最想看</span>
+              <strong>怎么改</strong>
+            </div>
+          </div>
+        </article>
+
+        <article class="panel">
+          <h2 class="panel-title">适合谁先看</h2>
+          <p class="panel-note">校长先看这页理解产品定位，老师再进入工作台看真实演示流程。两个入口分开，沟通更顺。</p>
+        </article>
+      </div>
+    </section>
+
+    <section>
+      <div class="section-head">
+        <div>
+          <h2 class="section-title">和智学网的核心差异</h2>
+          <p class="section-note">不是换一种看板，而是把诊断粒度从“知识点”推进到“步骤”。</p>
+        </div>
+      </div>
+      <div class="compare-grid">
+        <article class="compare-card left">
+          <span class="compare-label">传统统计平台</span>
+          <div class="compare-list">
+            <div class="compare-item">告诉老师：函数与导数模块得分率 44%。</div>
+            <div class="compare-item">告诉学生：这个知识点薄弱，需要多练。</div>
+            <div class="compare-item">老师仍然需要自己判断：到底是不会审题、不会建模，还是步骤断了。</div>
+          </div>
+        </article>
+        <article class="compare-card right">
+          <span class="compare-label">高考宝</span>
+          <div class="compare-list">
+            <div class="compare-item">告诉老师：这道导数应用题，学生会求导，但卡在“建立区间不等式”这一步。</div>
+            <div class="compare-item">告诉学生：本周只练 3 道“导函数符号判断”专项题，不做综合题。</div>
+            <div class="compare-item">告诉班主任/校长：这类失分是重复出现的顽固薄弱点，值得重点跟进。</div>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <section>
+      <div class="section-head">
+        <div>
+          <h2 class="section-title">三个核心功能</h2>
+          <p class="section-note">先看最能打动校长和老师的三个界面，再进入完整演示。</p>
+        </div>
+      </div>
+      <div class="features">
+        <article class="feature-card">
+          <div class="shot">
+            <div class="shot-bar"></div>
+            <div class="shot-card">
+              <span class="shot-chip">工作台</span>
+              <div class="shot-step"></div>
+              <div class="shot-step"></div>
+              <div class="shot-step"></div>
+            </div>
+          </div>
+          <h3 class="card-title">考后分析工作台</h3>
+          <p class="card-note">校长和老师一进来就看到“本次月考最需要关注的 3 件事”、班级横向对比和待跟进学生。</p>
+          <div class="doc-links">
+            <a class="doc-link" href="/gaokao/teacher-dashboard.html">查看工作台</a>
+          </div>
+        </article>
+
+        <article class="feature-card">
+          <div class="shot">
+            <div class="shot-bar warn"></div>
+            <div class="shot-card">
+              <span class="shot-chip">考试分析</span>
+              <div class="shot-step"></div>
+              <div class="shot-step"></div>
+              <div class="shot-step"></div>
+            </div>
+          </div>
+          <h3 class="card-title">讲评优先级与错因分布</h3>
+          <p class="card-note">不是只看错误率，而是直接告诉老师：这题为什么全班都错、下节课该优先讲哪三道题。</p>
+          <div class="doc-links">
+            <a class="doc-link" href="/gaokao/exam-analysis.html">查看考试分析</a>
+          </div>
+        </article>
+
+        <article class="feature-card">
+          <div class="shot">
+            <div class="shot-bar"></div>
+            <div class="shot-card">
+              <span class="shot-chip">学生报告</span>
+              <div class="shot-step"></div>
+              <div class="shot-step"></div>
+              <div class="shot-step"></div>
+            </div>
+          </div>
+          <h3 class="card-title">步骤级学生报告</h3>
+          <p class="card-note">最关键的差异化界面。直接呈现“识别题型 ✓ / 求导 ✓ / 区间讨论 ⚠️”，老师和家长一眼就明白问题在哪。</p>
+          <div class="doc-links">
+            <a class="doc-link" href="/gaokao/student-report.html">查看学生报告</a>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <section>
+      <div class="team-grid">
+        <article class="team-card">
+          <h2 class="section-title">团队介绍</h2>
+          <p class="section-note">
+            团队核心优势不是单纯会写代码，而是理解本地学校、理解高考场景，也愿意把系统做成真正能进教研组的工具。
+          </p>
+          <div class="team-badges">
+            <span class="badge">襄阳学子</span>
+            <span class="badge">985 背景</span>
+            <span class="badge">博硕团队</span>
+            <span class="badge">能做产品也能做交付</span>
+          </div>
+          <div class="doc-links">
+            <a class="doc-link" href="/gaokao/%E9%AB%98%E8%80%83%E5%AE%9D-%E5%9B%A2%E9%98%9F%E4%BB%8B%E7%BB%8D.md">查看团队介绍</a>
+            <a class="doc-link" href="/gaokao/%E9%AB%98%E8%80%83%E5%AE%9D-%E4%BA%A7%E5%93%81%E4%BB%8B%E7%BB%8D.md">查看产品介绍</a>
+            <a class="doc-link" href="/gaokao/%E9%AB%98%E8%80%83%E5%AE%9D-%E4%BD%BF%E7%94%A8%E6%8C%87%E5%8D%97.md">查看使用指南</a>
+          </div>
+        </article>
+
+        <article class="pricing-card">
+          <h2 class="section-title">试点方案</h2>
+          <div class="price">3000 - 10000元</div>
+          <p class="pricing-note">建议先从一个年级、一个学科、一个班级试点，先验证价值，再扩展到年级或全校。</p>
+          <div class="pricing-points">
+            <div>包含：考后分析、班级讲评建议、学生个人报告、重点学生跟踪。</div>
+            <div>形式：小范围试点，不要求学校一上来做重投入。</div>
+            <div>目标：让老师先觉得“真省时间、真有抓手”，再谈后续合作。</div>
+          </div>
+          <div class="contact-card">
+            联系方式：支持到校演示、微信沟通、试点方案对接。<br>
+            演示入口：点击上方“开始演示”，或直接进入老师工作台查看完整流程。
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <div class="footer">
+      高考宝 Demo · 面向高中学校的考后提分与步骤诊断系统
+    </div>
+  </div>
 </body>
 </html>

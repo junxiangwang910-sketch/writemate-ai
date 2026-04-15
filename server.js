@@ -64,7 +64,7 @@ const mimeTypes = {
 };
 
 function defaultHomePath() {
-  if (SITE_VARIANT === "gaokao") return path.join(ROOT, "gaokao", "teacher-dashboard.html");
+  if (SITE_VARIANT === "gaokao") return path.join(ROOT, "gaokao", "index.html");
   return path.join(ROOT, "shenlun", "index.html");
 }
 
