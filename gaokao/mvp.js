@@ -16,38 +16,46 @@ const GAOKAO_MVP = (() => {
     { className: "高二(3)班", averageScore: 87.5, change: "-4.2", trend: "down" }
   ];
   const mockStudentReport = {
-    student: { id: "mock-student-1", name: "李明远（示例）", className: "高二(3)班", studentNo: "20260318" },
+    student: { id: "mock-student-1", name: "李明远", className: "高二(3)班", studentNo: "20260318" },
     latestExam: { id: "mock-exam-1", name: "2026年4月月考", date: "2026-04-10", totalScore: 81 },
     stepReached: "第 3 步",
     repeatStatus: "重复出现",
-    pathSummary: "这次真正拉低分数的不是“不会求导”，而是在导数应用题里，做完求导后不会继续把条件转成区间判断，所以总卡在第二步。",
-    weakPoints: ["导数单调性", "三角函数变形", "数列求和"],
-    weakAbilities: ["条件转化", "规范书写", "分类讨论"],
+    pathSummary: "这次失分的关键不是不会求导——求导他做对了。问题在第三步：求完导之后，他不会把f\'(x)>0这个条件转化成区间不等式去解。这一步卡住，后面的分类讨论和结论全部丢失。上次月考同样的地方也出了问题。",
+    weakPoints: ["导数区间讨论", "三角函数变形入口", "数列求和方法选择"],
+    weakAbilities: ["条件转化能力", "分类讨论完整性", "规范书写"],
     wrongDetails: [
-      { questionNo: "7", knowledgePoint: "导数应用", mainErrorType: "方法问题", teacherFeedback: "导函数求出后不会继续做区间讨论。" },
-      { questionNo: "3", knowledgePoint: "三角函数", mainErrorType: "步骤问题", teacherFeedback: "公式方向选错，导致后续变形中断。" }
+      { questionNo: "7", knowledgePoint: "导数应用", mainErrorType: "方法问题", teacherFeedback: "求导正确，但令f\'(x)>0后不会建立区间不等式，直接跳到写结论导致全错。建议专项练习导函数符号判断这一步。" },
+      { questionNo: "3", knowledgePoint: "三角函数", mainErrorType: "步骤问题", teacherFeedback: "第一步就选错了公式方向，导致后续变形越来越复杂，最终放弃。需要从题型识别入手训练。" }
     ],
-    actionList: ["今天先做 3 道导数单调性专项题，只练“列出区间并判断符号”这一步。", "明天做 2 道三角函数变形题，重点练公式入口判断。", "周五回做原卷第 7 题，订正时必须写完整步骤。"],
-    focusTasks: ["导数单调性判断专项 3 题：只练区间讨论", "三角函数公式选择专项 2 题：只练变形入口", "中档题规范书写回测 1 次：按步骤分写完整"],
-    trackingSummary: "该生连续两次在导数和三角函数模块失分较多，建议本周优先跟进。",
+    actionList: [
+      "本周只做一件事：3道导数题，只练求完导之后怎么建立区间不等式这一步，不做完整题。",
+      "做完后，把这3道题的区间讨论过程写给老师检查，确认步骤格式正确。",
+      "周五重做4月月考第7题，对照标准步骤，逐步写完整，不跳步。"
+    ],
+    focusTasks: [
+      "导函数符号与区间判断专项 3 题（只练第3步，其余步骤可参考答案）",
+      "三角函数题型识别练习 2 题（重点判断：先化简还是先求性质）",
+      "第7题完整订正 1 次：对照标准步骤，每步写出依据"
+    ],
+    trackingSummary: "李明远连续两次在导数应用题的区间讨论步骤失分，属于顽固薄弱点。本周如果专项练习有改善，下次考试有望在这道题拿回8-10分。",
     trend: [
       { examName: "2026年3月联考", date: "2026-03-15", totalScore: 88 },
       { examName: "2026年3月周测", date: "2026-03-28", totalScore: 84 },
       { examName: "2026年4月月考", date: "2026-04-10", totalScore: 81 }
     ],
     conclusion: [
-      "这个问题上次考试已经出现过，这次仍然没有完全改善。",
-      "建议老师不要再泛泛讲“导数”，而是只盯“区间讨论这一步”。",
-      "如果本周 3 道专项题仍错 2 道以上，下周要单独面批。"
+      "导数区间讨论这个问题，3月联考、3月周测、4月月考连续三次出现，是顽固失分点。",
+      "老师下节讲评课不需要从头讲导数——只需要示范求完导之后的第3步怎么做，10分钟就够。",
+      "如果本周专项练习后仍然卡在这步，建议课后单独辅导5分钟，当面确认他理解了。"
     ],
     stepPath: ["识别题型", "求导", "区间讨论", "写结论"],
     progress: [
-      { label: "导数应用", status: "连续 2 次出现", trend: "down" },
-      { label: "规范书写", status: "比上次略有改善", trend: "up" },
-      { label: "三角函数变形", status: "仍需继续跟进", trend: "down" }
+      { label: "导数区间讨论", status: "连续3次出现，未改善", trend: "down" },
+      { label: "规范书写", status: "上次提醒后有改善", trend: "up" },
+      { label: "三角函数变形", status: "本次新增，需跟进", trend: "down" }
     ]
   };
-  const mockExamAnalysis = {
+    const mockExamAnalysis = {
     exam: { id: "mock-exam-1", name: "2026年4月月考", date: "2026-04-10", subject: "高二数学", className: "高二(3)班" },
     studentCount: 28,
     averageScore: 87.5,
@@ -79,11 +87,11 @@ const GAOKAO_MVP = (() => {
       { questionId: "q4", questionNo: "4", score: 12, knowledgePoint: "数列求和", questionType: "填空题", difficulty: "中档", errorRate: 46, topReason: "计算错误", standardSteps: "提取条件 -> 建立公式 -> 代入求和 -> 检查结果", whyWrong: "多数学生到最后一步才错，属于公式会用但结果不稳。", teachFocus: "讲评时带着学生复盘最后两步的计算与检查。", priority: "中" }
     ],
     highRiskStudents: [
-      { id: "mock-student-1", name: "李明远（示例）", totalScore: 81, tag: "重点跟进 · 导数应用连续失分" },
-      { id: "mock-student-2", name: "张晓燕（示例）", totalScore: 79, tag: "重点跟进 · 三角函数方向判断反复出错" },
-      { id: "mock-student-3", name: "王浩然（示例）", totalScore: 77, tag: "重点跟进 · 解析几何建模步骤断裂" },
-      { id: "mock-student-4", name: "陈雨欣（示例）", totalScore: 74, tag: "高风险 · 连续三次下滑" },
-      { id: "mock-student-5", name: "刘子轩（示例）", totalScore: 91, tag: "改善中 · 数列模块已明显提升" }
+      { id: "mock-student-1", name: "李明远", totalScore: 81, tag: "重点跟进 · 导数区间讨论连续3次失分" },
+      { id: "mock-student-2", name: "张晓燕", totalScore: 79, tag: "重点跟进 · 三角函数第一步方向判断反复出错" },
+      { id: "mock-student-3", name: "王浩然", totalScore: 77, tag: "重点跟进 · 解析几何建模步骤断裂" },
+      { id: "mock-student-4", name: "陈雨欣", totalScore: 74, tag: "高风险 · 本次较上次下滑10分" },
+      { id: "mock-student-5", name: "刘子轩", totalScore: 91, tag: "改善中 · 数列模块上次弱项已明显提升" }
     ],
     scoreDistribution: [
       { range: "60分以下", count: 1, type: "warn" },
