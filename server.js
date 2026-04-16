@@ -947,31 +947,202 @@ function generateTeachFocus(knowledgePoint, errorType) {
   return "重点讲关键步骤的选择逻辑，而不是直接展示答案。";
 }
 
-function buildAnalysisPrompt(question) {
-  return `你是高中数学阅卷专家。请仔细看这名学生的作答图片。
+function getSubjectPromptContext(knowledgePoint) {
+  const templates = {
+    "导数": {
+      role: "你是一位专门分析高考导数题的数学老师",
+      commonErrors: ["忘记验证端点", "链式法则出错", "符号处理失误", "漏讨论定义域边界"],
+      analysisFocus: "重点判断学生在哪一步出现逻辑断裂，是否混淆极值与最值"
+    },
+    "解析几何": {
+      role: "你是一位专门分析高考解析几何题的数学老师",
+      commonErrors: ["设参后忘记代入约束条件", "斜率不存在未单独讨论", "韦达定理使用错误", "算术失误"],
+      analysisFocus: "重点关注学生是否遗漏特殊情况讨论，以及代数运算中的错误"
+    },
+    "三角函数": {
+      role: "你是一位专门分析高考三角函数题的数学老师",
+      commonErrors: ["辅助角公式符号搞错", "相位偏移方向搞反", "忘记考虑定义域对值域的限制"],
+      analysisFocus: "重点判断变形步骤是否正确，以及值域判断是否受定义域约束"
+    },
+    "物理受力": {
+      role: "你是一位专门分析高考物理受力分析题的物理老师",
+      commonErrors: ["漏力（摩擦力或支持力）", "受力方向画错", "坐标轴选取不合理", "静摩擦力方向错误"],
+      analysisFocus: "重点看受力图是否完整，以及方程是否与受力图一致"
+    },
+    "电学": {
+      role: "你是一位专门分析高考电学题的物理老师",
+      commonErrors: ["串并联判断错误", "内阻遗漏", "基尔霍夫定律列式符号错误", "功率公式用错"],
+      analysisFocus: "重点看电路分析逻辑是否正确，各段电压电流是否自洽"
+    }
+  };
 
-请找到并分析【第${question.question_no}题】（${question.knowledge_point}，${question.question_type}，满分${question.score}分）的作答内容。
-如果图片中有多道题，请只看第${question.question_no}题的作答区域。
+  const matched = Object.keys(templates).find((k) =>
+    knowledgePoint && knowledgePoint.includes(k)
+  );
 
-标准步骤：${question.standard_steps}
-标准答案要点：${question.standard_answer}
+  return matched ? templates[matched] : {
+    role: "你是一位经验丰富的高考阅卷老师",
+    commonErrors: ["审题不清", "公式记忆错误", "计算失误", "答非所问"],
+    analysisFocus: "判断学生主要的失分原因"
+  };
+}
 
-请逐步对比该题的学生作答和标准步骤，判断：
-1. step_reached：学生完整写出了标准步骤中的第几步（数字，从1开始，如果完全没写或方向全错填1）
-2. main_error_type：主要错误类型，从"方法问题/步骤问题/计算错误/习惯问题"选一个
-3. secondary_error_type：次要错误简述
-4. weak_knowledge_points：薄弱知识点，JSON数组，1-2个
-5. weak_ability_points：薄弱能力点，JSON数组，1-2个
-6. teacher_feedback：给老师的建议，一句话，具体说明哪步出错该怎么讲
-7. student_feedback：给学生的鼓励性建议，一句话
-8. next_practice_focus：下一步练习重点，一句话
-9. confidence：分析置信度，"高"/"中"/"低"
+function normalizeStandardSteps(input) {
+  if (Array.isArray(input)) {
+    return input.map((item) => String(item || "").trim()).filter(Boolean);
+  }
+  return String(input || "")
+    .split(/\s*->\s*|\r?\n+/)
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
 
-只输出JSON，不要其他文字。`;
+function buildAnalysisPrompt(questionData, knowledgePoint) {
+  const ctx = getSubjectPromptContext(knowledgePoint);
+  const standardSteps = normalizeStandardSteps(questionData.standardSteps || questionData.standard_steps);
+  return `
+${ctx.role}，请严格按以下格式分析学生的作答。
+
+【本题信息】
+题目：${questionData.questionText || questionData.question_text || "见图片"}
+满分：${questionData.fullScore || questionData.score || "未知"}分
+知识点：${knowledgePoint || questionData.knowledge_point || "未标注"}
+标准步骤：
+${standardSteps.map((s, i) => `  第${i + 1}步：${s}`).join("\n") || "  （未录入标准步骤）"}
+
+【本题常见错误类型】（仅供你判断参考，不要直接告诉学生）
+${ctx.commonErrors.map((e) => `  - ${e}`).join("\n")}
+
+【分析重点】
+${ctx.analysisFocus}
+
+【学生作答见附图】
+
+请只输出以下 JSON，不要有任何其他文字：
+{
+  "step_reached": "学生做到了哪一步（填步骤序号和名称）",
+  "main_error_type": "主要错误类型",
+  "secondary_error_type": "次要错误类型（没有填null）",
+  "weak_knowledge_points": ["薄弱知识点"],
+  "weak_ability_points": ["薄弱能力"],
+  "teacher_feedback": "给老师的专业诊断，50字以内",
+  "student_feedback": "给学生的鼓励式反馈，温和语气，80字以内",
+  "next_practice_focus": "下一步具体练习建议",
+  "confidence": 0.0到1.0之间的小数
+}
+`;
+}
+
+function buildFallback(knowledgePoint, reason) {
+  const fallbacks = {
+    "导数": {
+      teacher_feedback: "学生在导数计算或极值判断环节存在问题，建议针对性复习导数综合题",
+      student_feedback: "这道导数题你已经有了正确方向！主要加强求导运算的准确性，多练几道就会了。",
+      next_practice_focus: "导数求值与极值判断专项练习"
+    },
+    "解析几何": {
+      teacher_feedback: "学生在联立方程或几何量计算环节出现问题，注意是否有特殊情况遗漏",
+      student_feedback: "解析几何需要耐心，你的思路基本对！主要是计算细节再仔细一些。",
+      next_practice_focus: "直线与圆锥曲线位置关系专项练习"
+    },
+    "三角函数": {
+      teacher_feedback: "学生在三角变形或值域判断上出现偏差，建议复习辅助角公式应用",
+      student_feedback: "三角函数变形很考验细心，你做到这一步已经不错了！继续加油。",
+      next_practice_focus: "三角函数辅助角公式与值域专项练习"
+    },
+    "物理受力": {
+      teacher_feedback: "学生受力分析存在遗漏或方向错误，建议重点训练隔离法",
+      student_feedback: "受力分析是物理的基础，画图再仔细一点你肯定能做对！",
+      next_practice_focus: "隔离法与整体法受力分析专项练习"
+    },
+    "电学": {
+      teacher_feedback: "学生在电路判断或计算环节出现错误，建议复习串并联基本规律",
+      student_feedback: "电学题计算量大，你能写出这些步骤很棒！继续巩固基本规律就好。",
+      next_practice_focus: "串并联电路综合计算专项练习"
+    }
+  };
+
+  const matched = Object.keys(fallbacks).find((k) => knowledgePoint && knowledgePoint.includes(k));
+  const base = matched ? fallbacks[matched] : {
+    teacher_feedback: "学生在本题核心步骤存在障碍，建议面批了解具体卡点",
+    student_feedback: "这题有点难，但你能写出这些步骤已经很棒了！我们一起找找卡在哪里。",
+    next_practice_focus: "本知识点基础题型专项复习"
+  };
+
+  return {
+    step_reached: "未能确定",
+    main_error_type: "待面批确认",
+    secondary_error_type: null,
+    weak_knowledge_points: [knowledgePoint || "待确认"],
+    weak_ability_points: ["待确认"],
+    confidence: 0.3,
+    _is_fallback: true,
+    _fallback_reason: reason,
+    ...base
+  };
+}
+
+function extractStepIndex(stepReached, stepsLength = 0) {
+  if (typeof stepReached === "number" && Number.isFinite(stepReached)) {
+    return stepReached;
+  }
+  const text = String(stepReached || "");
+  const matched = text.match(/第?\s*(\d+)\s*步?/);
+  if (matched) return Number(matched[1]);
+  if (stepsLength > 0) {
+    for (let i = 0; i < stepsLength; i += 1) {
+      if (text.includes(`第${i + 1}步`)) return i + 1;
+    }
+  }
+  return null;
+}
+
+function validateAndFallback(aiRawOutput, questionData, knowledgePoint) {
+  let parsed;
+
+  try {
+    const rawText = typeof aiRawOutput === "string"
+      ? aiRawOutput
+      : JSON.stringify(aiRawOutput || {});
+    const cleaned = rawText.replace(/```json|```/g, "").trim();
+    parsed = typeof aiRawOutput === "string" ? JSON.parse(cleaned) : aiRawOutput;
+  } catch (e) {
+    return buildFallback(knowledgePoint, "json_parse_error");
+  }
+
+  const confidence = Number(parsed.confidence);
+  if (!Number.isFinite(confidence) || confidence < 0.5) {
+    return buildFallback(knowledgePoint, "low_confidence");
+  }
+
+  const required = ["step_reached", "main_error_type", "teacher_feedback", "student_feedback"];
+  required.forEach((k) => {
+    if (!parsed[k]) {
+      const fb = buildFallback(knowledgePoint, "missing_field");
+      parsed[k] = fb[k];
+      parsed._patched = parsed._patched || [];
+      parsed._patched.push(k);
+    }
+  });
+
+  const stepsLength = normalizeStandardSteps(questionData.standardSteps || questionData.standard_steps).length;
+  const numericStep = extractStepIndex(parsed.step_reached, stepsLength);
+  if (numericStep) {
+    parsed.step_reached_label = String(parsed.step_reached);
+    parsed.step_reached = numericStep;
+  }
+
+  return parsed;
 }
 
 async function analyzeWithOpenAIVision(imageDataUrl, question) {
-  const prompt = buildAnalysisPrompt(question);
+  const questionData = {
+    questionText: question.question_text || question.standard_answer || "见图片",
+    fullScore: question.score,
+    standardSteps: question.standard_steps,
+    knowledgePoint: question.knowledge_point
+  };
+  const prompt = buildAnalysisPrompt(questionData, questionData.knowledgePoint);
   try {
     const response = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
@@ -1002,7 +1173,7 @@ async function analyzeWithOpenAIVision(imageDataUrl, question) {
     const usage = data.usage || {};
     console.log(`[OpenAI cost] prompt_tokens=${usage.prompt_tokens} completion_tokens=${usage.completion_tokens} total=${usage.total_tokens} est_cost_rmb=¥${((usage.prompt_tokens||0)*0.15/1e6*7.2 + (usage.completion_tokens||0)*0.6/1e6*7.2).toFixed(5)}`);
     const text = data.choices?.[0]?.message?.content || "";
-    const result = safeJsonParse(text);
+    const result = validateAndFallback(text, questionData, questionData.knowledgePoint);
     if (result) result._source = "openai_vision";
     return result;
   } catch (err) {
@@ -1012,14 +1183,13 @@ async function analyzeWithOpenAIVision(imageDataUrl, question) {
 }
 
 async function analyzeWithDeepSeekText(question) {
-  const prompt = `你是高中数学教师。根据以下题目信息，生成一个学生常见失分的典型诊断（假设该学生得了部分分）。
-
-题目知识点：${question.knowledge_point}
-题目类型：${question.question_type}
-标准步骤：${question.standard_steps}
-
-输出JSON，字段：step_reached(数字2), main_error_type, secondary_error_type, weak_knowledge_points(数组), weak_ability_points(数组), teacher_feedback(一句话), student_feedback(一句话), next_practice_focus(一句话), confidence("低")
-仅输出JSON。`;
+  const questionData = {
+    questionText: question.question_text || question.standard_answer || "见图片",
+    fullScore: question.score,
+    standardSteps: question.standard_steps,
+    knowledgePoint: question.knowledge_point
+  };
+  const prompt = buildAnalysisPrompt(questionData, questionData.knowledgePoint);
   try {
     const response = await fetch("https://api.deepseek.com/chat/completions", {
       method: "POST",
@@ -1037,7 +1207,7 @@ async function analyzeWithDeepSeekText(question) {
     if (!response.ok) return null;
     const data = await response.json();
     const text = data.choices?.[0]?.message?.content || "";
-    const result = safeJsonParse(text);
+    const result = validateAndFallback(text, questionData, questionData.knowledgePoint);
     if (result) result._source = "deepseek_text";
     return result;
   } catch (err) {
@@ -1050,7 +1220,13 @@ async function analyzeWithDeepSeekText(question) {
 // 申请方法：https://siliconflow.cn 注册，免费额度够测试用
 async function analyzeWithQwenVL(imageDataUrl, question) {
   if (!QWEN_API_KEY) return null;
-  const prompt = buildAnalysisPrompt(question);
+  const questionData = {
+    questionText: question.question_text || question.standard_answer || "见图片",
+    fullScore: question.score,
+    standardSteps: question.standard_steps,
+    knowledgePoint: question.knowledge_point
+  };
+  const prompt = buildAnalysisPrompt(questionData, questionData.knowledgePoint);
   try {
     const response = await fetch("https://api.siliconflow.cn/v1/chat/completions", {
       method: "POST",
@@ -1081,7 +1257,7 @@ async function analyzeWithQwenVL(imageDataUrl, question) {
     const usage = data.usage || {};
     console.log(`[Qwen-VL cost] prompt_tokens=${usage.prompt_tokens} completion_tokens=${usage.completion_tokens} total=${usage.total_tokens}`);
     const text = data.choices?.[0]?.message?.content || "";
-    const result = safeJsonParse(text);
+    const result = validateAndFallback(text, questionData, questionData.knowledgePoint);
     if (result) result._source = "qwen_vision";
     return result;
   } catch (err) {
