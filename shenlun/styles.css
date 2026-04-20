@@ -196,6 +196,7 @@ main {
 
 .hero-copy,
 .hero-panel,
+.workflow-card,
 .feature-grid article,
 .pain-grid article,
 .pricing-grid article,
@@ -289,6 +290,70 @@ main {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 12px;
+}
+
+.workflow-section {
+  display: grid;
+  gap: 22px;
+}
+
+.workflow-grid,
+.command-grid,
+.coach-grid {
+  display: grid;
+  gap: 16px;
+}
+
+.workflow-grid {
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+}
+
+.workflow-card,
+.command-center,
+.coach-panel {
+  padding: 24px;
+  border: 1px solid rgba(255, 248, 238, 0.55);
+  border-radius: 30px;
+  background:
+    linear-gradient(180deg, rgba(255, 252, 247, 0.88), rgba(244, 235, 222, 0.78));
+  box-shadow: var(--shadow-card);
+}
+
+.workflow-card {
+  display: grid;
+  gap: 12px;
+  min-height: 100%;
+}
+
+.workflow-card span {
+  display: inline-grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  color: #fff7ed;
+  font-weight: 800;
+  background:
+    radial-gradient(circle at top left, rgba(255, 220, 170, 0.24), transparent 30%),
+    linear-gradient(135deg, #541610, var(--red) 68%, #bf5d40);
+  box-shadow: 0 14px 28px rgba(125, 31, 21, 0.24);
+}
+
+.workflow-card h3,
+.workflow-card p,
+.command-head h3,
+.command-card p,
+.command-card span,
+.coach-card p,
+.coach-card span {
+  margin: 0;
+}
+
+.workflow-card p,
+.command-card span,
+.coach-card span {
+  color: var(--ink-soft);
+  line-height: 1.75;
 }
 
 .hero-proof div {
@@ -788,6 +853,83 @@ a.secondary-button:hover {
   gap: 18px;
 }
 
+.command-center,
+.coach-panel {
+  display: grid;
+  gap: 16px;
+}
+
+.command-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: flex-start;
+}
+
+.command-head h3 {
+  margin-top: 6px;
+  font-size: 1.52rem;
+  letter-spacing: -0.04em;
+}
+
+.stage-pill {
+  display: inline-flex;
+  align-items: center;
+  min-height: 42px;
+  padding: 0 16px;
+  border: 1px solid rgba(156, 45, 33, 0.18);
+  border-radius: 999px;
+  color: var(--red-deep);
+  background: rgba(255, 248, 240, 0.86);
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.command-grid,
+.coach-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.command-card,
+.coach-card {
+  display: grid;
+  gap: 10px;
+  padding: 18px;
+  border: 1px solid rgba(156, 45, 33, 0.12);
+  border-radius: 24px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.58), rgba(255, 248, 240, 0.48));
+}
+
+.command-card p,
+.coach-card p {
+  color: var(--ink-faint);
+  font-size: 0.88rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.command-card strong,
+.coach-card strong {
+  font-size: 1.12rem;
+  line-height: 1.55;
+}
+
+.command-card-strong,
+.coach-card-accent {
+  background:
+    radial-gradient(circle at top right, rgba(188, 140, 69, 0.12), transparent 24%),
+    linear-gradient(180deg, rgba(156, 45, 33, 0.09), rgba(255, 247, 237, 0.72));
+}
+
+.command-list {
+  margin: 0;
+  padding-left: 18px;
+  color: var(--ink-soft);
+  line-height: 1.8;
+}
+
 .report-panel,
 .interview-panel {
   position: sticky;
@@ -864,6 +1006,7 @@ a.secondary-button:hover {
 .profile-snapshot,
 .intake-card,
 .sample-card,
+.question-bank-card,
 .activation-card {
   padding: 18px;
   border: 1px solid rgba(156, 45, 33, 0.14);
@@ -937,11 +1080,13 @@ a.secondary-button:hover {
 
 .intake-card,
 .sample-card,
+.question-bank-card,
 .activation-card {
   gap: 14px;
 }
 
 .sample-card,
+.question-bank-card,
 .activation-card {
   grid-template-columns: 1fr auto;
   align-items: center;
@@ -951,9 +1096,16 @@ a.secondary-button:hover {
 .intake-card p,
 .sample-card strong,
 .sample-card p,
+.question-bank-card strong,
+.question-bank-card p,
 .activation-card strong,
 .activation-card p {
   margin: 0;
+}
+
+.question-bank-card {
+  display: grid;
+  grid-template-columns: minmax(0, 0.95fr) minmax(280px, 1.05fr);
 }
 
 .upload-grid {
@@ -1214,6 +1366,9 @@ textarea {
 .hero-copy,
 .hero-avatar-card,
 .hero-card,
+.workflow-card,
+.command-center,
+.coach-panel,
 .feature-grid article,
 .pain-grid article,
 .pricing-grid article,
@@ -1284,6 +1439,10 @@ textarea {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
+  .workflow-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .distill-board {
     grid-template-columns: 1fr;
   }
@@ -1310,6 +1469,7 @@ textarea {
   }
 
   .hero-panel,
+  .workflow-grid,
   .feature-grid,
   .pricing-grid,
   .pain-grid,
@@ -1332,10 +1492,13 @@ textarea {
   }
 
   .sample-card,
+  .question-bank-card,
   .activation-card,
   .field-row,
   .snapshot-grid,
   .dimension-grid,
+  .command-grid,
+  .coach-grid,
   .mode-switch,
   .module-strip {
     grid-template-columns: 1fr;
@@ -1364,7 +1527,8 @@ textarea {
 
   .hero-actions,
   .form-footer,
-  .activation-actions {
+  .activation-actions,
+  .command-head {
     align-items: stretch;
     flex-direction: column;
   }

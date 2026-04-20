@@ -97,6 +97,61 @@ const tradeInstruments = [
   { symbol: "NQ1!", asset: "NQ", name: "Nasdaq Futures Ref", marketType: "futures", source: "internal_reference", basePrice: 18274.0, amplitude: 0.011, volume: "13.76K" }
 ];
 
+const shenlunQuestionBank = [
+  {
+    id: "guokao-summary-digital-service",
+    exam: "guokao",
+    examLabel: "国考",
+    year: "仿真 2026",
+    province: "中央机关及其直属机构",
+    questionType: "summary",
+    maxScore: 20,
+    title: "数字政务服务中的群众获得感",
+    prompt: "根据给定资料1，概括基层数字政务服务在提升群众获得感方面的主要做法。要求：全面、准确、有条理，不超过250字。",
+    material: "资料1：H 区过去办理高频民生事项时，群众需要在街道、社区和业务部门之间多次往返，老年人和外来务工人员尤其感到不便。为改变这种状况，H 区梳理出生育登记、社保认证、困难救助、居住证办理等 42 项高频事项，统一制作事项清单、材料清单和办理流程图，并在社区党群服务中心设置综合受理窗口。窗口人员先行收件，后台部门分类审核，群众只需到一个窗口提交一次材料。\n\n同时，H 区建设了“民生一码通”小程序。群众可以在线查询办事进度、补充材料、评价服务，也可以预约上门帮办。对不会使用智能手机的老人，社区安排网格员定期入户，帮助完成认证、代填申请表，并保留电话预约和纸质材料通道。针对部门之间信息不通的问题，区政务服务办推动民政、人社、公安、医保等系统数据共享，对符合条件的救助、补贴事项进行主动提醒。\n\nH 区还把群众评价纳入窗口考核，对超时办理、重复提交材料、解释不清等问题建立月度通报。各街道每季度召开一次服务复盘会，邀请居民代表、窗口人员和业务部门共同梳理堵点。经过半年运行，高频事项平均办理时间缩短，群众投诉明显减少。",
+    referenceAnswer: "主要做法包括：一是梳理高频事项，形成事项清单、材料清单和流程图，推动办事标准化。二是设置综合受理窗口，实行前台统一收件、后台分类审核，减少群众多头跑、重复交材料。三是建设线上小程序，提供进度查询、材料补交、服务评价和预约帮办。四是照顾特殊群体，安排网格员入户帮办，并保留电话预约、纸质材料等线下渠道。五是推进部门数据共享，对救助补贴等事项主动提醒。六是把群众评价、超时办理和重复提交材料等问题纳入考核通报，并通过复盘会持续优化服务。"
+  },
+  {
+    id: "shengkao-solution-rural-tourism",
+    exam: "shengkao",
+    examLabel: "省考",
+    year: "仿真 2026",
+    province: "A 省",
+    questionType: "solution",
+    maxScore: 30,
+    title: "乡村文旅发展中的同质化治理",
+    prompt: "假如你是 A 县文旅局工作人员，请根据给定资料2，就破解乡村文旅发展同质化问题提出对策。要求：针对性强、措施具体、可操作，不超过400字。",
+    material: "资料2：A 县近年大力发展乡村文旅，多个村庄改造闲置院落，建设咖啡店、露营地、民宿和农产品展销点。但调研发现，一些项目存在“看上去都差不多”的问题：村庄标识、墙绘、摊位样式高度相似，游客拍照后停留时间短；部分民宿照搬城市装修风格，缺少本地农耕、民俗和山水特色；农产品包装粗糙，品牌识别度低。\n\n村干部反映，招商时更愿意复制外地成功案例，担心创新失败。运营公司则表示，村里文化资源分散，故事没人整理，传统手艺人年龄偏大，不懂网络传播。部分村庄重建设轻运营，节假日人多，平时冷清；交通接驳、停车、公共厕所、垃圾清运等配套服务跟不上，游客体验受到影响。还有农户担心参与文旅收益不稳定，只愿意把房屋出租，不愿参与产品开发和服务。\n\n县里已有茶山、古道、竹编、红色记忆、稻田研学等资源，但缺少统一梳理和差异化定位。县文旅局计划组织一次乡村文旅提质行动。",
+    referenceAnswer: "对策包括：一是开展资源普查和分类评估，梳理茶山、古道、竹编、红色记忆、稻田研学等特色资源，形成一村一主题、一线一特色的差异化定位。二是建立创意策划和专家指导机制，引导各村避免简单复制外地模板，把本地历史、农耕、民俗、山水转化为场景、线路和产品。三是培育运营主体和本地人才，组织村干部、运营公司、手艺人、农户开展产品设计、短视频传播、服务接待培训。四是完善利益联结机制，鼓励农户以房屋、手艺、农产品、劳务等方式参与，明确分红和保底收益，提高参与积极性。五是提升基础配套和常态运营，补齐交通接驳、停车、公厕、垃圾清运等短板，策划平日研学、节庆活动和农事体验。六是打造县域公共品牌，统一农产品包装、质量标准和宣传渠道，提升识别度和复购率。"
+  },
+  {
+    id: "guokao-analysis-community-negotiation",
+    exam: "guokao",
+    examLabel: "国考",
+    year: "仿真 2026",
+    province: "中央机关及其直属机构",
+    questionType: "analysis",
+    maxScore: 30,
+    title: "社区协商中的规则与温度",
+    prompt: "给定资料3中提到“社区治理既要讲规则，也要有温度”。请结合资料，谈谈你对这句话的理解。要求：观点明确、分析深入、条理清楚，不超过350字。",
+    material: "资料3：B 市某老旧小区推进加装电梯。低楼层住户认为自己受益较少，还可能受到采光、噪音和施工影响，不愿分摊费用；高楼层老人则认为上下楼困难，电梯是现实刚需。最初，社区只是把政策文件贴在公告栏，要求居民按程序表决，结果双方情绪激烈，项目一度停滞。\n\n后来，街道和社区重新组织协商。工作人员先逐户走访，记录反对意见和真实顾虑；邀请规划、施工、法律等专业人员公开说明方案，测算费用和影响；组织居民代表多轮议事，调整电梯位置、施工时间和费用分摊比例，并为受影响住户设计补偿方案。社区还建立了施工监督微信群，及时回应噪音、占道、安全等问题。\n\n项目完成后，一位低楼层住户说：“我不是反对老人方便，而是担心没人听我们说话。现在事情讲清楚了，补偿也有安排，心里就顺了。”社区书记总结说，规则保证公平底线，沟通让群众愿意接受规则。",
+    referenceAnswer: "这句话说明社区治理要把制度规范和群众感受结合起来。讲规则，是指治理必须依法依规，按照政策程序、表决机制、费用分摊、施工监督等要求推进，保证公共事务有边界、有秩序、有公平底线。有温度，是指不能只把政策贴出来、程序走完就算完成，而要理解不同群体的利益诉求和情绪顾虑，通过走访沟通、专业说明、多轮协商、方案调整和适当补偿，让群众感到被尊重、被倾听。二者并不矛盾：没有规则，协商容易失序；只有规则而缺少沟通，政策也难以落地。基层治理应在规则框架内开展耐心协商，把分歧导入可讨论、可调整、可监督的轨道，最终实现公共利益和个体诉求的相对平衡。"
+  },
+  {
+    id: "shengkao-official-waste-sorting",
+    exam: "shengkao",
+    examLabel: "省考",
+    year: "仿真 2026",
+    province: "B 省",
+    questionType: "official",
+    maxScore: 30,
+    title: "垃圾分类志愿服务倡议书",
+    prompt: "假如你是 C 社区工作人员，请根据给定资料4，面向社区居民写一份垃圾分类志愿服务倡议书。要求：格式基本规范、内容具体、语言有号召力，不超过500字。",
+    material: "资料4：C 社区推行垃圾分类一年多，硬件设施基本到位，但居民参与度不稳定。早晚投放高峰期，分类桶旁经常出现混投、错投；部分老人分不清厨余垃圾和其他垃圾；一些租户认为自己住不久，不愿花时间学习；商铺产生的纸箱、餐盒数量较多，清运不及时容易堆积。\n\n社区曾组织过几次宣传活动，但多是发传单、贴海报，效果有限。后来，几名热心居民自发在晚间投放点值守，提醒大家分类，帮助老人辨识垃圾，还把常见错误拍照发到居民群里说明。物业反映，有志愿者引导时，混投现象明显减少。\n\n社区计划成立垃圾分类志愿服务队，招募居民、党员、楼栋长、商户代表参加。服务内容包括：高峰值守、入户讲解、商铺沟通、旧物交换、问题反馈等。社区将提供培训、手套、夹子、马甲等物资，并每月公示优秀志愿者。",
+    referenceAnswer: "倡议书应包括：标题和称呼，说明垃圾分类关系社区环境和居民生活，需要大家共同参与。正文要写清现状问题，如混投错投、老人不会分、租户参与不足、商铺垃圾堆积等。要提出具体倡议：积极学习分类知识，按时定点准确投放；加入志愿服务队，参与早晚高峰值守、入户讲解、商铺沟通、旧物交换和问题反馈；党员、楼栋长、商户代表带头示范；居民在微信群中友善提醒、分享经验。还要说明社区保障措施，包括统一培训、发放手套夹子马甲、每月公示优秀志愿者。结尾应发出号召，倡导从自己做起、从一次正确投放做起，共建整洁有序、绿色文明社区，并署名 C 社区和日期。"
+  }
+];
+
 let aemoPriceCache = {
   fetchedAt: 0,
   value: null
@@ -298,6 +353,14 @@ function openDatabase() {
       FOREIGN KEY(exam_id) REFERENCES exams(id) ON DELETE CASCADE,
       FOREIGN KEY(student_id) REFERENCES students(id) ON DELETE CASCADE,
       FOREIGN KEY(question_id) REFERENCES questions(id) ON DELETE CASCADE
+    );
+    CREATE TABLE IF NOT EXISTS knowledge_error_stats (
+      id TEXT PRIMARY KEY,
+      knowledge_point TEXT NOT NULL,
+      error_type TEXT NOT NULL,
+      count INTEGER NOT NULL DEFAULT 1,
+      last_seen TEXT NOT NULL,
+      UNIQUE(knowledge_point, error_type)
     );
     CREATE TABLE IF NOT EXISTS ai_reports (
       id TEXT PRIMARY KEY,
@@ -849,6 +912,7 @@ function json(res, statusCode, payload) {
 }
 
 function textProvider() {
+  if (AI_PROVIDER === "demo") return "demo";
   if (AI_PROVIDER === "deepseek") return DEEPSEEK_API_KEY ? "deepseek" : (OPENAI_API_KEY ? "openai" : "demo");
   if (AI_PROVIDER === "openai") return OPENAI_API_KEY ? "openai" : (DEEPSEEK_API_KEY ? "deepseek" : "demo");
   if (DEEPSEEK_API_KEY) return "deepseek";
@@ -997,9 +1061,23 @@ function normalizeStandardSteps(input) {
     .filter(Boolean);
 }
 
+function getTopErrors(knowledgePoint, limit = 4) {
+  if (!knowledgePoint) return [];
+  const rows = db.prepare(
+    `SELECT error_type, count FROM knowledge_error_stats
+     WHERE knowledge_point LIKE ?
+     ORDER BY count DESC LIMIT ?`
+  ).all(`%${knowledgePoint}%`, limit);
+  return rows.map((r) => `${r.error_type}（已出现${r.count}次）`);
+}
+
 function buildAnalysisPrompt(questionData, knowledgePoint) {
   const ctx = getSubjectPromptContext(knowledgePoint);
   const standardSteps = normalizeStandardSteps(questionData.standardSteps || questionData.standard_steps);
+  const realErrors = getTopErrors(knowledgePoint);
+  const errorLines = realErrors.length > 0
+    ? realErrors.map((e) => `  - ${e}`).join("\n")
+    : ctx.commonErrors.map((e) => `  - ${e}`).join("\n");
   return `
 ${ctx.role}，请严格按以下格式分析学生的作答。
 
@@ -1010,8 +1088,8 @@ ${ctx.role}，请严格按以下格式分析学生的作答。
 标准步骤：
 ${standardSteps.map((s, i) => `  第${i + 1}步：${s}`).join("\n") || "  （未录入标准步骤）"}
 
-【本题常见错误类型】（仅供你判断参考，不要直接告诉学生）
-${ctx.commonErrors.map((e) => `  - ${e}`).join("\n")}
+【本题常见错误类型】${realErrors.length > 0 ? "（来自本知识点历史真实数据，优先参考）" : "（通用参考）"}
+${errorLines}
 
 【分析重点】
 ${ctx.analysisFocus}
@@ -1028,7 +1106,7 @@ ${ctx.analysisFocus}
   "teacher_feedback": "给老师的专业诊断，50字以内",
   "student_feedback": "给学生的鼓励式反馈，温和语气，80字以内",
   "next_practice_focus": "下一步具体练习建议",
-  "confidence": 0.0到1.0之间的小数
+  "confidence": 0.85
 }
 `;
 }
@@ -1104,7 +1182,11 @@ function validateAndFallback(aiRawOutput, questionData, knowledgePoint) {
     const rawText = typeof aiRawOutput === "string"
       ? aiRawOutput
       : JSON.stringify(aiRawOutput || {});
-    const cleaned = rawText.replace(/```json|```/g, "").trim();
+    const cleaned = rawText
+      .replace(/```[a-zA-Z]*/g, "")
+      .replace(/^[\s\S]*?({)/, "$1")
+      .replace(/(})[\s\S]*$/, "$1")
+      .trim();
     parsed = typeof aiRawOutput === "string" ? JSON.parse(cleaned) : aiRawOutput;
   } catch (e) {
     return buildFallback(knowledgePoint, "json_parse_error");
@@ -1135,6 +1217,39 @@ function validateAndFallback(aiRawOutput, questionData, knowledgePoint) {
   return parsed;
 }
 
+function recordErrorStat(knowledgePoint, analysisResult) {
+  if (!knowledgePoint || !analysisResult) return;
+  const confidence = Number(analysisResult.confidence);
+  if (analysisResult._is_fallback || !Number.isFinite(confidence) || confidence < 0.7) {
+    return;
+  }
+  const errors = [];
+  if (analysisResult.main_error_type &&
+      analysisResult.main_error_type !== "待面批确认") {
+    errors.push(analysisResult.main_error_type);
+  }
+  if (analysisResult.secondary_error_type &&
+      analysisResult.secondary_error_type !== "null" &&
+      analysisResult.secondary_error_type !== null) {
+    errors.push(analysisResult.secondary_error_type);
+  }
+  const now = new Date().toISOString();
+  for (const errorType of errors) {
+    const existing = db.prepare(
+      "SELECT id, count FROM knowledge_error_stats WHERE knowledge_point = ? AND error_type = ?"
+    ).get(knowledgePoint, errorType);
+    if (existing) {
+      db.prepare(
+        "UPDATE knowledge_error_stats SET count = count + 1, last_seen = ? WHERE id = ?"
+      ).run(now, existing.id);
+    } else {
+      db.prepare(
+        "INSERT INTO knowledge_error_stats (id, knowledge_point, error_type, count, last_seen) VALUES (?, ?, ?, 1, ?)"
+      ).run(randomUUID(), knowledgePoint, errorType, now);
+    }
+  }
+}
+
 async function analyzeWithOpenAIVision(imageDataUrl, question) {
   const questionData = {
     questionText: question.question_text || question.standard_answer || "见图片",
@@ -1143,26 +1258,37 @@ async function analyzeWithOpenAIVision(imageDataUrl, question) {
     knowledgePoint: question.knowledge_point
   };
   const prompt = buildAnalysisPrompt(questionData, questionData.knowledgePoint);
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 30000);
   try {
     const response = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
+      signal: controller.signal,
       headers: {
         "Content-Type": "application/json",
         "Authorization": `Bearer ${OPENAI_API_KEY}`
       },
       body: JSON.stringify({
         model: "gpt-4o-mini",
-        messages: [{
-          role: "user",
-          content: [
-            { type: "image_url", image_url: { url: imageDataUrl, detail: "high" } },
-            { type: "text", text: prompt }
-          ]
-        }],
+        messages: [
+          {
+            role: "system",
+            content: "你是一个严格的高考答题分析引擎。你只输出JSON，不输出任何解释、前缀、后缀或markdown代码块。"
+          },
+          {
+            role: "user",
+            content: [
+              { type: "image_url", image_url: { url: imageDataUrl, detail: "high" } },
+              { type: "text", text: prompt }
+            ]
+          }
+        ],
         max_tokens: 800,
-        temperature: 0.1
+        temperature: 0.1,
+        response_format: { type: "json_object" }
       })
     });
+    clearTimeout(timeoutId);
     if (!response.ok) {
       const err = await response.text();
       console.error("OpenAI vision error:", response.status, err.slice(0, 200));
@@ -1177,6 +1303,11 @@ async function analyzeWithOpenAIVision(imageDataUrl, question) {
     if (result) result._source = "openai_vision";
     return result;
   } catch (err) {
+    clearTimeout(timeoutId);
+    if (err.name === "AbortError") {
+      console.error("模型调用超时（30s）");
+      return null;
+    }
     console.error("OpenAI vision exception:", err.message);
     return null;
   }
@@ -1190,20 +1321,31 @@ async function analyzeWithDeepSeekText(question) {
     knowledgePoint: question.knowledge_point
   };
   const prompt = buildAnalysisPrompt(questionData, questionData.knowledgePoint);
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 30000);
   try {
     const response = await fetch("https://api.deepseek.com/chat/completions", {
       method: "POST",
+      signal: controller.signal,
       headers: {
         "Content-Type": "application/json",
         "Authorization": `Bearer ${DEEPSEEK_API_KEY}`
       },
       body: JSON.stringify({
         model: DEEPSEEK_MODEL || "deepseek-chat",
-        messages: [{ role: "user", content: prompt }],
+        messages: [
+          {
+            role: "system",
+            content: "你是一个严格的高考答题分析引擎。你只输出JSON，不输出任何解释、前缀、后缀或markdown代码块。"
+          },
+          { role: "user", content: prompt }
+        ],
         max_tokens: 600,
-        temperature: 0.1
+        temperature: 0.1,
+        response_format: { type: "json_object" }
       })
     });
+    clearTimeout(timeoutId);
     if (!response.ok) return null;
     const data = await response.json();
     const text = data.choices?.[0]?.message?.content || "";
@@ -1211,6 +1353,11 @@ async function analyzeWithDeepSeekText(question) {
     if (result) result._source = "deepseek_text";
     return result;
   } catch (err) {
+    clearTimeout(timeoutId);
+    if (err.name === "AbortError") {
+      console.error("模型调用超时（30s）");
+      return null;
+    }
     console.error("DeepSeek text error:", err.message);
     return null;
   }
@@ -1227,26 +1374,36 @@ async function analyzeWithQwenVL(imageDataUrl, question) {
     knowledgePoint: question.knowledge_point
   };
   const prompt = buildAnalysisPrompt(questionData, questionData.knowledgePoint);
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 30000);
   try {
     const response = await fetch("https://api.siliconflow.cn/v1/chat/completions", {
       method: "POST",
+      signal: controller.signal,
       headers: {
         "Content-Type": "application/json",
         "Authorization": `Bearer ${QWEN_API_KEY}`
       },
       body: JSON.stringify({
         model: QWEN_MODEL,
-        messages: [{
-          role: "user",
-          content: [
-            { type: "image_url", image_url: { url: imageDataUrl } },
-            { type: "text", text: prompt }
-          ]
-        }],
+        messages: [
+          {
+            role: "system",
+            content: "你是一个严格的高考答题分析引擎。你只输出JSON，不输出任何解释、前缀、后缀或markdown代码块。"
+          },
+          {
+            role: "user",
+            content: [
+              { type: "image_url", image_url: { url: imageDataUrl } },
+              { type: "text", text: prompt }
+            ]
+          }
+        ],
         max_tokens: 800,
         temperature: 0.1
       })
     });
+    clearTimeout(timeoutId);
     if (!response.ok) {
       const err = await response.text();
       console.error("Qwen-VL error:", response.status, err.slice(0, 200));
@@ -1261,6 +1418,11 @@ async function analyzeWithQwenVL(imageDataUrl, question) {
     if (result) result._source = "qwen_vision";
     return result;
   } catch (err) {
+    clearTimeout(timeoutId);
+    if (err.name === "AbortError") {
+      console.error("模型调用超时（30s）");
+      return null;
+    }
     console.error("Qwen-VL exception:", err.message);
     return null;
   }
@@ -4633,6 +4795,111 @@ function parseReferenceOutline(referenceOutline) {
     .filter(Boolean);
 }
 
+const shenlunSynonymGroups = [
+  ["群众", "居民", "百姓", "公众", "市民", "服务对象"],
+  ["诉求", "需求", "意见", "问题", "呼声", "关切"],
+  ["回应", "响应", "办理", "处理", "解决", "反馈"],
+  ["协同", "联动", "协作", "配合", "会商", "统筹"],
+  ["数据共享", "信息互通", "系统打通", "平台互联", "信息共享"],
+  ["综合受理", "一窗受理", "统一受理", "前台收件", "一站式办理"],
+  ["主动提醒", "主动服务", "提前告知", "精准推送", "主动告知"],
+  ["网格员", "社区工作人员", "基层干部", "志愿者", "楼栋长"],
+  ["帮办", "代办", "协助办理", "上门服务", "入户服务"],
+  ["复盘", "评估", "总结", "回访", "改进", "优化"],
+  ["考核", "通报", "监督", "评价", "问责"],
+  ["规则", "制度", "程序", "规范", "边界"],
+  ["温度", "关怀", "尊重", "倾听", "理解"],
+  ["协商", "沟通", "议事", "商量", "协调"],
+  ["补偿", "利益平衡", "分摊调整", "权益保障"],
+  ["特色", "差异化", "本地化", "辨识度", "一村一品"],
+  ["资源普查", "资源梳理", "分类评估", "摸清家底"],
+  ["运营", "常态运营", "持续运营", "日常运营"],
+  ["人才培训", "能力培训", "业务培训", "技能培训"],
+  ["利益联结", "分红", "收益分配", "保底收益"],
+  ["品牌", "公共品牌", "统一包装", "质量标准", "宣传渠道"],
+  ["垃圾分类", "分类投放", "准确投放", "定点投放"],
+  ["混投", "错投", "乱投", "分类不准"],
+  ["志愿服务", "志愿队", "高峰值守", "引导提醒"],
+  ["倡议", "号召", "动员", "带头示范"]
+];
+
+const referenceStopWords = new Set([
+  "主要", "包括", "通过", "进行", "实现", "推动", "推进", "建立", "完善", "形成", "提升", "提高",
+  "加强", "开展", "组织", "相关", "方面", "问题", "要求", "说明", "如下", "以及", "并且", "同时",
+  "需要", "应当", "可以", "不能", "不是", "就是", "一种", "一个", "一些", "本地", "工作"
+]);
+
+function splitReferenceSentences(referenceAnswer) {
+  return String(referenceAnswer || "")
+    .replace(/\r/g, "\n")
+    .split(/(?:\n+|[。；;]|(?=一是)|(?=二是)|(?=三是)|(?=四是)|(?=五是)|(?=六是)|(?=首先)|(?=其次)|(?=再次)|(?=最后))/)
+    .map((line) => line.replace(/^[：:，,、\s]+/, "").replace(/^[（(]?[一二三四五六七八九十0-9]+[)）、.\s-]*/, "").trim())
+    .filter((line) => line.length >= 8);
+}
+
+function expandShenlunSynonyms(term) {
+  const group = shenlunSynonymGroups.find((items) => items.some((item) => term.includes(item) || item.includes(term)));
+  return group ? group.filter((item) => item !== term) : [];
+}
+
+function extractReferenceKeywords(text) {
+  const source = String(text || "");
+  const dictionaryHits = shenlunSynonymGroups
+    .flat()
+    .filter((word) => source.includes(word));
+  const phraseHits = source
+    .replace(/[，。；：、“”‘’（）《》？！\s]/g, " ")
+    .split(/\s+/)
+    .flatMap((part) => part.split(/[、,]/))
+    .map((part) => part.replace(/^[一二三四五六七八九十]+是/, "").trim())
+    .filter((part) => part.length >= 2 && part.length <= 8 && !referenceStopWords.has(part));
+  const compact = source.replace(/[^\u4e00-\u9fa5]/g, "");
+  const ngrams = [];
+  for (let size = 4; size >= 2; size -= 1) {
+    for (let index = 0; index <= compact.length - size; index += size) {
+      const term = compact.slice(index, index + size);
+      if (!referenceStopWords.has(term) && !/[的一是在和与及把中内为对]/.test(term)) {
+        ngrams.push(term);
+      }
+    }
+  }
+  return uniqueStrings([...dictionaryHits, ...phraseHits, ...ngrams], 6);
+}
+
+function buildReferenceScoringPoints(referenceAnswer) {
+  return splitReferenceSentences(referenceAnswer).map((sentence, index) => {
+    const keywords = extractReferenceKeywords(sentence);
+    return {
+      id: `P${index + 1}`,
+      text: sentence,
+      keywords,
+      alternatives: Object.fromEntries(keywords.map((keyword) => [keyword, expandShenlunSynonyms(keyword)]))
+    };
+  });
+}
+
+function matchReferenceScoring(referenceAnswer, answerText) {
+  const points = buildReferenceScoringPoints(referenceAnswer);
+  if (!points.length) return { score: 0, matched: [], missing: [], points: [] };
+  const answer = String(answerText || "").replace(/\s/g, "");
+  const assessed = points.map((point) => {
+    const matchedTerms = point.keywords.filter((keyword) => {
+      const terms = [keyword, ...expandShenlunSynonyms(keyword), ...(point.alternatives[keyword] || [])];
+      return terms.some((term) => term && answer.includes(term.replace(/\s/g, "")));
+    });
+    const semanticHit = chineseCoverage(point.text, answer) >= 0.46;
+    const matched = semanticHit || matchedTerms.length >= Math.max(1, Math.ceil(point.keywords.length * 0.34));
+    return { ...point, matched, matchedTerms };
+  });
+  const matched = assessed.filter((point) => point.matched);
+  return {
+    score: matched.length / assessed.length,
+    matched,
+    missing: assessed.filter((point) => !point.matched),
+    points: assessed
+  };
+}
+
 function referenceOutlineCoverage(referenceOutline, answerText) {
   const lines = parseReferenceOutline(referenceOutline);
   if (!lines.length) return { score: 0, matched: [], missing: [] };
@@ -4660,14 +4927,18 @@ function shenlunScoringGuide(rubric, targetMax) {
   ].join("\n");
 }
 
-function demoShenlunReport({ questionType, maxScore, prompt, material, answer, referenceOutline }) {
+function demoShenlunReport({ questionType, maxScore, prompt, material, answer, referenceOutline, referenceAnswer }) {
   const rubric = getShenlunRubric(questionType);
-  const playbook = buildTeachingPlaybook("shenlun", rubric.questionType, `${prompt}\n${material}\n${referenceOutline}\n${answer}`);
+  const standardAnswer = String(referenceAnswer || referenceOutline || "");
+  const playbook = buildTeachingPlaybook("shenlun", rubric.questionType, `${prompt}\n${material}\n${standardAnswer}\n${answer}`);
   const answerText = String(answer || "");
   const charTotal = answerText.replace(/\s/g, "").length;
   const materialCoverage = chineseCoverage(material, answerText);
   const promptCoverageValue = chineseCoverage(prompt, answerText);
-  const referenceCoverage = referenceOutlineCoverage(referenceOutline, answerText);
+  const referenceCoverage = standardAnswer
+    ? matchReferenceScoring(standardAnswer, answerText)
+    : referenceOutlineCoverage(referenceOutline, answerText);
+  const scoringPoints = referenceCoverage.points || [];
   const paragraphCount = answerText.split(/\n+/).filter((part) => part.trim()).length;
   const policyWords = countChinesePolicyWords(answerText);
   const hasNumbering = /一是|二是|三是|首先|其次|再次|第一|第二|第三/.test(answerText);
@@ -4682,16 +4953,16 @@ function demoShenlunReport({ questionType, maxScore, prompt, material, answer, r
     : 0;
 
   const rawDimensions = isEssay ? [
-    { label: rubric.dimensions[0], score: 54 + promptCoverageValue * 18 + (style.hasCentralThesis ? 8 : -5) + (style.hasTension ? 8 : -6) + referenceCoverage.score * 10, comment: referenceOutline ? (referenceCoverage.score >= 0.6 ? "中心论点和参考结构基本同向，但还要继续压实政策表达。" : "中心论点与参考分论点的主线还不够贴合，建议先把总论点压准。") : (style.hasTension ? "中心论点能够触及材料背后的治理张力，但还要进一步压实政策表达。" : "立意仍偏表层，建议从材料中提炼更明确的核心矛盾。") },
-    { label: rubric.dimensions[1], score: 52 + (paragraphCount >= 5 ? 12 : 4) + (style.hasTension ? 8 : 0) + Math.min(policyWords, 8) + referenceCoverage.score * 14, comment: referenceOutline ? (referenceCoverage.score >= 0.6 ? "分论点与参考结构有一定对应，但分论点之间的层次和递进还可更清楚。" : "参考分论点覆盖不足，建议按参考结构先列出 3 个分论点再展开。") : (paragraphCount >= 5 ? "分论点结构基本清楚，但分论点之间的递进关系仍可增强。" : "分论点层次不够稳定，建议用更清晰的并列或递进结构展开。") },
+    { label: rubric.dimensions[0], score: 54 + promptCoverageValue * 18 + (style.hasCentralThesis ? 8 : -5) + (style.hasTension ? 8 : -6) + referenceCoverage.score * 10, comment: standardAnswer ? (referenceCoverage.score >= 0.6 ? "中心论点和参考答案的标准表达基本同向，但还要继续压实政策表达。" : "中心论点与参考答案主线还不够贴合，建议先把总论点压准。") : (style.hasTension ? "中心论点能够触及材料背后的治理张力，但还要进一步压实政策表达。" : "立意仍偏表层，建议从材料中提炼更明确的核心矛盾。") },
+    { label: rubric.dimensions[1], score: 52 + (paragraphCount >= 5 ? 12 : 4) + (style.hasTension ? 8 : 0) + Math.min(policyWords, 8) + referenceCoverage.score * 14, comment: standardAnswer ? (referenceCoverage.score >= 0.6 ? "分论点与参考答案有一定对应，但分论点之间的层次和递进还可更清楚。" : "参考答案得分点覆盖不足，建议先列出标准答案中的关键得分信息再展开。") : (paragraphCount >= 5 ? "分论点结构基本清楚，但分论点之间的递进关系仍可增强。" : "分论点层次不够稳定，建议用更清晰的并列或递进结构展开。") },
     { label: rubric.dimensions[2], score: 50 + Math.min(style.materialMarkers * 6, 24) + (style.hasPolicyLanding ? 8 : -4), comment: style.materialMarkers >= 3 ? "能够调用材料细节支撑观点，但部分材料还可进一步抽象为治理原则。" : "材料使用偏弱，容易显得空泛或脱离给定资料。" },
-    { label: rubric.dimensions[3], score: 52 + Math.max(materialCoverage, referenceCoverage.score) * 18 + Math.min(policyWords, 10), comment: referenceOutline ? "如果没有完整材料，也要把参考分论点转化成自己的论证结构，而不是简单复述标题。" : "材料联系需要服务于论证，不宜只罗列故事或只提口号。" },
+    { label: rubric.dimensions[3], score: 52 + Math.max(materialCoverage, referenceCoverage.score) * 18 + Math.min(policyWords, 10), comment: standardAnswer ? "如果没有完整材料，也要把参考答案转化成自己的论证结构，而不是简单复述标题。" : "材料联系需要服务于论证，不宜只罗列故事或只提口号。" },
     { label: rubric.dimensions[4], score: 50 + (style.hasPolicyLanding ? 14 : 4) + (style.hasTension ? 6 : 0), comment: style.hasPolicyLanding ? "能落到治理机制与群众参与，但政策高度还可更稳。" : "建议把个人感受进一步转化为制度弹性、协商治理等公共治理表达。" },
     { label: rubric.dimensions[5], score: 60 + Math.min(charTotal / 90, 10) - style.colloquialHits * 4 - Math.min(style.emptySloganHits, 6), comment: style.colloquialHits ? "部分表达偏口语化，正式考场文章需更稳健。" : "语言整体较通顺，但仍要避免万能套话。" }
   ] : [
     { label: rubric.dimensions[0], score: 56 + promptCoverageValue * 22, comment: "基本能够围绕题干作答，但还可进一步拆解限制条件与作答对象。" },
-    { label: rubric.dimensions[1], score: 52 + materialCoverage * 28 + Math.min(policyWords, 8), comment: "覆盖了部分核心信息，建议继续补齐材料中的关键对象、问题和措施。" },
-    { label: rubric.dimensions[2], score: 52 + materialCoverage * 24 + Math.min(policyWords, 10), comment: "能够联系材料，但提炼还可以更凝练、更贴近材料原意。" },
+    { label: rubric.dimensions[1], score: 52 + Math.max(materialCoverage, referenceCoverage.score) * 28 + Math.min(policyWords, 8), comment: standardAnswer ? "系统已按参考答案提取关键词得分点；覆盖了部分核心信息，但还需补齐未命中的标准表达。" : "覆盖了部分核心信息，建议继续补齐材料中的关键对象、问题和措施。" },
+    { label: rubric.dimensions[2], score: 52 + Math.max(materialCoverage, referenceCoverage.score) * 24 + Math.min(policyWords, 10), comment: standardAnswer ? "作答能命中部分参考答案意思，近义表达可得分；仍要提高关键词密度和表述准确度。" : "能够联系材料，但提炼还可以更凝练、更贴近材料原意。" },
     { label: rubric.dimensions[3], score: 54 + (hasNumbering ? 12 : 2) + Math.min(paragraphCount * 3, 10), comment: hasNumbering ? "分层较明显，阅卷识别度较好。" : "建议使用“一是、二是、三是”等结构标志增强条理。" },
     { label: rubric.dimensions[4], score: 60 + Math.min(charTotal / 35, 10) - style.colloquialHits * 3, comment: "表达基本规范，可继续减少口语化和泛泛表述。" },
     { label: rubric.dimensions[5], score: 62 + (questionType === "official" && !/通知|倡议|讲话|提纲|简报/.test(answerText) ? -12 : 3), comment: "整体符合基本作答要求，特殊题型需进一步注意格式。" }
@@ -4707,8 +4978,8 @@ function demoShenlunReport({ questionType, maxScore, prompt, material, answer, r
   const percentScore = Math.round(spreadAdjusted.reduce((sum, item) => sum + item.score, 0) / spreadAdjusted.length);
   const targetMax = Number(maxScore || 30);
   const scaledScore = Math.round((percentScore / 100) * targetMax);
-  const missing = (referenceOutline
-    ? referenceCoverage.missing
+  const missing = (standardAnswer
+    ? referenceCoverage.missing.map((point) => `${point.id} ${point.keywords.slice(0, 3).join(" / ") || point.text.slice(0, 14)}`)
     : rubric.focusPoints.filter((point) => !answerText.includes(point.slice(0, 2)))
   ).slice(0, 4);
 
@@ -4728,21 +4999,23 @@ function demoShenlunReport({ questionType, maxScore, prompt, material, answer, r
       policyWords >= 4 ? "使用了一定政策表达，语言有申论规范感。" : "表达较为清楚，具备继续优化的基础。"
     ],
     weaknesses: [
-      materialCoverage < 0.5 ? "材料要点覆盖不足，建议回到材料中提炼更多关键词。" : "要点仍可进一步压缩和合并，避免表达松散。",
+      standardAnswer && referenceCoverage.score < 0.68 ? `参考答案得分点命中率约 ${Math.round(referenceCoverage.score * 100)}%，需补齐未命中的关键词信息。` : (materialCoverage < 0.5 ? "材料要点覆盖不足，建议回到材料中提炼更多关键词。" : "要点仍可进一步压缩和合并，避免表达松散。"),
       !hasNumbering ? "层次标志不够明显，建议使用“一是、二是、三是”增强条理。" : "部分要点之间的逻辑递进还可以更清晰。",
       charTotal < (isEssay ? 900 : 180) ? "作答篇幅偏短，可能导致要点展开不足。" : "可以进一步提升语言的机关表达和对策可操作性。",
       isEssay && style.colloquialHits ? "个别表达偏口语化，建议改成更稳健的议论文表达。" : "评分会继续按立意、材料转化和表达规范拉开维度差距。",
       ...playbook.pitfalls.slice(0, 1)
     ].slice(0, 4),
-    missing: uniqueStrings([...(missing.length ? missing : ["材料关键词", "分层表达"]), ...playbook.selfCheck.slice(0, 2)], 4),
-    rewrite: referenceOutline
-      ? `建议先按参考结构把总论点和 3 个分论点列成提纲，再检查你的文章是否真正覆盖了“${parseReferenceOutline(referenceOutline).slice(0, 3).join("、")}”。本次先优先改：${playbook.actions[0] || "让每个分论点承担不同任务"}。下一稿自查：${playbook.selfCheck[0] || "我的总论点能不能统领全文？"}`
+    missing: uniqueStrings([...(missing.length ? missing : ["材料关键词", "分层表达"]), ...playbook.selfCheck.slice(0, 2)], 5),
+    rewrite: standardAnswer
+      ? `建议先把参考答案拆成得分点清单，再逐点改写为自己的表述。本次系统从参考答案中提取了 ${scoringPoints.length} 个得分点，已命中 ${referenceCoverage.matched.length} 个；优先补齐“${missing.slice(0, 3).join("、") || "关键对象、措施、机制"}”。近义表达可以得分，但必须写出对象、动作和结果。下一稿自查：${playbook.selfCheck[0] || "我有没有把标准答案里的关键得分信息写完整？"}`
       : `建议围绕“${rubric.focusPoints.slice(0, 3).join("、")}”重新组织答案。作答时要尽量使用材料关键词，把问题、原因、影响和对策分层呈现，避免只写泛泛口号。本次先优先改：${playbook.actions[0] || "先锁定概括对象再分层展开"}。下一稿自查：${playbook.selfCheck[0] || "我有没有把概括对象写准？"}`
   };
 }
 
-async function openAiShenlunReport({ questionType, maxScore, prompt, material, answer, referenceOutline }) {
+async function openAiShenlunReport({ questionType, maxScore, prompt, material, answer, referenceOutline, referenceAnswer }) {
   const rubric = getShenlunRubric(questionType);
+  const standardAnswer = String(referenceAnswer || referenceOutline || "");
+  const scoringPoints = buildReferenceScoringPoints(standardAnswer);
   const schema = {
     type: "object",
     additionalProperties: false,
@@ -4794,7 +5067,8 @@ async function openAiShenlunReport({ questionType, maxScore, prompt, material, a
                 `核心关注点：${rubric.focusPoints.join("、")}`,
                 "输出必须是简体中文，反馈要具体、可操作、适合考生提分。",
                 "如果答案只是套话完整但材料转化弱，分数必须控制在中等区间；如果口语化明显，要在语言表达或论证深度中扣分。",
-                referenceOutline ? "本次大作文提供了参考分论点，请重点对照中心论点是否贴合、分论点是否覆盖、结构是否对应。" : ""
+                standardAnswer ? "本次提供了参考答案。请先理解参考答案中的标准表达，再按分段、分句、分词提取关键得分信息并标注为关键词；考生使用意思相近的表达也应判为命中，但不能漏掉对象、动作和结果。" : "",
+                scoringPoints.length ? `系统预提取关键词得分点：${JSON.stringify(scoringPoints)}` : ""
               ].join("\n")
             }
           ]
@@ -4807,7 +5081,7 @@ async function openAiShenlunReport({ questionType, maxScore, prompt, material, a
               text: [
                 `题目要求：${prompt}`,
                 `给定资料：${material}`,
-                referenceOutline ? `参考分论点：${referenceOutline}` : "",
+                standardAnswer ? `参考答案：${standardAnswer}` : "",
                 `考生作答：${answer}`
               ].join("\n\n")
             }
@@ -4846,10 +5120,12 @@ async function openAiShenlunReport({ questionType, maxScore, prompt, material, a
   };
 }
 
-async function deepSeekShenlunReport({ questionType, maxScore, prompt, material, answer, referenceOutline, userProfile }) {
+async function deepSeekShenlunReport({ questionType, maxScore, prompt, material, answer, referenceOutline, referenceAnswer, userProfile }) {
   const rubric = getShenlunRubric(questionType);
   const targetMax = Number(maxScore || 30);
-  const playbook = buildTeachingPlaybook("shenlun", rubric.questionType, `${prompt}\n${material}\n${referenceOutline}\n${answer}`);
+  const standardAnswer = String(referenceAnswer || referenceOutline || "");
+  const scoringPoints = buildReferenceScoringPoints(standardAnswer);
+  const playbook = buildTeachingPlaybook("shenlun", rubric.questionType, `${prompt}\n${material}\n${standardAnswer}\n${answer}`);
   const parsed = await deepSeekJsonChat({
     systemPrompt: [
       "你是一位中国公务员考试申论阅卷与教研专家。",
@@ -4859,7 +5135,8 @@ async function deepSeekShenlunReport({ questionType, maxScore, prompt, material,
       `目标分值：${targetMax}`,
       `评分维度：${rubric.dimensions.join("、")}`,
       `核心关注点：${rubric.focusPoints.join("、")}`,
-      referenceOutline ? "本次大作文带有参考分论点或参考结构，请把它视为对照标准。重点判断中心论点是否同向、分论点覆盖是否充分、结构是否贴合；不要要求考生逐字复述参考答案，但如果明显漏掉核心分论点，要在要点覆盖和逻辑结构里扣分。" : "本次未提供参考分论点，请按常规申论阅卷逻辑评分。",
+      standardAnswer ? "本次提供了参考答案。请把参考答案视为标准得分依据：先按分段、分句、分词提取关键得分信息并标注为关键词，再判断考生是否命中。允许同义词、近义词、顺序变化得分，但不能把泛泛表述判为命中；必须保留对象、动作、结果或评价。" : "本次未提供参考答案，请按常规申论阅卷逻辑评分。",
+      scoringPoints.length ? `系统预提取关键词得分点：${JSON.stringify(scoringPoints)}` : "",
       userProfile ? `该考生已有训练档案：${JSON.stringify(userProfile)}` : "该考生暂无历史训练档案。",
       playbook.focus.length ? `名师蒸馏重点：${playbook.focus.join("\n")}` : "名师蒸馏重点：无。",
       playbook.pitfalls.length ? `高频失误提醒：${playbook.pitfalls.join("\n")}` : "高频失误提醒：无。",
@@ -4874,7 +5151,7 @@ async function deepSeekShenlunReport({ questionType, maxScore, prompt, material,
     userPrompt: [
       `题目要求：${prompt}`,
       `给定资料：${material}`,
-      referenceOutline ? `参考分论点：${referenceOutline}` : "",
+      standardAnswer ? `参考答案：${standardAnswer}` : "",
       `考生作答：${answer}`
     ].join("\n\n"),
     fallbackError: "DeepSeek Shenlun request failed"
@@ -5892,17 +6169,20 @@ const server = http.createServer(async (req, res) => {
           const maxScore = Number(question.score);
           let analysis = null;
           let scoreGot = 0;
+          const questionForAnalysis = questionOverride ? {
+            ...question,
+            knowledge_point: questionOverride.knowledge_point || question.knowledge_point,
+            standard_steps: questionOverride.standard_steps || question.standard_steps,
+            standard_answer: questionOverride.question_text || question.standard_answer,
+            score: questionOverride.score || question.score,
+            question_no: question.question_no
+          } : question;
+          const shouldUseAiAnalysis = Boolean(
+            card.imageDataUrl && question.id === aiTargetQuestion.id && (OPENAI_API_KEY || DEEPSEEK_API_KEY)
+          );
 
-          if (card.imageDataUrl && question.id === aiTargetQuestion.id && (OPENAI_API_KEY || DEEPSEEK_API_KEY)) {
+          if (shouldUseAiAnalysis) {
             // 如果老师填写了题目信息，用真实题目覆盖默认模板
-            const questionForAnalysis = questionOverride ? {
-              ...question,
-              knowledge_point: questionOverride.knowledge_point || question.knowledge_point,
-              standard_steps: questionOverride.standard_steps || question.standard_steps,
-              standard_answer: questionOverride.question_text || question.standard_answer,
-              score: questionOverride.score || question.score,
-              question_no: question.question_no
-            } : question;
             analysis = await analyzeStudentAnswer(card.imageDataUrl, questionForAnalysis);
           }
 
@@ -5930,6 +6210,9 @@ const server = http.createServer(async (req, res) => {
             scoreGot,
             JSON.stringify(analysis)
           );
+          if (shouldUseAiAnalysis && analysis) {
+            recordErrorStat(questionForAnalysis.knowledge_point, analysis);
+          }
           scoredRows.push({ ...question, scoreGot, ai_analysis: JSON.stringify(analysis) });
         }
 
@@ -6099,6 +6382,7 @@ const server = http.createServer(async (req, res) => {
         user,
         plans,
         provider: textProvider(),
+        questionBank: shenlunQuestionBank,
         history: getShenlunHistory(user.id),
         profile: getLearningProfile(user.id, "shenlun") || buildShenlunLearningProfile(user.id)
       });
@@ -6327,6 +6611,11 @@ const server = http.createServer(async (req, res) => {
       return;
     }
 
+    if (req.method === "GET" && url.pathname === "/api/shenlun/question-bank") {
+      json(res, 200, { questionBank: shenlunQuestionBank });
+      return;
+    }
+
     if (req.method === "POST" && url.pathname === "/api/shenlun/grade") {
       const body = await parseBody(req);
       const user = getOrCreateUser(body.userId);
@@ -6336,6 +6625,7 @@ const server = http.createServer(async (req, res) => {
         prompt: body.prompt || "",
         material: body.material || "",
         referenceOutline: body.referenceOutline || "",
+        referenceAnswer: body.referenceAnswer || body.referenceOutline || "",
         answer: body.answer || ""
       }, user);
       json(res, 200, result);

@@ -19,6 +19,8 @@ const dimensions = [
 const state = {
   userId: window.localStorage.getItem("writemate-user-id") || "",
   history: [],
+  profile: null,
+  questionBank: [],
   isSubmitting: false,
   isInterviewSubmitting: false
 };
@@ -31,6 +33,8 @@ const questionType = document.querySelector("#questionType");
 const maxScore = document.querySelector("#maxScore");
 const referenceOutlineField = document.querySelector("#referenceOutlineField");
 const essayReferenceCard = document.querySelector("#essayReferenceCard");
+const questionBankSelect = document.querySelector("#questionBankSelect");
+const questionBankMeta = document.querySelector("#questionBankMeta");
 const charCount = document.querySelector("#charCount");
 const form = document.querySelector("#shenlunForm");
 const emptyState = document.querySelector("#emptyState");
@@ -58,6 +62,21 @@ const sampleButton = document.querySelector("#sampleButton");
 const activationCode = document.querySelector("#activationCode");
 const activateButton = document.querySelector("#activateButton");
 const activationStatus = document.querySelector("#activationStatus");
+const workflowStagePill = document.querySelector("#workflowStagePill");
+const diagnosisHeadline = document.querySelector("#diagnosisHeadline");
+const diagnosisDetail = document.querySelector("#diagnosisDetail");
+const pathPlanList = document.querySelector("#pathPlanList");
+const supervisionList = document.querySelector("#supervisionList");
+const nextMoveHeadline = document.querySelector("#nextMoveHeadline");
+const nextMoveDetail = document.querySelector("#nextMoveDetail");
+const coachStageBadge = document.querySelector("#coachStageBadge");
+const coachStageTitle = document.querySelector("#coachStageTitle");
+const coachReason = document.querySelector("#coachReason");
+const coachBottleneck = document.querySelector("#coachBottleneck");
+const coachBottleneckDetail = document.querySelector("#coachBottleneckDetail");
+const coachNextAction = document.querySelector("#coachNextAction");
+const coachNextActionDetail = document.querySelector("#coachNextActionDetail");
+const coachRiskList = document.querySelector("#coachRiskList");
 const interviewForm = document.querySelector("#interviewForm");
 const interviewQuestion = document.querySelector("#interviewQuestion");
 const interviewAnswer = document.querySelector("#interviewAnswer");
@@ -100,6 +119,7 @@ const sampleShenlun = {
   maxScore: "20",
   prompt: "根据给定资料，概括 M 市在推进数字化基层治理过程中的主要做法。要求：全面、准确、有条理，不超过 250 字。",
   material: "材料 3：M 市部分社区曾面临治理信息分散、群众诉求响应慢、基层重复填报、部门协同不足等问题。为提升治理效能，M 市建立统一数据共享平台，将民政、社保、城管、社区网格等数据接入同一系统，减少基层重复录入。各社区设置线上群众反馈入口，居民可以通过小程序提交诉求，由平台自动分派至相关部门。针对跨部门事项，街道建立联席会商机制，明确牵头单位和办理时限，并将办理结果纳入绩效考核。部分社区还组织网格员定期回访群众，收集服务评价，推动治理流程持续优化。",
+  referenceAnswer: "M 市主要做法包括：一是搭建统一数据共享平台，整合民政、社保、城管和网格等信息，减少重复填报；二是开通线上群众反馈入口，对居民诉求进行平台分派；三是建立跨部门联席会商机制，明确牵头单位、办理时限和考核要求；四是组织网格员回访群众，收集评价并优化治理流程。",
   answer: "M 市主要做法包括：一是搭建统一数据共享平台，整合民政、社保、城管和网格等信息，减少重复填报；二是开通线上群众反馈入口，对居民诉求进行平台分派；三是建立跨部门联席会商机制，明确牵头单位、办理时限和考核要求；四是组织网格员回访群众，收集评价并优化治理流程。"
 };
 
@@ -238,15 +258,273 @@ function renderLearningProfile(profile) {
   profileNextActions.innerHTML = (profile.nextActions || []).map((item) => `<li>${item}</li>`).join("");
 }
 
+function getDimensionScores(report) {
+  return Object.fromEntries((report?.dimensions || []).map((dimension) => [dimension.label, Number(dimension.score || 0)]));
+}
+
+function normalizeSkillLabel(label) {
+  const text = String(label || "");
+  if (text === "语言凝练") return "语言规范";
+  if (text === "条理分层") return "逻辑结构";
+  return text;
+}
+
+function inferSignal(text) {
+  const normalized = String(text || "");
+  if (normalized.includes("审题") || normalized.includes("跑题")) {
+    return "审题准确";
+  }
+  if (normalized.includes("材料") || normalized.includes("漏点") || normalized.includes("要点") || normalized.includes("归类")) {
+    return "要点覆盖";
+  }
+  if (normalized.includes("结构") || normalized.includes("层次") || normalized.includes("逻辑")) {
+    return "逻辑结构";
+  }
+  if (normalized.includes("语言") || normalized.includes("空话") || normalized.includes("口语") || normalized.includes("凝练")) {
+    return "语言规范";
+  }
+  if (normalized.includes("字数")) {
+    return "字数控制";
+  }
+  return "";
+}
+
+function describeLongTermBottleneck(label, trend) {
+  if (!label) {
+    return {
+      title: "当前弱项待进一步确认",
+      detail: "当前样本还不够多，系统会继续观察你的稳定弱项。"
+    };
+  }
+  const mapping = {
+    "审题准确": "历史样本显示你更容易在对象、任务边界和题干要求上失分，训练资源应继续向审题校准倾斜。",
+    "要点覆盖": "长期看，你更容易漏关键主体、原因或措施，说明材料抓点仍是稳定短板。",
+    "材料提炼": "历史报告反复提示你对材料原词和机制链条的提炼不够稳，需要持续补材料转化。",
+    "逻辑结构": "长期问题更像结构组织不稳，说明你需要继续训练“先分层后输出”的习惯。",
+    "语言规范": "历史画像说明表达压缩和申论式句型仍是最拖分的一环，不是一稿两稿能完全修掉的。",
+    "字数控制": "你长期在字数和展开度之间拿捏不稳，容易写得过短或展开不充分。"
+  };
+  return {
+    title: label,
+    detail: `${mapping[label] || `档案里最弱的一环仍是“${label}”，接下来训练资源会继续向这里倾斜。`}${trend ? ` 当前趋势：${trend}。` : ""}`
+  };
+}
+
+function describeCurrentPriority(label, currentType, report) {
+  const missing = report?.missing || [];
+  const firstMissing = missing[0];
+  if (!label) {
+    return {
+      label: "先完成 1 次批改",
+      detail: "有了首份报告后，系统才会把训练计划收敛到更具体的动作。",
+      stage: "待建立档案",
+      stageTitle: "档案未建立",
+      reason: "申论宝会先用真实作答建立你的初始能力画像。",
+      risks: ["没有训练样本时，系统无法判断最该优先补哪一环。"]
+    };
+  }
+
+  if (label === "审题准确") {
+    return {
+      label: `${typeLabels[currentType] || "本题型"}先做审题拆解`,
+      detail: "完成标准：先写出作答对象、核心任务和 3 个必答点，再开始正式作答。",
+      stage: "优先校准审题",
+      stageTitle: "分诊期",
+      reason: "本轮最急的是先锁死题目边界，否则后续提炼和表达都会跑偏。",
+      risks: ["如果继续直接成文，后续材料提炼和结构努力可能都会浪费在错误方向上。"]
+    };
+  }
+  if (label === "要点覆盖" || label === "材料提炼") {
+    return {
+      label: "下一轮先做材料提取再成文",
+      detail: firstMissing
+        ? `完成标准：先把“${firstMissing}”补进提纲，再从材料里列出 5 到 8 个可用要点。`
+        : "完成标准：先从材料里列出 5 到 8 个可用要点，再按顺序组织答案。",
+      stage: "补强材料抓点",
+      stageTitle: "提炼专项期",
+      reason: "本轮最急的损失来自关键细节或机制链条漏写，先补覆盖率比直接改文采更值钱。",
+      risks: ["如果只改语言不补材料覆盖，分数通常提升有限。"]
+    };
+  }
+  if (label === "逻辑结构") {
+    return {
+      label: "下一次先交提纲，再写正文",
+      detail: "完成标准：提纲里至少先写清总分结构或并列要点顺序。",
+      stage: "重整结构",
+      stageTitle: "结构校准期",
+      reason: "本轮更急的是先稳住层次和段落职责，再去追求更漂亮的表达。",
+      risks: ["如果段落职责不清，越长的答案越容易失控。"]
+    };
+  }
+  if (label === "语言规范" || label === "字数控制") {
+    return {
+      label: "下一次重点压缩空话并补足展开",
+      detail: "完成标准：至少替换 3 句空泛表达，并把最关键的一条做法写得更贴材料、更具体。",
+      stage: "压缩空话",
+      stageTitle: "表达打磨期",
+      reason: "本轮最急的是先把啰嗦、口语化和过短的问题压住，让有效信息密度上来。",
+      risks: ["如果表达继续空转或写得太短，会掩盖你原本已经有的内容基础。"]
+    };
+  }
+
+  return {
+    label: "继续提交下一次训练",
+    detail: "完成标准：围绕本次最显眼的问题，只改一个核心点，再进入下一题。",
+    stage: "持续稳步推进",
+    stageTitle: "稳定训练期",
+    reason: "申论提分往往来自持续收敛，而不是单次大幅跳跃。",
+    risks: ["如果训练间隔过长，系统难以建立稳定节奏。"]
+  };
+}
+
+function summarizeDiagnosis({ profile, report, currentType }) {
+  const dimensionScores = getDimensionScores(report);
+  const weakestFromProfile = Array.isArray(profile?.weakestAreas) ? profile.weakestAreas[0] : null;
+  const lowestDimension = Object.entries(dimensionScores).sort((a, b) => a[1] - b[1])[0];
+  const recurringIssues = profile?.recurringIssues || [];
+  const reportSignals = [report?.weaknesses || [], report?.missing || []].flat().map(inferSignal).filter(Boolean);
+  const currentPriorityLabel = normalizeSkillLabel(reportSignals[0] || lowestDimension?.[0] || "");
+  const longTermLabel = normalizeSkillLabel(weakestFromProfile?.label || recurringIssues.map(inferSignal).find(Boolean) || lowestDimension?.[0] || "");
+  const longTerm = describeLongTermBottleneck(longTermLabel, profile?.recentTrend || "");
+  const currentPriority = describeCurrentPriority(currentPriorityLabel, currentType, report);
+
+  if (!profile?.totalReports && !report) {
+    return {
+      stage: currentPriority.stage,
+      stageTitle: currentPriority.stageTitle,
+      headline: "先完成 1 次批改，系统再判断长期主短板和本轮先修项",
+      detail: "首次训练后，系统会把长期能力瓶颈和这一次最急需修正的问题分开显示。",
+      longTermTitle: "尚未识别",
+      longTermDetail: "当前还没有足够样本支持长期分诊。",
+      currentPriorityLabel: currentPriority.label,
+      currentPriorityDetail: currentPriority.detail,
+      reason: currentPriority.reason,
+      risks: currentPriority.risks
+    };
+  }
+
+  return {
+    stage: currentPriority.stage,
+    stageTitle: currentPriority.stageTitle,
+    headline: `长期主短板是“${longTerm.title}”，但本轮先修“${currentPriorityLabel}”`,
+    detail: `系统会把长期训练资源继续压在“${longTerm.title}”，同时优先处理这一次最影响得分的急救项“${currentPriorityLabel}”。`,
+    longTermTitle: longTerm.title,
+    longTermDetail: longTerm.detail,
+    currentPriorityLabel: currentPriority.label,
+    currentPriorityDetail: currentPriority.detail,
+    reason: currentPriority.reason,
+    risks: currentPriority.risks
+  };
+}
+
+function buildPathPlan({ diagnosis, profile, currentType, report }) {
+  const typeLabel = typeLabels[currentType] || "当前题型";
+  const plan = [];
+  if (!profile?.totalReports) {
+    plan.push(`第 1 步：先用 ${typeLabel} 完成首份诊断报告，建立个人档案。`);
+    plan.push("第 2 步：把长期主短板和本轮先修项拆开看。");
+    plan.push("第 3 步：第二次提交时验证历史弱项和当轮急救项是否仍然重叠。");
+    return plan;
+  }
+
+  plan.push(`第 1 步：长期继续补“${diagnosis.longTermTitle}”，但这次先完成“${diagnosis.currentPriorityLabel}”。`);
+  if ((report?.missing || []).length) {
+    plan.push(`第 2 步：优先补齐这次遗漏的要点：${report.missing.slice(0, 2).join("、")}。`);
+  } else {
+    plan.push(`第 2 步：围绕“${diagnosis.currentPriorityLabel}”重做提纲，再写一版更克制的答案。`);
+  }
+  plan.push(`第 3 步：完成后复盘“${diagnosis.currentPriorityLabel}”是否真的做到，再进入下一题。`);
+  return plan;
+}
+
+function buildSupervisionSignals({ diagnosis, profile, report }) {
+  const signals = [];
+  if (profile?.recentTrend) {
+    signals.push(`趋势监控：${profile.recentTrend}。`);
+  }
+  if ((report?.weaknesses || []).length) {
+    signals.push(`本次系统重点盯到：${report.weaknesses[0]}。`);
+  }
+  if ((profile?.recurringIssues || []).length) {
+    signals.push(`重复问题提醒：${profile.recurringIssues[0]}。`);
+  }
+  if ((report?.missing || []).length) {
+    signals.push(`漏点预警：${report.missing.slice(0, 2).join("、")}。`);
+  }
+  if (!signals.length) {
+    signals.push(`当前监督重点：${diagnosis.bottleneck}。`);
+  }
+  return signals.slice(0, 4);
+}
+
+function renderWorkflow({ profile, report, currentType }) {
+  const diagnosis = summarizeDiagnosis({ profile, report, currentType });
+  const pathPlan = buildPathPlan({ diagnosis, profile, currentType, report });
+  const signals = buildSupervisionSignals({ diagnosis, profile, report });
+
+  workflowStagePill.textContent = diagnosis.stage;
+  diagnosisHeadline.textContent = diagnosis.headline;
+  diagnosisDetail.textContent = diagnosis.detail;
+  pathPlanList.innerHTML = pathPlan.map((item) => `<li>${item}</li>`).join("");
+  supervisionList.innerHTML = signals.map((item) => `<li>${item}</li>`).join("");
+  nextMoveHeadline.textContent = diagnosis.currentPriorityLabel;
+  nextMoveDetail.textContent = diagnosis.currentPriorityDetail;
+
+  coachStageBadge.textContent = diagnosis.stage;
+  coachStageTitle.textContent = diagnosis.stageTitle;
+  coachReason.textContent = diagnosis.reason;
+  coachBottleneck.textContent = diagnosis.longTermTitle;
+  coachBottleneckDetail.textContent = diagnosis.longTermDetail;
+  coachNextAction.textContent = diagnosis.currentPriorityLabel;
+  coachNextActionDetail.textContent = diagnosis.currentPriorityDetail;
+  coachRiskList.innerHTML = diagnosis.risks.map((item) => `<li>${item}</li>`).join("");
+}
+
 function toggleEssayReferenceMode() {
   const isEssay = questionType.value === "essay";
-  referenceOutlineField.classList.toggle("hidden", !isEssay);
-  essayReferenceCard.classList.toggle("hidden", !isEssay);
+  referenceOutlineField.classList.remove("hidden");
+  essayReferenceCard.classList.remove("hidden");
   if (isEssay) {
     materialText.placeholder = "如果你没有完整材料，只做大作文对照批改，这里可以留空。若希望系统同时参考材料摘要，也可以补充几句。";
+    referenceOutline.placeholder = "可粘贴完整参考范文、参考分论点或结构提纲。系统会提取中心论点、分论点和标准表达作为得分点。";
   } else {
     materialText.placeholder = "";
+    referenceOutline.placeholder = "可粘贴完整参考答案或标准答案。系统会分段、分句、分词提取关键词得分点，并允许近义表达命中。";
   }
+}
+
+function renderQuestionBank(cases = []) {
+  state.questionBank = cases;
+  if (!questionBankSelect) return;
+  if (!cases.length) {
+    questionBankSelect.innerHTML = `<option value="">题库暂未加载</option>`;
+    return;
+  }
+  questionBankSelect.innerHTML = [
+    `<option value="">选择一套省考 / 国考训练题</option>`,
+    ...cases.map((item) => `<option value="${item.id}">${item.examLabel} · ${item.questionType === "summary" ? "归纳概括" : typeLabels[item.questionType] || "申论"} · ${item.title}</option>`)
+  ].join("");
+}
+
+function applyQuestionBankCase(caseId) {
+  const item = state.questionBank.find((entry) => entry.id === caseId);
+  if (!item) return;
+  questionType.value = item.questionType;
+  maxScore.value = String(item.maxScore);
+  promptText.value = item.prompt;
+  materialText.value = item.material;
+  referenceOutline.value = item.referenceAnswer || "";
+  answerText.value = "";
+  if (questionBankMeta) {
+    questionBankMeta.textContent = `${item.examLabel} ${item.year} · ${item.province} · ${item.title}。已载入完整材料、题目和参考答案，等待填写考生作答。`;
+  }
+  toggleEssayReferenceMode();
+  updateCount();
+  renderWorkflow({
+    profile: state.profile,
+    report: state.history.slice(-1)[0],
+    currentType: questionType.value
+  });
 }
 
 function setInterviewMode(mode) {
@@ -297,8 +575,10 @@ function fillSample() {
     promptText.value = sampleShenlun.prompt;
     materialText.value = sampleShenlun.material;
     answerText.value = sampleShenlun.answer;
-    referenceOutline.value = "";
+    referenceOutline.value = sampleShenlun.referenceAnswer;
   }
+  if (questionBankSelect) questionBankSelect.value = "";
+  if (questionBankMeta) questionBankMeta.textContent = "选择题目后会自动填入完整材料、题目要求和参考答案。题库为原创仿真材料，用于训练批改流程。";
   toggleEssayReferenceMode();
   updateCount();
 }
@@ -368,13 +648,13 @@ async function submitShenlun(event) {
     return;
   }
 
-  if (!isEssay && !hasMaterial) {
-    window.alert("请先填写材料或给定资料。");
+  if (!isEssay && !hasMaterial && !hasReferenceOutline) {
+    window.alert("请先填写材料或参考答案。");
     return;
   }
 
   if (isEssay && !hasMaterial && !hasReferenceOutline) {
-    window.alert("大作文至少需要填写材料摘要或参考分论点，二选一即可。");
+    window.alert("大作文至少需要填写材料摘要或参考答案，二选一即可。");
     return;
   }
 
@@ -392,12 +672,15 @@ async function submitShenlun(event) {
         prompt: promptText.value.trim(),
         material: materialText.value.trim(),
         referenceOutline: referenceOutline.value.trim(),
+        referenceAnswer: referenceOutline.value.trim(),
         answer: answerText.value.trim()
       })
     });
     state.history = payload.history || [];
+    state.profile = payload.profile || null;
     renderLearningProfile(payload.profile);
     renderReport(payload.report);
+    renderWorkflow({ profile: payload.profile, report: payload.report, currentType: questionType.value });
   } catch (error) {
     window.alert(error.message);
     reportContent.classList.add("hidden");
@@ -437,8 +720,10 @@ async function submitInterview(event) {
       })
     });
     state.history = payload.history || [];
+    state.profile = payload.profile || null;
     renderLearningProfile(payload.profile);
     renderInterviewReport(payload.report);
+    renderWorkflow({ profile: payload.profile, report: payload.report, currentType: "interview" });
   } catch (error) {
     window.alert(error.message);
     interviewReportContent.classList.add("hidden");
@@ -702,7 +987,15 @@ submitButton.addEventListener("click", submitShenlun);
 });
 sampleButton.addEventListener("click", fillSample);
 activateButton.addEventListener("click", redeemCode);
-questionType.addEventListener("change", toggleEssayReferenceMode);
+questionBankSelect?.addEventListener("change", () => applyQuestionBankCase(questionBankSelect.value));
+questionType.addEventListener("change", () => {
+  toggleEssayReferenceMode();
+  renderWorkflow({
+    profile: state.profile,
+    report: state.history.slice(-1)[0],
+    currentType: questionType.value
+  });
+});
 interviewForm.addEventListener("submit", submitInterview);
 interviewButton.addEventListener("click", submitInterview);
 followupButton.addEventListener("click", generateFollowup);
@@ -730,8 +1023,11 @@ toggleEssayReferenceMode();
 bootstrapUser().then((payload) => {
   updateActivationStatus(payload.user);
   state.history = payload.history || [];
+  state.profile = payload.profile || null;
+  renderQuestionBank(payload.questionBank || []);
   renderLearningProfile(payload.profile);
   updateProviderBadge(payload.provider);
+  renderWorkflow({ profile: payload.profile, report: payload.history?.slice(-1)?.[0], currentType: payload.history?.slice(-1)?.[0]?.type || questionType.value });
 }).catch((error) => {
   console.error(error);
 });
